@@ -12,27 +12,27 @@ class Tongquan extends Component {
           <div className="tongquan-mid">
             <Cards
               title={"Tổng số phòng"}
-              logo={"fa-regular fa-building"}
+              logo={"fa-solid fa-building"}
               number={"0"}
               desc={"Trống: | Đang dùng: "}
             />
             <Cards
-              title={"Tổng số phòng"}
-              logo={"fa-regular fa-building"}
+              title={"Công suất phòng"}
+              logo={"fa-solid fa-bed"}
               number={"0"}
-              desc={"Trống: | Đang dùng: "}
+              desc={""}
             />
             <Cards
-              title={"Tổng số phòng"}
-              logo={"fa-regular fa-building"}
+              title={"Check-in/out hôm nay"}
+              logo={"fa-solid fa-calendar-check"}
               number={"0"}
-              desc={"Trống: | Đang dùng: "}
+              desc={"Nhận / Trả phòng"}
             />
             <Cards
-              title={"Tổng số phòng"}
-              logo={"fa-regular fa-building"}
+              title={"Doanh thu tháng này"}
+              logo={"fa-solid fa-money-bill"}
               number={"0"}
-              desc={"Trống: | Đang dùng: "}
+              desc={"Từ 0 lượt lưu trú"}
             />
           </div>
           <div className="tongquan-low">

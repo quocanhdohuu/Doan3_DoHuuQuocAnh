@@ -1,30 +1,46 @@
 .tongquan {
   padding: 0 20px;
   width: 100%;
+  font-family: "Times New Roman", Times, serif;
 }
+
+.tongquan-top p {
+  color: rgb(118, 118, 118);
+}
+
+.tongquan-top {
+  line-height: 0.3;
+}
+
 .tongquan-mid {
   width: 100%;
+  margin-top: 3%;
   display: flex;
   justify-content: space-between;
-  align-items: center;
 }
 
 .card {
   background: white;
   border-radius: 16px;
   width: 20%;
-  height: max-content;
-  padding: 5px 15px;
+  height: 28vh;
+  padding: 15px 15px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 .card i {
-  float: right;
+  position: absolute;
+  right: 10px;
+  top: 10px;
   width: 50px;
   height: 50px;
-  top: 0;
+  font-size: 15pt;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .card h3 {
-  margin: 0;
+  margin-top: 10px;
   font-size: 16px;
 }
 
@@ -43,21 +59,18 @@
 .tongquan-low {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-top: 3%;
   width: 100%;
-  max-height: 30%;
+  margin-top: 3%;
 }
 
 .activity {
   width: 45%;
   border-radius: 16px;
-  height: 100%;
+  height: 28vh;
   padding: 10px 15px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   background-color: rgb(255, 255, 255);
   line-height: 20%;
-  background-color: aqua;
 }
 
 .act {
