@@ -23,7 +23,7 @@
   background: white;
   border-radius: 16px;
   width: 20%;
-  height: 28vh;
+  height: 18vh;
   padding: 15px 15px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   position: relative;
@@ -79,8 +79,16 @@
   align-items: center;
   width: 100%;
 }
+.act i {
+  margin-right: 3%;
+}
+.act span {
+  margin-left: auto;
+}
 
-.tongquan-low p::before {
+.green::before,
+.blue::before,
+.orange::before {
   content: "";
   display: inline-block;
   width: 10px;

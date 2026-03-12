@@ -36,32 +36,45 @@ class Tongquan extends Component {
             />
           </div>
           <div className="tongquan-low">
-            <div className="activity">
-              <h3>Trạng thái phòng</h3>
-              <div className="act phongtrong">
-                <p className="green">Phòng trống</p>
-                <span>0</span>
-              </div>
-              <div className="act dangsudung">
-                <p className="blue">Đang sử dụng</p>
-                <span>0</span>
-              </div>
-              <div className="act candondep">
-                <p className="orange">Cần dọn dẹp</p>
-                <span>0</span>
-              </div>
-            </div>
-            <div className="activity">
-              <h3>Thông tin khách</h3>
-              <div className="act">
-                <p>Tổng khách hàng</p>
-                <span>0</span>
-              </div>
-              <div className="act">
-                <p>Đang lưu trú</p>
-                <span>0</span>
-              </div>
-            </div>
+            <Activity
+              title="Trạng thái phòng"
+              items={[
+                {
+                  label: "Phòng trống",
+                  value: 0,
+                  color: "green",
+                  className: "phongtrong",
+                },
+                {
+                  label: "Đang sử dụng",
+                  value: 0,
+                  color: "blue",
+                  className: "dangsudung",
+                },
+                {
+                  label: "Cần dọn dẹp",
+                  value: 0,
+                  color: "orange",
+                  className: "candondep",
+                },
+              ]}
+            />
+
+            <Activity
+              title="Thông tin khách"
+              items={[
+                {
+                  label: "Tổng khách hàng",
+                  logo: "fa-solid fa-user",
+                  value: 0,
+                },
+                {
+                  label: "Đang lưu trú",
+                  logo: "fa-solid fa-user-check",
+                  value: 0,
+                },
+              ]}
+            />
           </div>
         </div>
       </>
@@ -78,6 +91,22 @@ function Cards({ title, logo, number, desc }) {
         <span>{desc}</span>
       </div>
     </>
+  );
+}
+function Activity({ title, items }) {
+  return (
+    <div className="activity">
+      <h3>{title}</h3>
+
+      {items.map((item, index) => (
+        <div className={`act ${item.className || ""}`} key={index}>
+          {item.logo && <i className={item.logo}></i>}
+
+          <p className={item.color}>{item.label}</p>
+          <span>{item.value}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 
