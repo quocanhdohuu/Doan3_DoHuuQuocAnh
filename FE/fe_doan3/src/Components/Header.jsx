@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import "../style/Header.css";
-
+import { LogoutOutlined } from "@ant-design/icons";
 class Header extends Component {
   render() {
     const { Name, Role } = this.props;
@@ -19,7 +19,7 @@ class Header extends Component {
           </div>
 
           <button className="btn-logout">
-            <i className="fa-solid fa-arrow-right-from-bracket"></i>
+            <LogoutOutlined />
           </button>
         </div>
       </>

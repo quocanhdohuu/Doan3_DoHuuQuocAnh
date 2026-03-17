@@ -1,17 +1,22 @@
 .tongquan {
-  padding: 0 20px;
+  padding: 16px;
+  min-height: calc(100vh - 80px);
+  box-sizing: border-box;
   width: 100%;
-  font-family: "Times New Roman", Times, serif;
-}
-
-.tongquan-top p {
-  color: rgb(118, 118, 118);
 }
 
 .tongquan-top {
-  line-height: 0.3;
+  flex: 1 1 260px;
+}
+.tongquan-top h1 {
+  margin: 0;
+  font-size: 32px;
 }
 
+.tongquan-top p {
+  margin: 6px 0 12px;
+  color: #6a737d;
+}
 .tongquan-mid {
   width: 100%;
   margin-top: 3%;

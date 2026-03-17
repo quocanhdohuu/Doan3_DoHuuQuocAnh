@@ -4,8 +4,8 @@ import QLKhachSan from "./Components/QLKhachSan"
 function App() {
   return (
     <>
-      {/* <QLKhachSan/> */}
-      <Login></Login>
+      <QLKhachSan/>
+      {/* <Login></Login> */}
     </>
   );
 }

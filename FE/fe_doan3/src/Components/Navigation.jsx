@@ -12,6 +12,7 @@ import Dichvu from "./Dichvu";
 import Hoadon from "./Hoadon";
 import Baocao from "./Baocao";
 import Nhanvien from "./Nhanvien";
+import { TableOutlined } from "@ant-design/icons";
 
 class Navigation extends Component {
   render() {
@@ -23,7 +24,7 @@ class Navigation extends Component {
             className={`navigations-btn ${currentPage === Tongquan ? "active" : ""}`}
             onClick={() => changePage(Tongquan)}
           >
-            <i className="fa-solid fa-table-cells-large"></i>Tổng quan
+            <TableOutlined />Tổng quan
           </button>
           <button
             className={`navigations-btn ${currentPage === Lichphong ? "active" : ""}`}
