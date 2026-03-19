@@ -100,9 +100,10 @@ function Activity({ title, items }) {
 
       {items.map((item, index) => (
         <div className={`act ${item.className || ""}`} key={index}>
-          {item.logo && <i className={item.logo}></i>}
-
-          <p className={item.color}>{item.label}</p>
+          <div className="act-left">
+            {item.logo && <i className={item.logo}></i>}
+            <p className={item.color}>{item.label}</p>
+          </div>
           <span>{item.value}</span>
         </div>
       ))}

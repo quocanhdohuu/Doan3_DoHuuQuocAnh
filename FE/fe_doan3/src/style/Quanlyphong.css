@@ -62,9 +62,10 @@
 
 .search-box {
   position: relative;
-  flex: 1 1 400px;
+  flex: 0 0 71%;
+  width: 71%;
   min-width: 220px;
-  max-width: 710px;
+  max-width: 71%;
 }
 
 .search-box input {
@@ -90,9 +91,10 @@
   border-radius: 10px;
   background: #fff;
   outline: none;
-  min-width: 170px;
-  max-width: 240px;
-  flex: 0 0 auto;
+  width: 22%;
+  min-width: 140px;
+  max-width: 22%;
+  flex: 0 0 22%;
 }
 
 .qp-actions input {
@@ -107,6 +109,10 @@
   width: 100%;
   border-collapse: collapse;
   width: 100%;
+}
+.qp-table thead th {
+  color: #53575a ;
+  background-color: transparent ;
 }
 
 .qp-table th,
