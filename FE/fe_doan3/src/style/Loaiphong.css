@@ -94,7 +94,9 @@
   color: #53575a ;
   background-color: transparent ;
 }
-
+.lp-table tbody tr:hover {
+  background: #fafbff;
+}
 .lp-table th,
 .lp-table td {
   padding: 12px 10px;

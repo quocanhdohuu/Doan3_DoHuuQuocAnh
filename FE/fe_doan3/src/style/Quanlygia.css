@@ -121,7 +121,9 @@
   color: #53575a ;
   background-color: transparent ;
 }
-
+.qlgia-table tbody tr:hover {
+  background: #fafbff;
+}
 .qlgia-table th,
 .qlgia-table td {
   padding: 12px 10px;
