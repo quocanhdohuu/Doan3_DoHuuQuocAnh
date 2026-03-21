@@ -83,6 +83,7 @@ tbody tr:hover {
   background: #fafbff;
 }
 tbody td {
+  text-align: left;
   padding: 12px 12px;
   border-bottom: 1px solid #f3f5fa;
 }

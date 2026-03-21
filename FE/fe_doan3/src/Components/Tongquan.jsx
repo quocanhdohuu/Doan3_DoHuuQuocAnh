@@ -1,14 +1,15 @@
 import React, { Component } from "react";
 import "../style/Tongquan.css";
+import { FeatureHeader } from "./Common";
 class Tongquan extends Component {
   render() {
     return (
       <>
         <div className="tongquan">
-          <div className="tongquan-top">
-            <h1>Tổng quan</h1>
-            <p>Chào mừng đến với hệ thống quản lý khách sạn</p>
-          </div>
+          <FeatureHeader
+            title="Tổng quan"
+            description="Chào mừng đến với hệ thống quản lý khách sạn"
+          />
           <div className="tongquan-mid">
             <Cards
               title={"Tổng số phòng"}
