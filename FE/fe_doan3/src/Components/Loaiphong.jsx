@@ -27,7 +27,7 @@ class Loaiphong extends Component {
         description: "Phòng hạng sang với phòng khách riêng biệt",
         capacity: 4,
         price: 2000000,
-        amenities: ["WiFi", "Smart TV 55\"", "Điều hòa"],
+        amenities: ["WiFi", 'Smart TV 55"', "Điều hòa"],
       },
       {
         id: 4,
@@ -67,7 +67,14 @@ class Loaiphong extends Component {
     this.setState({
       isModalOpen: true,
       modalMode: "add",
-      currentType: { id: null, name: "", description: "", capacity: "", price: "", amenities: "" },
+      currentType: {
+        id: null,
+        name: "",
+        description: "",
+        capacity: "",
+        price: "",
+        amenities: "",
+      },
     });
   };
 
@@ -138,7 +145,9 @@ class Loaiphong extends Component {
 
   deleteType = (typeId) => {
     if (!window.confirm("Xóa loại phòng này?")) return;
-    this.setState((prev) => ({ types: prev.types.filter((t) => t.id !== typeId) }));
+    this.setState((prev) => ({
+      types: prev.types.filter((t) => t.id !== typeId),
+    }));
   };
 
   render() {
@@ -186,7 +195,9 @@ class Loaiphong extends Component {
               <tbody>
                 {filteredTypes.map((typeItem) => (
                   <tr key={typeItem.id}>
-                    <td><strong>{typeItem.name}</strong></td>
+                    <td>
+                      <strong>{typeItem.name}</strong>
+                    </td>
                     <td>{typeItem.description}</td>
                     <td>{typeItem.capacity} người</td>
                     <td>{typeItem.price.toLocaleString()}đ</td>
@@ -197,14 +208,22 @@ class Loaiphong extends Component {
                         </span>
                       ))}
                       {typeItem.amenities.length > 3 && (
-                        <span className="tag-pill">+{typeItem.amenities.length - 3}</span>
+                        <span className="tag-pill">
+                          +{typeItem.amenities.length - 3}
+                        </span>
                       )}
                     </td>
                     <td>
-                      <button className="btn-edit" onClick={() => this.openEditModal(typeItem)}>
+                      <button
+                        className="btn-edit"
+                        onClick={() => this.openEditModal(typeItem)}
+                      >
                         <i className="fa fa-edit"></i>
                       </button>
-                      <button className="btn-delete" onClick={() => this.deleteType(typeItem.id)}>
+                      <button
+                        className="btn-delete"
+                        onClick={() => this.deleteType(typeItem.id)}
+                      >
                         <i className="fa fa-trash"></i>
                       </button>
                     </td>
@@ -228,35 +247,67 @@ class Loaiphong extends Component {
               <button className="modal-close" onClick={this.closeModal}>
                 ×
               </button>
-              <h2>{modalMode === "add" ? "Thêm loại phòng mới" : "Chỉnh sửa loại phòng"}</h2>
+              <h2>
+                {modalMode === "add"
+                  ? "Thêm loại phòng mới"
+                  : "Chỉnh sửa loại phòng"}
+              </h2>
               <form onSubmit={this.handleSubmit}>
                 <label>
                   Tên loại phòng *
-                  <input className="modal-input" type="text" value={currentType.name} onChange={this.handleChange("name")} />
+                  <input
+                    className="modal-input"
+                    type="text"
+                    value={currentType.name}
+                    onChange={this.handleChange("name")}
+                  />
                 </label>
 
                 <label>
                   Mô tả
-                  <textarea className="modal-input" value={currentType.description} onChange={this.handleChange("description")} />
+                  <textarea
+                    className="modal-input"
+                    value={currentType.description}
+                    onChange={this.handleChange("description")}
+                  />
                 </label>
 
                 <label>
                   Sức chứa (người) *
-                  <input className="modal-input" type="number" value={currentType.capacity} onChange={this.handleChange("capacity")} />
+                  <input
+                    className="modal-input"
+                    type="number"
+                    value={currentType.capacity}
+                    onChange={this.handleChange("capacity")}
+                  />
                 </label>
 
                 <label>
                   Giá cơ bản (VNĐ) *
-                  <input className="modal-input" type="number" value={currentType.price} onChange={this.handleChange("price")} />
+                  <input
+                    className="modal-input"
+                    type="number"
+                    value={currentType.price}
+                    onChange={this.handleChange("price")}
+                  />
                 </label>
 
                 <label>
                   Tiện nghi (phân cách bằng dấu phẩy)
-                  <input className="modal-input" type="text" value={currentType.amenities} onChange={this.handleChange("amenities")} />
+                  <input
+                    className="modal-input"
+                    type="text"
+                    value={currentType.amenities}
+                    onChange={this.handleChange("amenities")}
+                  />
                 </label>
 
                 <div className="modal-buttons">
-                  <button className="btn-secondary" type="button" onClick={this.closeModal}>
+                  <button
+                    className="btn-secondary"
+                    type="button"
+                    onClick={this.closeModal}
+                  >
                     Hủy
                   </button>
                   <button className="btn-primary" type="submit">
