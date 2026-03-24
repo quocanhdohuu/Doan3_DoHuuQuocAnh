@@ -1,14 +1,16 @@
-CREATE DATABASE DOAN3_QLKHACHSAN
+﻿CREATE DATABASE DOAN3_QLKHACHSAN
 GO 
 USE DOAN3_QLKHACHSAN
 GO
+
 
 CREATE TABLE Users (
     UserID INT IDENTITY(1,1) PRIMARY KEY,
     Email NVARCHAR(150) NOT NULL UNIQUE,
     PasswordHash NVARCHAR(255) NOT NULL,
     Role NVARCHAR(20) NOT NULL CHECK (Role IN ('ADMIN','RECEPTIONIST','CUSTOMER')),
-    CreatedAt DATETIME DEFAULT GETDATE()
+    CreatedAt DATETIME DEFAULT GETDATE(),
+	Status NVARCHAR(20) NULL
 )
 
 CREATE TABLE Receptionists (
@@ -16,6 +18,7 @@ CREATE TABLE Receptionists (
     FullName NVARCHAR(150) NOT NULL,
     Phone NVARCHAR(20),
     UserID INT UNIQUE,
+	Status NVARCHAR(20) DEFAULT 'TRUE' CHECK (Status IN ('TRUE','FALSE')),
     FOREIGN KEY (UserID) REFERENCES Users(UserID)
 )
 
@@ -56,13 +59,12 @@ CREATE TABLE Rates (
 
 CREATE TABLE Reservations (
     ReservationID INT IDENTITY(1,1) PRIMARY KEY,
-    CustomerID INT NOT NULL,
+     UserID INT UNIQUE,
+    FOREIGN KEY (UserID) REFERENCES Users(UserID),
     CheckInDate DATE,
     CheckOutDate DATE,
-    Status NVARCHAR(20)
-        CHECK (Status IN ('BOOKED','CANCELLED','CHECKED_IN','COMPLETED')),
-    CreatedAt DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+    Status NVARCHAR(20) CHECK (Status IN ('BOOKED','CANCELLED','CHECKED_IN','COMPLETED')),
+    CreatedAt DATETIME DEFAULT GETDATE()
 )
 
 CREATE TABLE ReservationRooms (
@@ -108,7 +110,8 @@ CREATE TABLE RoomStayHistory (
 CREATE TABLE Services (
     ServiceID INT IDENTITY(1,1) PRIMARY KEY,
     ServiceName NVARCHAR(150),
-    Price DECIMAL(12,2)
+    Price DECIMAL(12,2),
+	Status NVARCHAR(20) DEFAULT 'TRUE' CHECK (Status IN ('TRUE','FALSE'))
 )
 
 CREATE TABLE ServiceUsages (
@@ -123,8 +126,10 @@ CREATE TABLE ServiceUsages (
 
 CREATE TABLE MinibarItems (
     MinibarID INT IDENTITY(1,1) PRIMARY KEY,
+	RoomTypeID INT NOT NULL,
     ItemName NVARCHAR(150),
-    Price DECIMAL(12,2)
+    Price DECIMAL(12,2),
+	FOREIGN KEY (RoomTypeID) REFERENCES RoomTypes(RoomTypeID)
 )
 
 CREATE TABLE MinibarUsages (
@@ -148,11 +153,10 @@ CREATE TABLE Penalties (
 CREATE TABLE Invoices (
     InvoiceID INT IDENTITY(1,1) PRIMARY KEY,
     StayID INT UNIQUE,
-    IssueDate DATETIME DEFAULT GETDATE(),
+    Date DATETIME DEFAULT GETDATE(),
     TotalAmount DECIMAL(14,2),
     VAT DECIMAL(14,2),
-    Status NVARCHAR(20)
-        CHECK (Status IN ('OPEN','PAID','CANCELLED')),
+    Status NVARCHAR(20) CHECK (Status IN ('OPEN','PAID','CANCELLED')),
     FOREIGN KEY (StayID) REFERENCES Stays(StayID)
 )
 
@@ -177,4 +181,175 @@ CREATE TABLE Payments (
     PaymentDate DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (InvoiceID) REFERENCES Invoices(InvoiceID)
 )
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+-----------------------------------Stored procedure-----------------------------
+--Thêm nhân viên mới------------------------------------------------------------
+CREATE PROCEDURE sp_CreateReceptionist
+    @Email NVARCHAR(150),
+    @PasswordHash NVARCHAR(255),
+    @FullName NVARCHAR(150),
+    @Role NVARCHAR(20),
+    @Phone NVARCHAR(20)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @UserID INT;
+
+    -- Thêm vào bảng Users
+    INSERT INTO Users (Email, PasswordHash, Role, CreatedAt)
+    VALUES (@Email, @PasswordHash, @Role, GETDATE());
+
+    -- Lấy UserID vừa tạo
+    SET @UserID = SCOPE_IDENTITY();
+
+    -- Thêm vào bảng Receptionists
+    INSERT INTO Receptionists (FullName, Phone, UserID)
+    VALUES (@FullName, @Phone, @UserID);
+END
+
+EXEC sp_CreateReceptionist
+    @Email = 'dohuuquocanh21dk@gmail.com',
+    @PasswordHash = '123',
+    @FullName = N'Đỗ Hữu Quốc Ánh',
+    @Role = 'ADMIN',
+    @Phone = '03972795272'
+
+--Thêm loại phòng mới------------------------------------------------------------------
+CREATE alter PROCEDURE sp_CreateRoomType
+    @Name NVARCHAR(100),
+    @Description NVARCHAR(MAX),
+    @Capacity INT,
+    @DefaultPrice DECIMAL(12,2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO RoomTypes(Name, Description, Capacity, DefaultPrice)
+    VALUES (@Name, @Description, @Capacity, @DefaultPrice);
+END
+
+EXEC sp_CreateRoomType
+    @Name = N'Phòng Half-Luxury',
+    @Description = N'Phòng cao cấp cửa kính',
+    @Capacity = 2,
+    @DefaultPrice = 1200000
+
+--Đăng ký tài khoản từ khách hàng---------------------------------------------------------
+CREATE PROCEDURE sp_RegisterCustomer
+    @FullName NVARCHAR(150),
+    @Phone NVARCHAR(20),
+    @Email NVARCHAR(150),
+    @PasswordHash NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Kiểm tra email đã tồn tại chưa
+    IF EXISTS (SELECT 1 FROM Users WHERE Email = @Email)
+    BEGIN
+        RAISERROR('Email đã tồn tại!', 16, 1);
+        RETURN;
+    END
+
+    DECLARE @UserID INT;
+
+    -- Thêm vào bảng Users
+    INSERT INTO Users (Email, PasswordHash, Role, CreatedAt)
+    VALUES (@Email, @PasswordHash, 'CUSTOMER', GETDATE());
+
+    -- Lấy UserID vừa tạo
+    SET @UserID = SCOPE_IDENTITY();
+
+    -- Thêm vào bảng Customers
+    INSERT INTO Customers (FullName, Phone, UserID)
+    VALUES (@FullName, @Phone, @UserID);
+END
+
+EXEC sp_RegisterCustomer 
+    @FullName = N'Nguyễn Văn B',
+    @Phone = '0123456788',
+    @Email = 'vanb@gmail.com',
+    @PasswordHash = '123';
+
+--Đăng nhập và lấy các thông tin--------------------------------------------------
+CREATE PROCEDURE GetAccountInfo
+    @Email NVARCHAR(255),
+    @PasswordHash NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Lấy thông tin từ Customers
+    SELECT 
+        u.Email,
+        u.PasswordHash,
+        u.Role,
+        c.FullName,
+        c.Phone
+    FROM Users u
+    INNER JOIN Customers c ON u.UserID = c.UserID
+    WHERE u.Email = @Email
+      AND u.PasswordHash = @PasswordHash;
+
+    -- Lấy thông tin từ Receptionists
+    SELECT 
+        u.Email,
+        u.PasswordHash,
+        u.Role,
+        r.FullName,
+        r.Phone
+    FROM Users u
+    INNER JOIN Receptionists r ON u.UserID = r.UserID
+    WHERE u.Email = @Email
+      AND u.PasswordHash = @PasswordHash;
+END;
+
+EXEC GetAccountInfo @Email = 'reception1@gmail.com', @PasswordHash = '123456';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+select * from Customers
+select * from Guests
+select * from InvoiceDetails
+select * from Invoices
+select * from MinibarItems
+select * from MinibarUsages
+select * from Payments
+select * from Penalties
+select * from Rates
+select * from Receptionists
+select * from ReservationRooms
+select * from Reservations
+select * from Rooms
+select * from RoomStayHistory
+select * from RoomTypes
+select * from Services
+select * from ServiceUsages
+select * from Stays
+select * from Users
 
