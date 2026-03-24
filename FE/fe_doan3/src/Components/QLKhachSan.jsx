@@ -4,6 +4,7 @@ import Header from "./Header";
 import Navigation from "./Navigation";
 import Content from "./Content";
 import Tongquan from "./Tongquan";
+
 class QLKhachSan extends Component {
   state = {
     page: Tongquan,
@@ -12,10 +13,11 @@ class QLKhachSan extends Component {
   changePage = (page) => {
     this.setState({ page });
   };
+
   render() {
     return (
       <>
-        <Header Name="Quoc Anh" Role="Admin" />
+        <Header />
         <Navigation
           changePage={this.changePage}
           currentPage={this.state.page}
@@ -25,4 +27,5 @@ class QLKhachSan extends Component {
     );
   }
 }
+
 export default QLKhachSan;

@@ -102,6 +102,7 @@
 	align-items: flex-start;
 	justify-content: space-between;
 	flex-wrap: wrap;
+	margin-bottom: 30px;
 }
 
 .baocao-header-row h1 {
@@ -128,7 +129,6 @@
 	flex-direction: column;
 	gap: 6px;
 	min-width: 180px;
-    margin-top: 50px;
 }
 .baocao-month-picker label {
 	font-size: 1rem;

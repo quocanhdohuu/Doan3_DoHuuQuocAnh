@@ -2,6 +2,26 @@ import React from "react";
 import "../style/Baocao.css";
 import { FeatureHeader } from "./Common";
 
+const StatCard = ({ label, value, desc, icon, color }) => (
+  <div className="baocao-stat-card">
+    <div className="baocao-stat-label">
+      {label}{" "}
+      <span className="baocao-stat-icon" style={{ color }}>
+        {icon}
+      </span>
+    </div>
+    <div className="baocao-stat-value">{value}</div>
+    <div className="baocao-stat-desc">{desc}</div>
+  </div>
+);
+
+const ChartCard = ({ title, placeholder }) => (
+  <div className="baocao-chart-card">
+    <div className="baocao-chart-title">{title}</div>
+    <div className="baocao-chart-placeholder">{placeholder}</div>
+  </div>
+);
+
 const Baocao = () => {
   return (
     <div className="baocao-page">
@@ -17,75 +37,55 @@ const Baocao = () => {
       </div>
 
       <div className="baocao-stats-row">
-        <div className="baocao-stat-card">
-          <div className="baocao-stat-label">
-            Công suất phòng{" "}
-            <span className="baocao-stat-icon" style={{ color: "#2563eb" }}>
-              %
-            </span>
-          </div>
-          <div className="baocao-stat-value">0.0%</div>
-          <div className="baocao-stat-desc">0/32 phòng đang sử dụng</div>
-        </div>
-        <div className="baocao-stat-card">
-          <div className="baocao-stat-label">
-            Doanh thu{" "}
-            <span className="baocao-stat-icon" style={{ color: "#22c55e" }}>
-              $
-            </span>
-          </div>
-          <div className="baocao-stat-value">0đ</div>
-          <div className="baocao-stat-desc">Tháng tháng 3 năm 2026</div>
-        </div>
-        <div className="baocao-stat-card">
-          <div className="baocao-stat-label">
-            Lưu trú{" "}
-            <span className="baocao-stat-icon" style={{ color: "#a855f7" }}>
-              <i class="fa-solid fa-users"></i>
-            </span>
-          </div>
-          <div className="baocao-stat-value">0</div>
-          <div className="baocao-stat-desc">0 đặt trước, 0 walk-in</div>
-        </div>
-        <div className="baocao-stat-card">
-          <div className="baocao-stat-label">
-            Đặt phòng{" "}
-            <span className="baocao-stat-icon" style={{ color: "#f97316" }}>
-              <i class="fa-solid fa-calendar-days"></i>
-            </span>
-          </div>
-          <div className="baocao-stat-value">0</div>
-          <div className="baocao-stat-desc">Đặt phòng trong tháng</div>
-        </div>
+        <StatCard
+          label="Công suất phòng"
+          value="0.0%"
+          desc="0/32 phòng đang sử dụng"
+          icon="%"
+          color="#2563eb"
+        />
+        <StatCard
+          label="Doanh thu"
+          value="0đ"
+          desc="Tháng tháng 3 năm 2026"
+          icon="$"
+          color="#22c55e"
+        />
+        <StatCard
+          label="Lưu trú"
+          value="0"
+          desc="0 đặt trước, 0 walk-in"
+          icon={<i className="fa-solid fa-users" />}
+          color="#a855f7"
+        />
+        <StatCard
+          label="Đặt phòng"
+          value="0"
+          desc="Đặt phòng trong tháng"
+          icon={<i className="fa-solid fa-calendar-days" />}
+          color="#f97316"
+        />
       </div>
 
       <div className="baocao-charts-row">
-        <div className="baocao-chart-card">
-          <div className="baocao-chart-title">Doanh thu theo ngày</div>
-          <div className="baocao-chart-placeholder">
-            [Biểu đồ doanh thu theo ngày]
-          </div>
-        </div>
-        <div className="baocao-chart-card">
-          <div className="baocao-chart-title">Doanh thu theo kênh</div>
-          <div className="baocao-chart-placeholder">
-            [Biểu đồ doanh thu theo kênh]
-          </div>
-        </div>
+        <ChartCard
+          title="Doanh thu theo ngày"
+          placeholder="[Biểu đồ doanh thu theo ngày]"
+        />
+        <ChartCard
+          title="Doanh thu theo kênh"
+          placeholder="[Biểu đồ doanh thu theo kênh]"
+        />
       </div>
       <div className="baocao-charts-row">
-        <div className="baocao-chart-card">
-          <div className="baocao-chart-title">Doanh thu theo loại phòng</div>
-          <div className="baocao-chart-placeholder">
-            [Biểu đồ doanh thu theo loại phòng]
-          </div>
-        </div>
-        <div className="baocao-chart-card">
-          <div className="baocao-chart-title">Công suất theo loại phòng</div>
-          <div className="baocao-chart-placeholder">
-            [Biểu đồ công suất theo loại phòng]
-          </div>
-        </div>
+        <ChartCard
+          title="Doanh thu theo loại phòng"
+          placeholder="[Biểu đồ doanh thu theo loại phòng]"
+        />
+        <ChartCard
+          title="Công suất theo loại phòng"
+          placeholder="[Biểu đồ công suất theo loại phòng]"
+        />
       </div>
     </div>
   );

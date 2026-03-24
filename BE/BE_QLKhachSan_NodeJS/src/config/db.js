@@ -2,10 +2,10 @@ const mssql = require("mssql");
 const msnodesqlv8 = require("mssql/msnodesqlv8");
 require("dotenv").config();
 
-const server = process.env.DB_SERVER || "localhost\\SQLEXPRESS";
-const database = process.env.DB_DATABASE || "DOAN3_QLKHACHSAN";
-const user = process.env.DB_USER || "";
-const password = process.env.DB_PASSWORD || "";
+const server = (process.env.DB_SERVER || "localhost\\SQLEXPRESS").trim();
+const database = (process.env.DB_DATABASE || "DOAN3_QLKHACHSAN").trim();
+const user = (process.env.DB_USER || "").trim();
+const password = (process.env.DB_PASSWORD || "").trim();
 
 let sql;
 let config;

@@ -1,7 +1,13 @@
 import React, { Component } from "react";
 import "../style/Header.css";
 import { LogoutOutlined } from "@ant-design/icons";
-class Header extends Component {
+import { useAuth } from "./AuthContext";
+
+class HeaderClass extends Component {
+  handleLogout = () => {
+    this.props.logout();
+  };
+
   render() {
     const { Name, Role } = this.props;
     return (
@@ -14,11 +20,11 @@ class Header extends Component {
           <h2>QUẢN LÝ KHÁCH SẠN</h2>
 
           <div className="header-right-text">
-            <h5>{Name}</h5>
-            <p>{Role}</p>
+            <h5>{Name || "Chưa đăng nhập"}</h5>
+            <p>{Role || ""}</p>
           </div>
 
-          <button className="btn-logout">
+          <button className="btn-logout" onClick={this.handleLogout}>
             <LogoutOutlined />
           </button>
         </div>
@@ -26,4 +32,10 @@ class Header extends Component {
     );
   }
 }
+
+const Header = () => {
+  const { user, logout } = useAuth();
+  return <HeaderClass Name={user?.name} Role={user?.role} logout={logout} />;
+};
+
 export default Header;

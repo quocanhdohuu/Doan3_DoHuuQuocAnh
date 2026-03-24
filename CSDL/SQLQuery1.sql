@@ -305,21 +305,95 @@ BEGIN
     INNER JOIN Receptionists r ON u.UserID = r.UserID
     WHERE u.Email = @Email
       AND u.PasswordHash = @PasswordHash;
+
+	   -- Lấy thông tin từ Receptionists
+    SELECT 
+        u.Email,
+        u.PasswordHash,
+        u.Role,
+        r.FullName,
+        r.Phone
+    FROM Users u
+    INNER JOIN Receptionists r ON u.UserID = r.UserID
+    WHERE u.Email = @Email
+      AND u.PasswordHash = @PasswordHash;
 END;
 
 EXEC GetAccountInfo @Email = 'reception1@gmail.com', @PasswordHash = '123456';
 
 
+--Thêm Loại phòng
+CREATE PROCEDURE sp_AddRoomType
+    @Name NVARCHAR(100),
+    @Description NVARCHAR(MAX) = NULL,
+    @Capacity INT = NULL,
+    @DefaultPrice DECIMAL(12,2) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO RoomTypes (Name, Description, Capacity, DefaultPrice)
+    VALUES (@Name, @Description, @Capacity, @DefaultPrice);
+
+    -- Trả về ID vừa tạo
+    SELECT SCOPE_IDENTITY() AS NewRoomTypeID;
+END;
+
+--Sửa Loại phòng
+CREATE PROCEDURE sp_UpdateRoomType
+    @RoomTypeID INT,
+    @Name NVARCHAR(100),
+    @Description NVARCHAR(MAX),
+    @Capacity INT,
+    @DefaultPrice DECIMAL(12,2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE RoomTypes
+    SET 
+        Name = @Name,
+        Description = @Description,
+        Capacity = @Capacity,
+        DefaultPrice = @DefaultPrice
+    WHERE RoomTypeID = @RoomTypeID;
+
+    -- Check có update không
+    IF @@ROWCOUNT = 0
+    BEGIN
+        RAISERROR ('RoomType không tồn tại', 16, 1);
+    END
+END;
+
+--Xoá Loại phòng
+CREATE PROCEDURE sp_DeleteRoomType
+    @RoomTypeID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DELETE FROM RoomTypes
+    WHERE RoomTypeID = @RoomTypeID;
+
+    -- Check có xoá không
+    IF @@ROWCOUNT = 0
+    BEGIN
+        RAISERROR ('RoomType không tồn tại', 16, 1);
+    END
+END;
 
 
 
-
-
-
-
-
-
-
+CREATE TABLE Admin (
+    AdminID INT IDENTITY(1,1) PRIMARY KEY,
+    FullName NVARCHAR(150) NOT NULL,
+    Phone NVARCHAR(20),
+    UserID INT UNIQUE,
+	Status NVARCHAR(20) DEFAULT 'TRUE' CHECK (Status IN ('TRUE','FALSE')),
+    FOREIGN KEY (UserID) REFERENCES Users(UserID)
+)
+INSERT INTO Admin (FullName, Phone, UserID, Status)
+VALUES (N'Đỗ Hữu Quốc Anh', '0394193241', 1, 'TRUE');
 
 
 

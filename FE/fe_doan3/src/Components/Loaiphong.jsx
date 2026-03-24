@@ -4,40 +4,7 @@ import { FeatureHeader } from "./Common";
 
 class Loaiphong extends Component {
   state = {
-    types: [
-      {
-        id: 1,
-        name: "Standard",
-        description: "Phòng tiêu chuẩn với đầy đủ tiện nghi cơ bản",
-        capacity: 2,
-        price: 800000,
-        amenities: ["WiFi", "TV", "Điều hòa"],
-      },
-      {
-        id: 2,
-        name: "Deluxe",
-        description: "Phòng cao cấp với view đẹp và không gian rộng rãi",
-        capacity: 3,
-        price: 1200000,
-        amenities: ["WiFi", "Smart TV", "Điều hòa"],
-      },
-      {
-        id: 3,
-        name: "Suite",
-        description: "Phòng hạng sang với phòng khách riêng biệt",
-        capacity: 4,
-        price: 2000000,
-        amenities: ["WiFi", 'Smart TV 55"', "Điều hòa"],
-      },
-      {
-        id: 4,
-        name: "Family",
-        description: "Phòng gia đình rộng rãi cho 4-6 người",
-        capacity: 6,
-        price: 1800000,
-        amenities: ["WiFi", "TV", "Điều hòa"],
-      },
-    ],
+    types: [],
     search: "",
     isModalOpen: false,
     modalMode: "add",
@@ -47,8 +14,40 @@ class Loaiphong extends Component {
       description: "",
       capacity: "",
       price: "",
-      amenities: "",
     },
+    loading: true,
+    error: null,
+  };
+
+  componentDidMount() {
+    this.fetchRoomTypes();
+  }
+
+  fetchRoomTypes = async () => {
+    try {
+      this.setState({ loading: true, error: null });
+      const response = await fetch("http://localhost:3000/api/get-room-types");
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Map API data to component state format
+      const mappedTypes = data.map((item) => ({
+        id: item.RoomTypeID,
+        name: item.Name,
+        description: item.Description,
+        capacity: item.Capacity,
+        price: item.DefaultPrice,
+      }));
+
+      this.setState({ types: mappedTypes, loading: false });
+    } catch (error) {
+      console.error("Error fetching room types:", error);
+      this.setState({ error: error.message, loading: false });
+    }
   };
 
   getFilteredTypes = () => {
@@ -58,8 +57,7 @@ class Loaiphong extends Component {
     return types.filter(
       (type) =>
         type.name.toLowerCase().includes(q) ||
-        type.description.toLowerCase().includes(q) ||
-        type.amenities.join(" ").toLowerCase().includes(q),
+        type.description.toLowerCase().includes(q),
     );
   };
 
@@ -73,7 +71,6 @@ class Loaiphong extends Component {
         description: "",
         capacity: "",
         price: "",
-        amenities: "",
       },
     });
   };
@@ -88,7 +85,6 @@ class Loaiphong extends Component {
         description: typeItem.description,
         capacity: typeItem.capacity,
         price: typeItem.price,
-        amenities: typeItem.amenities.join(", "),
       },
     });
   };
@@ -104,10 +100,10 @@ class Loaiphong extends Component {
     }));
   };
 
-  handleSubmit = (e) => {
+  handleSubmit = async (e) => {
     e.preventDefault();
     const { types, modalMode, currentType } = this.state;
-    const { name, description, capacity, price, amenities, id } = currentType;
+    const { name, description, capacity, price, id } = currentType;
 
     if (!name || !description || !capacity || !price) {
       alert("Vui lòng điền đủ các trường bắt buộc.");
@@ -127,31 +123,80 @@ class Loaiphong extends Component {
       description: description.trim(),
       capacity: capacityNum,
       price: priceNum,
-      amenities: amenities
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
     };
 
-    if (modalMode === "add") {
-      this.setState({ types: [...types, data], isModalOpen: false });
-    } else {
-      this.setState({
-        types: types.map((t) => (t.id === id ? data : t)),
-        isModalOpen: false,
-      });
+    const apiPayload = {
+      Name: data.name,
+      Description: data.description,
+      Capacity: data.capacity,
+      DefaultPrice: data.price,
+    };
+
+    try {
+      if (modalMode === "add") {
+        // POST request để thêm loại phòng mới
+        const response = await fetch(
+          "http://localhost:3000/api/get-room-types",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(apiPayload),
+          },
+        );
+        if (response.ok) {
+          this.setState({ isModalOpen: false });
+          await this.fetchRoomTypes(); // Refresh dữ liệu từ API
+        } else {
+          alert("Lỗi khi thêm loại phòng");
+        }
+      } else {
+        // PUT request để cập nhật loại phòng
+        const response = await fetch(
+          `http://localhost:3000/api/get-room-types/${id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(apiPayload),
+          },
+        );
+        if (response.ok) {
+          this.setState({ isModalOpen: false });
+          await this.fetchRoomTypes(); // Refresh dữ liệu từ API
+        } else {
+          alert("Lỗi khi cập nhật loại phòng");
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Lỗi: " + error.message);
     }
   };
 
-  deleteType = (typeId) => {
+  deleteType = async (typeId) => {
     if (!window.confirm("Xóa loại phòng này?")) return;
-    this.setState((prev) => ({
-      types: prev.types.filter((t) => t.id !== typeId),
-    }));
+
+    try {
+      const response = await fetch(
+        `http://localhost:3000/api/get-room-types/${typeId}`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      if (response.ok) {
+        await this.fetchRoomTypes(); // Refresh dữ liệu từ API
+      } else {
+        alert("Lỗi khi xóa loại phòng");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Lỗi: " + error.message);
+    }
   };
 
   render() {
-    const { search, isModalOpen, modalMode, currentType } = this.state;
+    const { search, isModalOpen, modalMode, currentType, loading, error } =
+      this.state;
     const filteredTypes = this.getFilteredTypes();
 
     return (
@@ -166,80 +211,98 @@ class Loaiphong extends Component {
           </button>
         </div>
 
-        <div className="lp-main">
-          <div className="lp-actions">
-            <div className="lp-search-box">
-              <i className="fa fa-search"></i>
-              <input
-                type="text"
-                placeholder="Tìm kiếm loại phòng..."
-                value={search}
-                onChange={(e) => this.setState({ search: e.target.value })}
-              />
-            </div>
-            <div />
+        {error && (
+          <div
+            className="error-message"
+            style={{
+              backgroundColor: "#f8d7da",
+              color: "#721c24",
+              padding: "12px",
+              marginBottom: "16px",
+              borderRadius: "4px",
+            }}
+          >
+            Lỗi: {error}
+            <button
+              onClick={this.fetchRoomTypes}
+              style={{
+                marginLeft: "12px",
+                padding: "4px 8px",
+                cursor: "pointer",
+              }}
+            >
+              Thử lại
+            </button>
           </div>
+        )}
 
-          <div className="lp-table-wrapper">
-            <table className="lp-table">
-              <thead>
-                <tr>
-                  <th>Tên loại phòng</th>
-                  <th>Mô tả</th>
-                  <th>Sức chứa</th>
-                  <th>Giá cơ bản</th>
-                  <th>Tiện nghi</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTypes.map((typeItem) => (
-                  <tr key={typeItem.id}>
-                    <td>
-                      <strong>{typeItem.name}</strong>
-                    </td>
-                    <td>{typeItem.description}</td>
-                    <td>{typeItem.capacity} người</td>
-                    <td>{typeItem.price.toLocaleString()}đ</td>
-                    <td>
-                      {typeItem.amenities.slice(0, 3).map((amenity) => (
-                        <span key={amenity} className="tag-pill">
-                          {amenity}
-                        </span>
-                      ))}
-                      {typeItem.amenities.length > 3 && (
-                        <span className="tag-pill">
-                          +{typeItem.amenities.length - 3}
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <button
-                        className="btn-edit"
-                        onClick={() => this.openEditModal(typeItem)}
-                      >
-                        <i className="fa fa-edit"></i>
-                      </button>
-                      <button
-                        className="btn-delete"
-                        onClick={() => this.deleteType(typeItem.id)}
-                      >
-                        <i className="fa fa-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {filteredTypes.length === 0 && (
-                  <tr>
-                    <td colSpan="6" className="empty-row">
-                      Không có loại phòng phù hợp
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        {loading && (
+          <div style={{ textAlign: "center", padding: "40px" }}>
+            <p>Đang tải dữ liệu...</p>
           </div>
-        </div>
+        )}
+
+        {!loading && (
+          <div className="lp-main">
+            <div className="lp-actions">
+              <div className="lp-search-box">
+                <i className="fa fa-search"></i>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm loại phòng..."
+                  value={search}
+                  onChange={(e) => this.setState({ search: e.target.value })}
+                />
+              </div>
+              <div />
+            </div>
+
+            <div className="lp-table-wrapper">
+              <table className="lp-table">
+                <thead>
+                  <tr>
+                    <th>Tên loại phòng</th>
+                    <th>Mô tả</th>
+                    <th>Sức chứa</th>
+                    <th>Giá cơ bản</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTypes.map((typeItem) => (
+                    <tr key={typeItem.id}>
+                      <td>{typeItem.name}</td>
+                      <td>{typeItem.description}</td>
+                      <td>{typeItem.capacity} người</td>
+                      <td>{typeItem.price.toLocaleString()}đ</td>
+                      <td>
+                        <button
+                          className="btn-edit"
+                          onClick={() => this.openEditModal(typeItem)}
+                        >
+                          <i className="fa fa-edit"></i>
+                        </button>
+                        <button
+                          className="btn-delete"
+                          onClick={() => this.deleteType(typeItem.id)}
+                        >
+                          <i className="fa fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredTypes.length === 0 && (
+                    <tr>
+                      <td colSpan="5" className="empty-row">
+                        Không có loại phòng phù hợp
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {isModalOpen && (
           <div className="modal-overlay" onClick={this.closeModal}>
@@ -289,16 +352,6 @@ class Loaiphong extends Component {
                     type="number"
                     value={currentType.price}
                     onChange={this.handleChange("price")}
-                  />
-                </label>
-
-                <label>
-                  Tiện nghi (phân cách bằng dấu phẩy)
-                  <input
-                    className="modal-input"
-                    type="text"
-                    value={currentType.amenities}
-                    onChange={this.handleChange("amenities")}
                   />
                 </label>
 
