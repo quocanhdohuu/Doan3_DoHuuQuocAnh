@@ -275,7 +275,7 @@ EXEC sp_RegisterCustomer
     @PasswordHash = '123';
 
 --Đăng nhập và lấy các thông tin--------------------------------------------------
-CREATE PROCEDURE GetAccountInfo
+ALTER PROCEDURE GetAccountInfo
     @Email NVARCHAR(255),
     @PasswordHash NVARCHAR(255)
 AS
@@ -311,15 +311,15 @@ BEGIN
         u.Email,
         u.PasswordHash,
         u.Role,
-        r.FullName,
-        r.Phone
+        a.FullName,
+        a.Phone
     FROM Users u
-    INNER JOIN Receptionists r ON u.UserID = r.UserID
+    INNER JOIN Admin a ON u.UserID = a.UserID
     WHERE u.Email = @Email
       AND u.PasswordHash = @PasswordHash;
 END;
 
-EXEC GetAccountInfo @Email = 'reception1@gmail.com', @PasswordHash = '123456';
+EXEC GetAccountInfo @Email = 'admin@gmail.com', @PasswordHash = '123456';
 
 
 --Thêm Loại phòng
