@@ -13,6 +13,17 @@ CREATE TABLE Users (
 	Status NVARCHAR(20) NULL
 )
 
+CREATE TABLE Admin (
+    AdminID INT IDENTITY(1,1) PRIMARY KEY,
+    FullName NVARCHAR(150) NOT NULL,
+    Phone NVARCHAR(20),
+    UserID INT UNIQUE,
+	Status NVARCHAR(20) DEFAULT 'TRUE' CHECK (Status IN ('TRUE','FALSE')),
+    FOREIGN KEY (UserID) REFERENCES Users(UserID)
+)
+INSERT INTO Admin (FullName, Phone, UserID, Status)
+VALUES (N'Đỗ Hữu Quốc Anh', '0394193241', 1, 'TRUE');
+
 CREATE TABLE Receptionists (
     ReceptionistID INT IDENTITY(1,1) PRIMARY KEY,
     FullName NVARCHAR(150) NOT NULL,
@@ -382,19 +393,6 @@ BEGIN
         RAISERROR ('RoomType không tồn tại', 16, 1);
     END
 END;
-
-
-
-CREATE TABLE Admin (
-    AdminID INT IDENTITY(1,1) PRIMARY KEY,
-    FullName NVARCHAR(150) NOT NULL,
-    Phone NVARCHAR(20),
-    UserID INT UNIQUE,
-	Status NVARCHAR(20) DEFAULT 'TRUE' CHECK (Status IN ('TRUE','FALSE')),
-    FOREIGN KEY (UserID) REFERENCES Users(UserID)
-)
-INSERT INTO Admin (FullName, Phone, UserID, Status)
-VALUES (N'Đỗ Hữu Quốc Anh', '0394193241', 1, 'TRUE');
 
 
 -----------------------------------------------------------------------------------
@@ -1055,8 +1053,156 @@ BEGIN
     DELETE FROM Rates WHERE RateID = @RateID
 
 END
-
 EXEC usp_DeleteSeasonalRate @RateID = 1;
+
+----------------------------------------------------
+------------33333333--------------------------------
+----------------------------------------------------
+
+---	Load thông tin KH đã CheckOut đợi tạo hoá đơn để thanh toán ()
+CREATE PROCEDURE sp_GetPendingInvoices
+AS
+BEGIN
+    SELECT 
+        r.RoomNumber,
+        g.FullName AS CustomerName,
+        rs.CheckInTime,
+        rs.CheckOutTime,
+        ISNULL(SUM(rs.RateAtThatTime), 0) AS EstimatedRoomCharge
+    FROM Stays s
+    JOIN Guests g ON s.GuestID = g.GuestID
+    JOIN RoomStayHistory rs ON s.StayID = rs.StayID
+    JOIN Rooms r ON rs.RoomID = r.RoomID
+    LEFT JOIN Invoices i ON s.StayID = i.StayID
+    WHERE s.Status = 'COMPLETED'
+        AND (i.InvoiceID IS NULL OR i.Status != 'PAID')
+    GROUP BY r.RoomNumber, g.FullName, rs.CheckInTime, rs.CheckOutTime
+END
+EXEC sp_GetPendingInvoices
+
+---	Tạo hoá đơn
+CREATE PROCEDURE sp_CreateInvoice
+    @StayID INT
+AS
+BEGIN
+    DECLARE @InvoiceID INT
+    DECLARE @Total DECIMAL(14,2) = 0
+
+    -- 1. Tạo Invoice
+    INSERT INTO Invoices (StayID, TotalAmount, VAT, Status)
+    VALUES (@StayID, 0, 0, 'OPEN')
+
+    SET @InvoiceID = SCOPE_IDENTITY()
+
+    -----------------------------------
+    -- 2. ROOM CHARGE
+    -----------------------------------
+    INSERT INTO InvoiceDetails (InvoiceID, ItemType, ItemName, Quantity, UnitPrice, Amount)
+    SELECT 
+        @InvoiceID,
+        'ROOM',
+        r.RoomNumber,
+        DATEDIFF(DAY, rs.CheckInTime, rs.CheckOutTime),
+        rs.RateAtThatTime,
+        DATEDIFF(DAY, rs.CheckInTime, rs.CheckOutTime) * rs.RateAtThatTime
+    FROM RoomStayHistory rs
+    JOIN Rooms r ON rs.RoomID = r.RoomID
+    WHERE rs.StayID = @StayID
+
+    -----------------------------------
+    -- 3. SERVICES
+    -----------------------------------
+    INSERT INTO InvoiceDetails
+    SELECT
+        @InvoiceID,
+        'SERVICE',
+        s.ServiceName,
+        su.Quantity,
+        s.Price,
+        su.Quantity * s.Price
+    FROM ServiceUsages su
+    JOIN Services s ON su.ServiceID = s.ServiceID
+    WHERE su.StayID = @StayID
+
+    -----------------------------------
+    -- 4. MINIBAR
+    -----------------------------------
+    INSERT INTO InvoiceDetails
+    SELECT
+        @InvoiceID,
+        'MINIBAR',
+        m.ItemName,
+        mu.Quantity,
+        m.Price,
+        mu.Quantity * m.Price
+    FROM MinibarUsages mu
+    JOIN MinibarItems m ON mu.MinibarID = m.MinibarID
+    WHERE mu.StayID = @StayID
+
+    -----------------------------------
+    -- 5. PENALTIES
+    -----------------------------------
+    INSERT INTO InvoiceDetails
+    SELECT
+        @InvoiceID,
+        'PENALTY',
+        p.Reason,
+        1,
+        p.Amount,
+        p.Amount
+    FROM Penalties p
+    WHERE p.StayID = @StayID
+
+    -----------------------------------
+    -- 6. UPDATE TOTAL
+    -----------------------------------
+    SELECT @Total = SUM(Amount)
+    FROM InvoiceDetails
+    WHERE InvoiceID = @InvoiceID
+
+    UPDATE Invoices
+    SET TotalAmount = @Total
+    WHERE InvoiceID = @InvoiceID
+
+    SELECT @InvoiceID AS InvoiceID, @Total AS Total
+END
+
+--Thanh toán hoá đơn
+CREATE PROCEDURE sp_PayInvoice
+    @InvoiceID INT,
+    @Method NVARCHAR(20)
+AS
+BEGIN
+    DECLARE @Amount DECIMAL(14,2)
+
+    SELECT @Amount = TotalAmount FROM Invoices WHERE InvoiceID = @InvoiceID
+
+    INSERT INTO Payments (InvoiceID, PaymentMethod, Amount)
+    VALUES (@InvoiceID, @Method, @Amount)
+
+    UPDATE Invoices
+    SET Status = 'PAID'
+    WHERE InvoiceID = @InvoiceID
+END
+
+--Load lịch sử hoá đơn
+CREATE PROCEDURE sp_GetInvoiceHistory
+AS
+BEGIN
+    SELECT 
+        r.RoomNumber,
+        g.FullName,
+        i.Date,
+        i.TotalAmount,
+        i.Status
+    FROM Invoices i
+    JOIN Stays s ON i.StayID = s.StayID
+    JOIN Guests g ON s.GuestID = g.GuestID
+    JOIN RoomStayHistory rs ON s.StayID = rs.StayID
+    JOIN Rooms r ON rs.RoomID = r.RoomID
+    WHERE i.Status = 'PAID'
+END
+EXEC sp_GetInvoiceHistory
 
 select * from Customers
 select * from Guests
@@ -1078,3 +1224,176 @@ select * from ServiceUsages
 select * from Stays
 select * from Users
 
+
+
+INSERT INTO Users (Email, PasswordHash, Role)
+VALUES
+('a@gmail.com','123','CUSTOMER'),
+('b@gmail.com','123','CUSTOMER'),
+('c@gmail.com','123','CUSTOMER'),
+('d@gmail.com','123','CUSTOMER'),
+('e@gmail.com','123','CUSTOMER'),
+('f@gmail.com','123','CUSTOMER'),
+('g@gmail.com','123','CUSTOMER'),
+('h@gmail.com','123','CUSTOMER'),
+('i@gmail.com','123','CUSTOMER'),
+('j@gmail.com','123','CUSTOMER'),
+('k@gmail.com','123','CUSTOMER'),
+('l@gmail.com','123','CUSTOMER'),
+('m@gmail.com','123','CUSTOMER'),
+('n@gmail.com','123','CUSTOMER'),
+('o@gmail.com','123','CUSTOMER'),
+('p@gmail.com','123','CUSTOMER'),
+('q@gmail.com','123','CUSTOMER'),
+('r@gmail.com','123','CUSTOMER'),
+('s@gmail.com','123','CUSTOMER'),
+('t@gmail.com','123','CUSTOMER');
+
+INSERT INTO Customers (FullName, Phone, UserID)
+SELECT 
+    N'Khách ' + CAST(u.UserID AS NVARCHAR),
+    '09000000' + RIGHT('000' + CAST(u.UserID AS NVARCHAR), 3),
+    u.UserID
+FROM Users u
+LEFT JOIN Customers c ON u.UserID = c.UserID
+WHERE c.UserID IS NULL;
+
+INSERT INTO RoomTypes (Name, Description, Capacity, DefaultPrice)
+VALUES
+(N'Single', N'1 người', 1, 300000),
+(N'Double', N'2 người', 2, 500000),
+(N'Family', N'4 người', 4, 800000),
+(N'VIP', N'Cao cấp', 2, 1500000),
+(N'Deluxe', N'Sang trọng', 2, 1000000);
+
+INSERT INTO Rooms (RoomNumber, RoomTypeID)
+VALUES
+('105',1),('106',1),('103',1),('104',1),
+('205',2),('202',2),('203',2),('204',2),
+('301',3),('302',3),('303',3),('304',3),
+('401',6),('402',6),('403',6),('404',6),
+('501',8),('502',8),('503',8),('504',8);
+
+INSERT INTO Rates (RoomTypeID, Price, StartDate, EndDate, Season)
+VALUES
+(1,300000,'2026-01-01','2026-12-31','Normal'),
+(2,500000,'2026-01-01','2026-12-31','Normal'),
+(3,800000,'2026-01-01','2026-12-31','Normal'),
+(4,1500000,'2026-01-01','2026-12-31','Normal'),
+(5,1000000,'2026-01-01','2026-12-31','Normal');
+
+INSERT INTO Reservations (UserID, CheckInDate, CheckOutDate, Status)
+VALUES
+(1,'2025-03-01','2025-03-03','COMPLETED'),
+(2,'2025-03-02','2025-03-05','COMPLETED'),
+(3,'2025-03-03','2025-03-06','COMPLETED'),
+(4,'2025-03-04','2025-03-07','COMPLETED'),
+(5,'2025-03-05','2025-03-08','COMPLETED'),
+(6,'2025-03-06','2025-03-09','CHECKED_IN'),
+(7,'2025-03-07','2025-03-10','BOOKED'),
+(8,'2025-03-08','2025-03-11','BOOKED'),
+(9,'2025-03-09','2025-03-12','CANCELLED'),
+(10,'2025-03-10','2025-03-13','COMPLETED');
+
+INSERT INTO ReservationRooms (ReservationID, RoomTypeID, Quantity, PriceAtBooking)
+VALUES
+(1,1,1,300000),
+(2,2,1,500000),
+(3,3,1,800000),
+(4,4,1,1500000),
+(5,5,1,1000000),
+(6,1,1,300000),
+(7,2,1,500000),
+(8,3,1,800000),
+(9,4,1,1500000),
+(10,5,1,1000000);
+
+INSERT INTO Guests (FullName, IdentityType, IdentityNumber)
+VALUES
+(N'Nguyễn A','CCCD','111'),
+(N'Trần B','CCCD','222'),
+(N'Lê C','CCCD','333'),
+(N'Phạm D','CCCD','444'),
+(N'Hoàng E','CCCD','555'),
+(N'Vũ F','CCCD','666'),
+(N'Đặng G','CCCD','777'),
+(N'Bùi H','CCCD','888'),
+(N'Đỗ I','CCCD','999'),
+(N'Ngô K','CCCD','1010');
+
+INSERT INTO Stays (ReservationID, GuestID, ActualCheckIn, ActualCheckOut, Status)
+VALUES
+(1,1,'2025-03-01','2025-03-03','COMPLETED'),
+(2,2,'2025-03-02','2025-03-05','COMPLETED'),
+(3,3,'2025-03-03','2025-03-06','COMPLETED'),
+(4,4,'2025-03-04','2025-03-07','COMPLETED'),
+(5,5,'2025-03-05','2025-03-08','COMPLETED'),
+(6,6,'2025-03-06',NULL,'CHECKED_IN'),
+(10,7,'2025-03-10','2025-03-13','COMPLETED');
+
+INSERT INTO RoomStayHistory (StayID, RoomID, CheckInTime, CheckOutTime, RateAtThatTime)
+VALUES
+(1,1,'2025-03-01','2025-03-03',300000),
+(2,2,'2025-03-02','2025-03-05',500000),
+(3,3,'2025-03-03','2025-03-06',800000),
+(4,31,'2025-03-04','2025-03-07',1500000),
+(5,32,'2025-03-05','2025-03-08',1000000),
+(7,33,'2025-03-10','2025-03-13',300000);
+
+INSERT INTO Services (ServiceName, Price)
+VALUES
+(N'Giặt ủi',50000),
+(N'Ăn sáng',100000),
+(N'Spa',300000),
+(N'Đưa đón sân bay',200000),
+(N'Dọn phòng',50000);
+
+INSERT INTO ServiceUsages (StayID, ServiceID, Quantity)
+VALUES
+(1,1,2),
+(1,2,2),
+(2,2,3),
+(3,3,1),
+(4,4,1),
+(5,1,1),
+(5,5,2);
+
+INSERT INTO MinibarItems (RoomTypeID, ItemName, Price)
+VALUES
+(1,N'Nước suối',20000),
+(1,N'Bia',50000),
+(2,N'Nước suối',20000),
+(2,N'Bia',50000),
+(3,N'Nước suối',20000);
+
+INSERT INTO MinibarUsages (StayID, MinibarID, Quantity)
+VALUES
+(1,1,2),
+(1,2,1),
+(2,3,2),
+(3,4,3),
+(5,5,1);
+
+INSERT INTO Penalties (StayID, Reason, Amount)
+VALUES
+(1,N'Làm hỏng đồ',200000),
+(3,N'Hút thuốc',100000),
+(5,N'Mất khăn',50000);
+
+INSERT INTO Invoices (StayID, TotalAmount, VAT, Status)
+VALUES
+(1,1000000,100000,'PAID'),
+(2,1500000,150000,'PAID'),
+(3,2000000,200000,'OPEN');
+
+INSERT INTO InvoiceDetails (InvoiceID, ItemType, ItemName, Quantity, UnitPrice, Amount)
+VALUES
+(1,'ROOM','101',2,300000,600000),
+(1,'SERVICE','Ăn sáng',2,100000,200000),
+(2,'ROOM','201',3,500000,1500000),
+(3,'ROOM','301',3,800000,2400000);
+
+INSERT INTO Payments (InvoiceID, PaymentMethod, Amount)
+VALUES
+(1,'CASH',1100000),
+(2,'TRANSFER',1650000);
