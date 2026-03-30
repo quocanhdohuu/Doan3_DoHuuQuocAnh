@@ -197,11 +197,10 @@ CREATE TABLE Payments (
 --------------------------------------------------------------------------------
 -----------------------------------Stored procedure-----------------------------
 --Thêm nhân viên mới------------------------------------------------------------
-CREATE PROCEDURE sp_CreateReceptionist
+CREATE PROCEDURE sp_CreateReceptionist 
     @Email NVARCHAR(150),
     @PasswordHash NVARCHAR(255),
     @FullName NVARCHAR(150),
-    @Role NVARCHAR(20),
     @Phone NVARCHAR(20)
 AS
 BEGIN
@@ -209,9 +208,9 @@ BEGIN
 
     DECLARE @UserID INT;
 
-    -- Thêm vào bảng Users
+    -- Thêm vào bảng Users với Role mặc định
     INSERT INTO Users (Email, PasswordHash, Role, CreatedAt)
-    VALUES (@Email, @PasswordHash, @Role, GETDATE());
+    VALUES (@Email, @PasswordHash, 'RECEPTIONIST', GETDATE());
 
     -- Lấy UserID vừa tạo
     SET @UserID = SCOPE_IDENTITY();
@@ -711,18 +710,16 @@ CREATE PROCEDURE sp_UpdateReceptionist
     @Email NVARCHAR(150),
     @PasswordHash NVARCHAR(255),
     @FullName NVARCHAR(150),
-    @Role NVARCHAR(20),
     @Phone NVARCHAR(20)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Cập nhật bảng Users
+    -- Cập nhật bảng Users (KHÔNG đụng tới Role)
     UPDATE Users
     SET 
         Email = @Email,
-        PasswordHash = @PasswordHash,
-        Role = @Role
+        PasswordHash = @PasswordHash
     WHERE UserID = @UserID;
 
     -- Cập nhật bảng Receptionists
@@ -973,8 +970,17 @@ EXEC sp_GetDefaultRate
 CREATE PROCEDURE sp_GetSeasonRate
 AS
 BEGIN
-    SELECT *
-    FROM Rates
+    SELECT 
+        r.RateID,
+        r.RoomTypeID,
+        rt.Name AS RoomTypeName,
+        r.Season,
+		rt.DefaultPrice,
+        r.Price,
+        r.StartDate,
+        r.EndDate
+    FROM Rates r
+    INNER JOIN RoomTypes rt ON r.RoomTypeID = rt.RoomTypeID
 END
 
 EXEC sp_GetSeasonRate
