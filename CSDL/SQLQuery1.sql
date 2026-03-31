@@ -2198,6 +2198,299 @@ BEGIN
     END
 END
 
+---Thêm dịch vụ sử dụng(Gọi dịch vụ)---------------------------------------------------
+CREATE PROCEDURE sp_AddServiceUsage
+    @StayID INT,
+    @ServiceID INT,
+    @Quantity INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate Stay tồn tại
+    IF NOT EXISTS (SELECT 1 FROM Stays WHERE StayID = @StayID)
+    BEGIN
+        RAISERROR (N'Stay không tồn tại', 16, 1)
+        RETURN
+    END
+
+    -- Validate Service tồn tại và đang active
+    IF NOT EXISTS (
+        SELECT 1 FROM Services 
+        WHERE ServiceID = @ServiceID AND Status = 'TRUE'
+    )
+    BEGIN
+        RAISERROR (N'Dịch vụ không hợp lệ hoặc đã bị tắt', 16, 1)
+        RETURN
+    END
+
+    -- Validate số lượng
+    IF @Quantity <= 0
+    BEGIN
+        RAISERROR (N'Số lượng phải > 0', 16, 1)
+        RETURN
+    END
+
+    -- Insert
+    INSERT INTO ServiceUsages (StayID, ServiceID, Quantity)
+    VALUES (@StayID, @ServiceID, @Quantity)
+END
+
+---Sửa thông tin Dịch vụ đã sử dụng----------------------------------------------
+CREATE PROCEDURE sp_UpdateServiceUsage
+    @UsageID INT,
+    @Quantity INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate tồn tại
+    IF NOT EXISTS (SELECT 1 FROM ServiceUsages WHERE UsageID = @UsageID)
+    BEGIN
+        RAISERROR (N'Dịch vụ sử dụng không tồn tại', 16, 1)
+        RETURN
+    END
+
+    -- Validate số lượng
+    IF @Quantity <= 0
+    BEGIN
+        RAISERROR (N'Số lượng phải > 0', 16, 1)
+        RETURN
+    END
+
+    -- Update
+    UPDATE ServiceUsages
+    SET Quantity = @Quantity
+    WHERE UsageID = @UsageID
+END
+
+---Xoá (Huỷ) dịch vụ đã sử dụng-----------------------------------------------------------------
+CREATE PROCEDURE sp_DeleteServiceUsage
+    @UsageID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate tồn tại
+    IF NOT EXISTS (SELECT 1 FROM ServiceUsages WHERE UsageID = @UsageID)
+    BEGIN
+        RAISERROR (N'Dịch vụ sử dụng không tồn tại', 16, 1)
+        RETURN
+    END
+
+    -- Delete cứng
+    DELETE FROM ServiceUsages
+    WHERE UsageID = @UsageID
+END
+
+---Load Dịch vụ đã sử dụng-----------------------------------------------------
+CREATE PROCEDURE sp_GetServiceUsageByStay
+    @StayID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        su.UsageID,
+        s.ServiceName,
+        su.Quantity,
+        s.Price,
+        (su.Quantity * s.Price) AS Total,
+        su.UsedDate
+    FROM ServiceUsages su
+    INNER JOIN Services s ON su.ServiceID = s.ServiceID
+    WHERE su.StayID = @StayID
+    ORDER BY su.UsedDate DESC
+END
+
+---Thêm minibarUsages-----------------------------------------------------------
+CREATE PROCEDURE sp_AddMinibarUsage
+    @StayID INT,
+    @MinibarID INT,
+    @Quantity INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Check Stay tồn tại
+    IF NOT EXISTS (SELECT 1 FROM Stays WHERE StayID = @StayID)
+    BEGIN
+        RAISERROR (N'Stay không tồn tại', 16, 1)
+        RETURN
+    END
+
+    -- Check Minibar tồn tại
+    IF NOT EXISTS (SELECT 1 FROM MinibarItems WHERE MinibarID = @MinibarID)
+    BEGIN
+        RAISERROR (N'Minibar item không tồn tại', 16, 1)
+        RETURN
+    END
+
+    -- Check số lượng
+    IF @Quantity <= 0
+    BEGIN
+        RAISERROR (N'Số lượng phải > 0', 16, 1)
+        RETURN
+    END
+
+    INSERT INTO MinibarUsages (StayID, MinibarID, Quantity)
+    VALUES (@StayID, @MinibarID, @Quantity)
+END
+
+---Sửa MinibarUsages-------------------------------------------
+CREATE PROCEDURE sp_UpdateMinibarUsage
+    @ID INT,
+    @Quantity INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Check tồn tại
+    IF NOT EXISTS (SELECT 1 FROM MinibarUsages WHERE ID = @ID)
+    BEGIN
+        RAISERROR (N'Minibar usage không tồn tại', 16, 1)
+        RETURN
+    END
+
+    -- Check số lượng
+    IF @Quantity <= 0
+    BEGIN
+        RAISERROR (N'Số lượng phải > 0', 16, 1)
+        RETURN
+    END
+
+    UPDATE MinibarUsages
+    SET Quantity = @Quantity
+    WHERE ID = @ID
+END
+
+---Xoá MinibarUsages--------------------------------------------------------
+CREATE PROCEDURE sp_DeleteMinibarUsage
+    @ID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM MinibarUsages WHERE ID = @ID)
+    BEGIN
+        RAISERROR (N'Minibar usage không tồn tại', 16, 1)
+        RETURN
+    END
+
+    DELETE FROM MinibarUsages
+    WHERE ID = @ID
+END
+
+---Load MinibarUsages---------------------------------------
+CREATE PROCEDURE sp_GetMinibarUsageByStay
+    @StayID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        mu.ID,
+        mi.ItemName,
+        mu.Quantity,
+        mi.Price,
+        (mu.Quantity * mi.Price) AS Total
+    FROM MinibarUsages mu
+    INNER JOIN MinibarItems mi ON mu.MinibarID = mi.MinibarID
+    WHERE mu.StayID = @StayID
+END
+
+---Thêm phạt--------------------------------------------
+CREATE PROCEDURE sp_AddPenalty
+    @StayID INT,
+    @Reason NVARCHAR(255),
+    @Amount DECIMAL(14,2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Check Stay tồn tại
+    IF NOT EXISTS (SELECT 1 FROM Stays WHERE StayID = @StayID)
+    BEGIN
+        RAISERROR (N'Stay không tồn tại', 16, 1)
+        RETURN
+    END
+
+    -- Validate Amount
+    IF @Amount <= 0
+    BEGIN
+        RAISERROR (N'Số tiền phạt phải > 0', 16, 1)
+        RETURN
+    END
+
+    INSERT INTO Penalties (StayID, Reason, Amount)
+    VALUES (@StayID, @Reason, @Amount)
+END
+
+---Sửa phạt---------------------------------------------
+CREATE PROCEDURE sp_UpdatePenalty
+    @PenaltyID INT,
+    @Reason NVARCHAR(255),
+    @Amount DECIMAL(14,2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Check tồn tại
+    IF NOT EXISTS (SELECT 1 FROM Penalties WHERE PenaltyID = @PenaltyID)
+    BEGIN
+        RAISERROR (N'Penalty không tồn tại', 16, 1)
+        RETURN
+    END
+
+    -- Validate Amount
+    IF @Amount <= 0
+    BEGIN
+        RAISERROR (N'Số tiền phạt phải > 0', 16, 1)
+        RETURN
+    END
+
+    UPDATE Penalties
+    SET 
+        Reason = @Reason,
+        Amount = @Amount
+    WHERE PenaltyID = @PenaltyID
+END
+
+---Xoá phạt---------------------------------------------
+CREATE PROCEDURE sp_DeletePenalty
+    @PenaltyID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM Penalties WHERE PenaltyID = @PenaltyID)
+    BEGIN
+        RAISERROR (N'Penalty không tồn tại', 16, 1)
+        RETURN
+    END
+
+    DELETE FROM Penalties
+    WHERE PenaltyID = @PenaltyID
+END
+
+---Load phạt----------------------------------------------------------
+CREATE PROCEDURE sp_GetPenaltyByStay
+    @StayID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        PenaltyID,
+        Reason,
+        Amount,
+        CreatedAt
+    FROM Penalties
+    WHERE StayID = @StayID
+    ORDER BY CreatedAt DESC
+END
+
+
 select * from Customers
 select * from Guests
 select * from InvoiceDetails
