@@ -313,7 +313,7 @@ class Datphong extends Component {
 
         {showModal && (
           <div className="modal-overlay" onClick={this.closeModal}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal modalDatPhong" onClick={(e) => e.stopPropagation()}>
               <div className="modal-title-row">
                 <h2>Thêm đặt phòng mới</h2>
                 <button className="close-btn" onClick={this.closeModal}>

@@ -202,12 +202,14 @@
   background: #fff;
   border-radius: 12px;
   padding: 22px;
-  margin-top: 20px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
   position: relative;
   max-height: calc(100vh - 80px);
   overflow-y: auto;
   box-sizing: border-box;
+}
+.modalDatPhong {
+  margin-top: 40px;
 }
 
 .modal-title-row {

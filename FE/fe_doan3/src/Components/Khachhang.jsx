@@ -44,6 +44,8 @@ const KH_LIST = [
 const Khachhang = () => {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [editIndex, setEditIndex] = useState(-1);
+  const [customers, setCustomers] = useState(KH_LIST);
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -53,7 +55,7 @@ const Khachhang = () => {
     note: "",
   });
 
-  const filteredList = KH_LIST.filter(
+  const filteredList = customers.filter(
     (kh) =>
       kh.name.toLowerCase().includes(search.toLowerCase()) ||
       kh.phone.includes(search) ||
@@ -61,15 +63,50 @@ const Khachhang = () => {
       kh.email.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const handleOpenModal = () => setShowModal(true);
-  const handleCloseModal = () => setShowModal(false);
+  const handleOpenModal = (index = -1) => {
+    if (index >= 0) {
+      setForm({ ...customers[index] });
+      setEditIndex(index);
+    } else {
+      setForm({
+        name: "",
+        phone: "",
+        cmnd: "",
+        email: "",
+        address: "",
+        note: "",
+      });
+      setEditIndex(-1);
+    }
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditIndex(-1);
+  };
+
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Xử lý thêm khách hàng ở đây
+
+    const nextCustomers = [...customers];
+    if (editIndex >= 0) {
+      nextCustomers[editIndex] = {
+        ...nextCustomers[editIndex],
+        ...form,
+      };
+    } else {
+      nextCustomers.push({
+        ...form,
+        stay: 0,
+      });
+    }
+    setCustomers(nextCustomers);
     handleCloseModal();
   };
 
@@ -80,7 +117,11 @@ const Khachhang = () => {
           title="Quản lý Khách hàng"
           description="Quản lý thông tin khách hàng"
         />
-        <button className="add-btn" onClick={handleOpenModal}>
+        <button
+          className="add-btn"
+          type="button"
+          onClick={() => handleOpenModal(-1)}
+        >
           + Thêm khách hàng
         </button>
       </div>
@@ -116,10 +157,17 @@ const Khachhang = () => {
                 <td>{kh.address}</td>
                 <td>{kh.stay} lần</td>
                 <td>
-                  <button className="icon-btn edit" title="Sửa">
-                    <span role="img" aria-label="edit">
-                      <i class="fa-regular fa-pen-to-square"></i>
-                    </span>
+                  <button
+                    type="button"
+                    className="icon-btn edit"
+                    title="Sửa"
+                    onClick={() =>
+                      handleOpenModal(
+                        customers.findIndex((c) => c.cmnd === kh.cmnd),
+                      )
+                    }
+                  >
+                    <i className="fa-regular fa-pen-to-square"></i>
                   </button>
                 </td>
               </tr>
@@ -130,8 +178,8 @@ const Khachhang = () => {
 
       {/* Modal thêm khách hàng */}
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button
               className="modal-close"
               onClick={handleCloseModal}
@@ -139,7 +187,9 @@ const Khachhang = () => {
             >
               &times;
             </button>
-            <h2>Thêm khách hàng mới</h2>
+            <h2>
+              {editIndex >= 0 ? "Chỉnh sửa khách hàng" : "Thêm khách hàng mới"}
+            </h2>
             <form className="add-customer-form" onSubmit={handleSubmit}>
               <label>
                 Họ và tên *

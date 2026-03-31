@@ -1,12 +1,18 @@
 .feature-header {
+  margin-bottom: 28px;
 }
 
 .feature-header h1 {
   margin: 0;
-  font-size: 32px;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
 }
 
 .feature-header p {
-  margin: 6px 0 12px;
-  color: #6a737d;
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 620px;
 }
