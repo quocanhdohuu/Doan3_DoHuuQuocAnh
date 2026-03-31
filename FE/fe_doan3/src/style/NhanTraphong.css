@@ -108,6 +108,17 @@ tbody td {
   margin-right: 8px;
 }
 
+.action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.action-group .icon-action,
+.action-group .btn {
+  margin-right: 0;
+}
+
 .btn-primary {
   background: #0a6cff;
   color: #fff;
