@@ -2,8 +2,9 @@ import React, { Component } from "react";
 import "../style/Quanlygia.css";
 import { FeatureHeader } from "./Common";
 
-const ROOM_TYPES = ["Standard", "Deluxe", "Suite", "Family"];
 const PAGE_SIZE = 4;
+const RATES_API_URL = "http://localhost:3000/api/rates";
+const ROOM_TYPES_API_URL = "http://localhost:3000/api/get-room-types";
 
 const formatDate = (dateString) => {
   if (!dateString) return "";
@@ -43,8 +44,11 @@ class Quanlygia extends Component {
     currentPage: 1,
     isModalOpen: false,
     modalMode: "add",
+    submitLoading: false,
+    deletingRateId: null,
     currentPrice: {
       id: null,
+      roomTypeId: "",
       roomType: "",
       amount: "",
       seasonName: "",
@@ -59,45 +63,75 @@ class Quanlygia extends Component {
   };
 
   componentDidMount() {
+    this.fetchRoomTypes();
     this.fetchRates();
   }
+
+  fetchRoomTypes = async () => {
+    try {
+      const response = await fetch(ROOM_TYPES_API_URL);
+      if (!response.ok) {
+        throw new Error(`Loi tai loai phong: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const roomTypes = (Array.isArray(data) ? data : [])
+        .map((item) => ({
+          id: item?.RoomTypeID,
+          name: item?.Name || "",
+        }))
+        .filter((item) => item.id && item.name);
+
+      if (roomTypes.length > 0) {
+        this.setState({ roomTypes });
+      }
+    } catch (error) {
+      console.error("Khong the tai danh sach loai phong:", error);
+    }
+  };
 
   fetchRates = async () => {
     this.setState({ loading: true, error: null });
 
     try {
-      const response = await fetch("http://localhost:3000/api/rates");
+      const response = await fetch(RATES_API_URL);
       if (!response.ok) {
-        throw new Error(`Lỗi tải dữ liệu: ${response.status}`);
+        throw new Error(`Loi tai du lieu: ${response.status}`);
       }
 
       const data = await response.json();
       const seasonalPrices = [];
-      const roomTypes = new Set();
+      const roomTypeMap = new Map();
 
-      data.forEach((item) => {
-        if (item.RoomTypeName) {
-          roomTypes.add(item.RoomTypeName);
+      (Array.isArray(data) ? data : []).forEach((item) => {
+        if (item.RoomTypeID && item.RoomTypeName) {
+          roomTypeMap.set(item.RoomTypeID, item.RoomTypeName);
         }
 
         seasonalPrices.push({
-          id: item.RateID,
-          roomType: item.RoomTypeName,
+          id: item.RateID ?? item.id,
+          roomTypeId: item.RoomTypeID ?? "",
+          roomType: item.RoomTypeName || "",
           seasonName: item.Season || "",
           startDate: toInputDate(item.StartDate),
           endDate: toInputDate(item.EndDate),
           dateRange: buildDateRangeLabel(item.StartDate, item.EndDate, ""),
           defaultPrice: item.DefaultPrice ?? 0,
-          amount: item.Price ?? 0,
+          amount: Number(item.Price ?? 0),
         });
       });
 
-      this.setState({
+      const roomTypesFromRates = Array.from(roomTypeMap.entries()).map(([id, name]) => ({
+        id,
+        name,
+      }));
+
+      this.setState((prev) => ({
         seasonalPrices,
-        roomTypes: [...roomTypes],
+        roomTypes: prev.roomTypes.length > 0 ? prev.roomTypes : roomTypesFromRates,
         currentPage: 1,
         loading: false,
-      });
+      }));
     } catch (error) {
       this.setState({ error: error.message, loading: false });
     }
@@ -109,6 +143,7 @@ class Quanlygia extends Component {
       modalMode: "add",
       currentPrice: {
         id: null,
+        roomTypeId: "",
         roomType: "",
         amount: "",
         seasonName: "",
@@ -125,6 +160,7 @@ class Quanlygia extends Component {
       modalMode: "edit",
       currentPrice: {
         ...price,
+        roomTypeId: String(price.roomTypeId || ""),
         startDate: toInputDate(price.startDate),
         endDate: toInputDate(price.endDate),
       },
@@ -142,47 +178,88 @@ class Quanlygia extends Component {
     }));
   };
 
-  handleSave = (e) => {
+  handleSave = async (e) => {
     e.preventDefault();
-    const { seasonalPrices, currentPrice, modalMode } = this.state;
-    const { roomType, amount, seasonName, startDate, endDate } = currentPrice;
+    const { currentPrice, modalMode } = this.state;
+    const { id, roomTypeId, amount, seasonName, startDate, endDate } = currentPrice;
 
-    if (!roomType || !amount || !seasonName || !startDate || !endDate) {
-      alert("Vui lòng điền đầy đủ các trường bắt buộc.");
+    if (!roomTypeId || !amount || !seasonName || !startDate || !endDate) {
+      alert("Vui long dien day du cac truong bat buoc.");
       return;
     }
 
     if (startDate > endDate) {
-      alert("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.");
+      alert("Ngay ket thuc phai lon hon hoac bang ngay bat dau.");
       return;
     }
 
-    const item = {
-      ...currentPrice,
-      id: modalMode === "add" ? Date.now() : currentPrice.id,
-      amount: Number(amount),
-      defaultPrice: Number(currentPrice.defaultPrice ?? amount),
-      startDate,
-      endDate,
-      dateRange: buildDateRangeLabel(startDate, endDate, currentPrice.dateRange || ""),
+    const roomTypeIdNum = Number(roomTypeId);
+    if (Number.isNaN(roomTypeIdNum)) {
+      alert("Loai phong khong hop le.");
+      return;
+    }
+
+    const amountText = String(amount).trim();
+    const isValidPrice = /^\d+(\.\d{1,2})?$/.test(amountText);
+    if (!isValidPrice || Number(amountText) <= 0) {
+      alert("Gia phai la so lon hon 0.");
+      return;
+    }
+
+    const payload = {
+      RoomTypeID: roomTypeIdNum,
+      Price: Number(amountText),
+      StartDate: startDate,
+      EndDate: endDate,
+      Season: seasonName.trim(),
     };
 
-    this.setState({
-      seasonalPrices:
-        modalMode === "add"
-          ? [...seasonalPrices, { ...item, seasonName }]
-          : seasonalPrices.map((p) => (p.id === item.id ? { ...item, seasonName } : p)),
-      isModalOpen: false,
-    });
+    try {
+      this.setState({ submitLoading: true, error: null });
+
+      const url = modalMode === "add" ? RATES_API_URL : `${RATES_API_URL}/${id}`;
+      const response = await fetch(url, {
+        method: modalMode === "add" ? "POST" : "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        throw new Error(responseText || `API error: ${response.status}`);
+      }
+
+      await this.fetchRates();
+      this.setState({ isModalOpen: false });
+      alert(modalMode === "add" ? "Them gia thanh cong." : "Cap nhat gia thanh cong.");
+    } catch (error) {
+      this.setState({ error: error.message || "Khong the luu gia." });
+    } finally {
+      this.setState({ submitLoading: false });
+    }
   };
 
-  handleDelete = (id) => {
-    const { seasonalPrices } = this.state;
-    if (!window.confirm("Xác nhận xóa?")) return;
+  handleDelete = async (id) => {
+    if (!window.confirm("Xac nhan xoa?")) return;
 
-    this.setState({
-      seasonalPrices: seasonalPrices.filter((p) => p.id !== id),
-    });
+    try {
+      this.setState({ deletingRateId: id, error: null });
+      const response = await fetch(`${RATES_API_URL}/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        throw new Error(responseText || `API error: ${response.status}`);
+      }
+
+      await this.fetchRates();
+      alert("Xoa gia thanh cong.");
+    } catch (error) {
+      this.setState({ error: error.message || "Khong the xoa gia." });
+    } finally {
+      this.setState({ deletingRateId: null });
+    }
   };
 
   filterPrices = () => {
@@ -212,21 +289,20 @@ class Quanlygia extends Component {
       loading,
       error,
       roomTypes,
+      submitLoading,
+      deletingRateId,
     } = this.state;
     const list = this.filterPrices();
     const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
     const currentDisplayPage = Math.min(currentPage, totalPages);
     const startIndex = (currentDisplayPage - 1) * PAGE_SIZE;
     const paginatedList = list.slice(startIndex, startIndex + PAGE_SIZE);
-    const typeOptions = roomTypes.length ? roomTypes : ROOM_TYPES;
+    const typeOptions = roomTypes;
 
     return (
       <div className="qlgia-page">
         <div className="qlgia-top">
-          <FeatureHeader
-            title="Quản lý Giá phòng"
-            description="Quản lý giá theo mùa"
-          />
+          <FeatureHeader title="Quản lý Giá phòng" description="Quản lý giá theo mùa" />
           <button className="qlgia-btn-primary" onClick={this.openAddPriceModal}>
             + Thêm giá
           </button>
@@ -295,12 +371,14 @@ class Quanlygia extends Component {
                         <button
                           className="qlgia-btn-edit"
                           onClick={() => this.openEditPriceModal(item)}
+                          disabled={submitLoading || deletingRateId === item.id}
                         >
                           <i className="fa fa-edit"></i>
                         </button>
                         <button
                           className="qlgia-btn-delete"
                           onClick={() => this.handleDelete(item.id)}
+                          disabled={submitLoading || deletingRateId === item.id}
                         >
                           <i className="fa fa-trash"></i>
                         </button>
@@ -368,13 +446,27 @@ class Quanlygia extends Component {
                   Loại phòng *
                   <select
                     className="qlgia-modal-input"
-                    value={currentPrice.roomType}
-                    onChange={this.handleInput("roomType")}
+                    value={currentPrice.roomTypeId || ""}
+                    onChange={(e) => {
+                      const selected = typeOptions.find(
+                        (item) => String(item.id) === e.target.value,
+                      );
+
+                      this.setState((prev) => ({
+                        currentPrice: {
+                          ...prev.currentPrice,
+                          roomTypeId: e.target.value,
+                          roomType: selected?.name || "",
+                        },
+                      }));
+                    }}
                   >
-                    <option value="">Chọn loại phòng</option>
+                    <option value="">
+                      {typeOptions.length > 0 ? "Chọn loại phòng" : "Không có loại phòng"}
+                    </option>
                     {typeOptions.map((rt) => (
-                      <option key={rt} value={rt}>
-                        {rt}
+                      <option key={rt.id} value={rt.id}>
+                        {rt.name}
                       </option>
                     ))}
                   </select>
@@ -425,8 +517,8 @@ class Quanlygia extends Component {
                   <button className="qlgia-btn-secondary" type="button" onClick={this.closeModal}>
                     Hủy
                   </button>
-                  <button className="qlgia-btn-primary" type="submit">
-                    Lưu
+                  <button className="qlgia-btn-primary" type="submit" disabled={submitLoading}>
+                    {submitLoading ? "Đang lưu..." : "Lưu"}
                   </button>
                 </div>
               </form>
