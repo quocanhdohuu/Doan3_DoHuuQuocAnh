@@ -1,84 +1,190 @@
-import React, { Component } from "react";
+﻿import React, { Component } from "react";
 import "../style/Quanlyphong.css";
 import { FeatureHeader } from "./Common";
 
-const ROOM_TYPES = ["Standard", "Deluxe", "Suite", "Family"];
-const ROOM_STATUS = ["Trống", "Đang dùng", "Cần dọn", "Bảo trì"];
+const ROOMS_API_URL = "http://localhost:3000/api/rooms";
+const ROOM_TYPES_API_URL = "http://localhost:3000/api/get-room-types";
+const PAGE_SIZE = 4;
+const ALL_STATUS_VALUE = "all";
+const DEFAULT_STATUS = "AVAILABLE";
+const DEFAULT_STATUS_OPTIONS = [
+  "AVAILABLE",
+  "OCCUPIED",
+  "DIRTY",
+  "MAINTENANCE",
+];
+
+const getDefaultRoomForm = () => ({
+  RoomID: null,
+  RoomNumber: "",
+  Status: DEFAULT_STATUS,
+  RoomTypeID: "",
+  RoomTypeName: "",
+});
+
+const mapRoomFromApi = (item) => ({
+  RoomID: item?.RoomID ?? null,
+  RoomNumber: String(item?.RoomNumber ?? ""),
+  Status: item?.Status ?? DEFAULT_STATUS,
+  RoomTypeID: item?.RoomTypeID ?? "",
+  RoomTypeName: item?.RoomTypeName ?? "",
+  Description: item?.Description ?? "",
+  Capacity: item?.Capacity ?? null,
+  DefaultPrice: item?.DefaultPrice ?? null,
+});
+
+const normalizeText = (value = "") =>
+  String(value)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\u0111\u0110]/g, "d")
+    .replace(/\s+/g, "-");
+
+const statusClassMap = {
+  available: "qp-status-available",
+  occupied: "qp-status-occupied",
+  dirty: "qp-status-cleaning",
+  maintenance: "qp-status-maintenance",
+  trong: "qp-status-available",
+  "dang-dung": "qp-status-occupied",
+  "can-don": "qp-status-cleaning",
+  "bao-tri": "qp-status-maintenance",
+};
+
+const getStatusClassName = (status) =>
+  statusClassMap[normalizeText(status)] || "qp-status-default";
+const statusLabelMap = {
+  Available: "AVAILABLE",
+  Occupied: "OCCUPIED",
+  Dirty: "DIRTY",
+  Maintenance: "MAINTENANCE",
+};
+const getStatusLabel = (status) => statusLabelMap[status] || status || "-";
+
+const formatCurrency = (value) => {
+  const amount = Number(value);
+  if (Number.isNaN(amount)) return "-";
+  return `${amount.toLocaleString("vi-VN")} VND`;
+};
 
 class Quanlyphong extends Component {
   state = {
-    rooms: [
-      {
-        id: 101,
-        number: "101",
-        type: "Suite",
-        floor: "Tầng 1",
-        status: "Trống",
-        note: "",
-      },
-      {
-        id: 102,
-        number: "102",
-        type: "Family",
-        floor: "Tầng 1",
-        status: "Trống",
-        note: "",
-      },
-      {
-        id: 103,
-        number: "103",
-        type: "Standard",
-        floor: "Tầng 1",
-        status: "Trống",
-        note: "",
-      },
-      {
-        id: 104,
-        number: "104",
-        type: "Deluxe",
-        floor: "Tầng 1",
-        status: "Trống",
-        note: "",
-      },
-    ],
+    rooms: [],
+    roomTypes: [],
     search: "",
-    statusFilter: "Tất cả trạng thái",
+    statusFilter: ALL_STATUS_VALUE,
+    currentPage: 1,
     isModalOpen: false,
     modalMode: "add",
-    currentRoom: {
-      id: null,
-      number: "",
-      type: "",
-      floor: "",
-      status: "Trống",
-      note: "",
-    },
+    currentRoom: getDefaultRoomForm(),
+    loading: false,
+    submitLoading: false,
+    error: "",
   };
 
-  getFilteredRooms() {
-    const { rooms, search, statusFilter } = this.state;
-    return rooms.filter((room) => {
-      const matchName = room.number
-        .toLowerCase()
-        .includes(search.toLowerCase());
-      const matchStatus =
-        statusFilter === "Tất cả trạng thái" || room.status === statusFilter;
-      return matchName && matchStatus;
-    });
+  componentDidMount() {
+    this.fetchRoomTypes();
+    this.fetchRooms();
   }
+
+  fetchRoomTypes = async () => {
+    try {
+      const response = await fetch(ROOM_TYPES_API_URL);
+      if (!response.ok) {
+        throw new Error(`Lỗi tải loại phòng: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const roomTypes = (Array.isArray(data) ? data : [])
+        .map((item) => ({
+          id: String(item?.RoomTypeID ?? item?.id ?? ""),
+          name: item?.Name || item?.RoomTypeName || item?.name || "",
+        }))
+        .filter((item) => item.id && item.name);
+
+      if (roomTypes.length > 0) {
+        this.setState({ roomTypes });
+      }
+    } catch (error) {
+      console.error("Không thể tải danh sách loại phòng:", error);
+    }
+  };
+
+  fetchRooms = async () => {
+    this.setState({ loading: true, error: "" });
+
+    try {
+      const response = await fetch(ROOMS_API_URL);
+      if (!response.ok) {
+        throw new Error(`Lỗi tải dữ liệu phòng: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const rooms = (Array.isArray(data) ? data : []).map(mapRoomFromApi);
+      const roomTypesFromRooms = this.buildRoomTypesFromRooms(rooms);
+
+      this.setState((prev) => ({
+        rooms,
+        roomTypes:
+          prev.roomTypes.length > 0 ? prev.roomTypes : roomTypesFromRooms,
+        currentPage: 1,
+        loading: false,
+      }));
+    } catch (error) {
+      this.setState({
+        loading: false,
+        error: error.message || "Không thể tải danh sách phòng.",
+      });
+    }
+  };
+
+  buildRoomTypesFromRooms = (rooms) => {
+    const map = new Map();
+    rooms.forEach((room) => {
+      if (!room.RoomTypeID) return;
+      const id = String(room.RoomTypeID);
+      const name = room.RoomTypeName || `Loại phòng ${id}`;
+      if (!map.has(id)) {
+        map.set(id, { id, name });
+      }
+    });
+    return Array.from(map.values());
+  };
+
+  getStatusOptions = () => {
+    const roomStatuses = this.state.rooms
+      .map((room) => room.Status)
+      .filter(Boolean);
+    return Array.from(new Set([...DEFAULT_STATUS_OPTIONS, ...roomStatuses]));
+  };
+
+  getFilteredRooms = () => {
+    const { rooms, search, statusFilter } = this.state;
+    const keyword = search.trim().toLowerCase();
+
+    return rooms.filter((room) => {
+      const roomText = [
+        room.RoomID,
+        room.RoomNumber,
+        room.RoomTypeName,
+        room.Description,
+      ]
+        .join(" ")
+        .toLowerCase();
+      const matchSearch = !keyword || roomText.includes(keyword);
+      const matchStatus =
+        statusFilter === ALL_STATUS_VALUE || room.Status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  };
 
   openAddModal = () => {
     this.setState({
       isModalOpen: true,
       modalMode: "add",
-      currentRoom: {
-        id: null,
-        number: "",
-        type: "",
-        floor: "",
-        status: "Trống",
-        note: "",
-      },
+      currentRoom: getDefaultRoomForm(),
     });
   };
 
@@ -86,62 +192,141 @@ class Quanlyphong extends Component {
     this.setState({
       isModalOpen: true,
       modalMode: "edit",
-      currentRoom: { ...room },
+      currentRoom: {
+        RoomID: room.RoomID,
+        RoomNumber: room.RoomNumber || "",
+        Status: room.Status || DEFAULT_STATUS,
+        RoomTypeID: String(room.RoomTypeID || ""),
+        RoomTypeName: room.RoomTypeName || "",
+      },
     });
   };
 
   closeModal = () => {
-    this.setState({ isModalOpen: false });
+    this.setState({
+      isModalOpen: false,
+      currentRoom: getDefaultRoomForm(),
+    });
   };
 
   handleChange = (field) => (event) => {
     const value = event.target.value;
-    this.setState((prev) => ({
-      currentRoom: { ...prev.currentRoom, [field]: value },
-    }));
+
+    this.setState((prev) => {
+      if (field !== "RoomTypeID") {
+        return { currentRoom: { ...prev.currentRoom, [field]: value } };
+      }
+
+      const selected = prev.roomTypes.find((item) => item.id === value);
+      return {
+        currentRoom: {
+          ...prev.currentRoom,
+          RoomTypeID: value,
+          RoomTypeName: selected?.name || "",
+        },
+      };
+    });
   };
 
-  handleSubmit = (event) => {
+  handleSubmit = async (event) => {
     event.preventDefault();
-    const { rooms, modalMode, currentRoom } = this.state;
 
-    if (!currentRoom.number || !currentRoom.type || !currentRoom.floor) {
-      alert("Vui lòng điền đủ Số phòng, Loại phòng, Tầng!");
+    const { currentRoom, modalMode } = this.state;
+
+    if (!currentRoom.RoomNumber.trim()) {
+      alert("Vui lòng nhập số phòng.");
       return;
     }
 
-    if (modalMode === "add") {
-      const nextId = rooms.reduce((max, room) => Math.max(max, room.id), 0) + 1;
-      this.setState({
-        rooms: [...rooms, { ...currentRoom, id: nextId }],
-        isModalOpen: false,
+    if (!currentRoom.RoomTypeID) {
+      alert("Vui lòng chọn loại phòng.");
+      return;
+    }
+
+    const roomTypeIdNum = Number(currentRoom.RoomTypeID);
+    if (Number.isNaN(roomTypeIdNum)) {
+      alert("Loại phòng không hợp lệ.");
+      return;
+    }
+
+    const payload = {
+      RoomNumber: currentRoom.RoomNumber.trim(),
+      Status: currentRoom.Status?.trim() || DEFAULT_STATUS,
+      RoomTypeID: roomTypeIdNum,
+    };
+
+    try {
+      this.setState({ submitLoading: true, error: "" });
+
+      const isEdit = modalMode === "edit" && currentRoom.RoomID !== null;
+      const url = isEdit
+        ? `${ROOMS_API_URL}/${currentRoom.RoomID}`
+        : ROOMS_API_URL;
+
+      const response = await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-    } else {
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        throw new Error(responseText || `API error: ${response.status}`);
+      }
+
+      await this.fetchRooms();
+      this.closeModal();
+      alert(isEdit ? "Cập nhật phòng thành công." : "Thêm phòng thành công.");
+    } catch (error) {
       this.setState({
-        rooms: rooms.map((room) =>
-          room.id === currentRoom.id ? { ...currentRoom } : room,
-        ),
-        isModalOpen: false,
+        error: error.message || "Không thể lưu thông tin phòng.",
       });
+    } finally {
+      this.setState({ submitLoading: false });
     }
   };
 
   render() {
-    const { search, statusFilter, isModalOpen, modalMode, currentRoom } =
-      this.state;
-    const rooms = this.getFilteredRooms();
+    const {
+      search,
+      statusFilter,
+      currentPage,
+      isModalOpen,
+      modalMode,
+      currentRoom,
+      roomTypes,
+      loading,
+      error,
+      submitLoading,
+    } = this.state;
+
+    const filteredRooms = this.getFilteredRooms();
+    const totalPages = Math.max(1, Math.ceil(filteredRooms.length / PAGE_SIZE));
+    const currentDisplayPage = Math.min(currentPage, totalPages);
+    const startIndex = (currentDisplayPage - 1) * PAGE_SIZE;
+    const paginatedRooms = filteredRooms.slice(
+      startIndex,
+      startIndex + PAGE_SIZE,
+    );
+    const statusOptions = this.getStatusOptions();
 
     return (
       <div className="quanlyphong">
         <div className="qp-top">
           <FeatureHeader
             title="Quản lý Phòng"
-            description="Quản lý thông tin các phòng trong khách sạn"
+            description="Quản lý thông tin phòng trong khách sạn"
           />
-          <button className="btn-primary" onClick={this.openAddModal}>
+          <button
+            className="qp-add-btn"
+            type="button"
+            onClick={this.openAddModal}
+          >
             + Thêm phòng
           </button>
         </div>
+
+        {error && <div className="qp-error-banner">{error}</div>}
 
         <div className="qp-main">
           <div className="qp-actions">
@@ -149,18 +334,26 @@ class Quanlyphong extends Component {
               <i className="fa fa-search"></i>
               <input
                 type="text"
-                placeholder="Tìm kiếm theo số phòng..."
+                placeholder="Tìm theo mã phòng, số phòng, loại phòng..."
                 value={search}
-                onChange={(e) => this.setState({ search: e.target.value })}
+                onChange={(e) =>
+                  this.setState({ search: e.target.value, currentPage: 1 })
+                }
               />
             </div>
+
             <select
+              className="qp-filter-select"
               value={statusFilter}
-              onChange={(e) => this.setState({ statusFilter: e.target.value })}
+              onChange={(e) =>
+                this.setState({ statusFilter: e.target.value, currentPage: 1 })
+              }
             >
-              <option>Tất cả trạng thái</option>
-              {ROOM_STATUS.map((status) => (
-                <option key={status}>{status}</option>
+              <option value={ALL_STATUS_VALUE}>Tất cả trạng thái</option>
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {getStatusLabel(status)}
+                </option>
               ))}
             </select>
           </div>
@@ -169,48 +362,111 @@ class Quanlyphong extends Component {
             <table className="qp-table">
               <thead>
                 <tr>
+                  <th>Mã phòng</th>
                   <th>Số phòng</th>
                   <th>Loại phòng</th>
-                  <th>Tầng</th>
                   <th>Trạng thái</th>
-                  <th>Ghi chú</th>
+                  <th>Sức chứa</th>
+                  <th>Giá mặc định</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {rooms.map((room) => (
-                  <tr key={room.id}>
-                    <td>{room.number}</td>
-                    <td>{room.type}</td>
-                    <td>{room.floor}</td>
-                    <td>
-                      <span
-                        className={`status-pill status-${room.status.replace(/\s/g, "").toLowerCase()}`}
-                      >
-                        {room.status}
-                      </span>
-                    </td>
-                    <td>{room.note || "-"}</td>
-                    <td>
-                      <button
-                        className="btn-edit"
-                        onClick={() => this.openEditModal(room)}
-                      >
-                        <i className="fa fa-edit"></i>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {rooms.length === 0 && (
+                {loading ? (
                   <tr>
-                    <td colSpan="6" className="empty-row">
-                      Không có phòng phù hợp
+                    <td colSpan="7" className="qp-empty-row">
+                      Đang tải dữ liệu...
                     </td>
                   </tr>
+                ) : filteredRooms.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="qp-empty-row">
+                      Không có dữ liệu phòng.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedRooms.map((room) => (
+                    <tr key={room.RoomID || room.RoomNumber}>
+                      <td>{room.RoomID ?? "-"}</td>
+                      <td>{room.RoomNumber || "-"}</td>
+                      <td>
+                        {room.RoomTypeName ||
+                          roomTypes.find(
+                            (item) => item.id === String(room.RoomTypeID || ""),
+                          )?.name ||
+                          "-"}
+                      </td>
+                      <td>
+                        <span
+                          className={`qp-status-pill ${getStatusClassName(room.Status)}`}
+                        >
+                          {getStatusLabel(room.Status)}
+                        </span>
+                      </td>
+                      <td>{room.Capacity ?? "-"}</td>
+                      <td>{formatCurrency(room.DefaultPrice)}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="qp-icon-btn edit"
+                          title="Sửa phòng"
+                          onClick={() => this.openEditModal(room)}
+                          disabled={submitLoading}
+                        >
+                          <i className="fa-regular fa-pen-to-square"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
           </div>
+
+          {!loading && filteredRooms.length > 0 && (
+            <div className="qp-pagination">
+              <button
+                type="button"
+                className="qp-page-btn"
+                onClick={() =>
+                  this.setState({
+                    currentPage: Math.max(currentDisplayPage - 1, 1),
+                  })
+                }
+                disabled={currentDisplayPage === 1}
+                aria-label="Trang trước"
+              >
+                {"‹"}
+              </button>
+
+              {Array.from({ length: totalPages }, (_, idx) => idx + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    className={`qp-page-btn ${page === currentDisplayPage ? "active" : ""}`}
+                    onClick={() => this.setState({ currentPage: page })}
+                  >
+                    {page}
+                  </button>
+                ),
+              )}
+
+              <button
+                type="button"
+                className="qp-page-btn"
+                onClick={() =>
+                  this.setState({
+                    currentPage: Math.min(currentDisplayPage + 1, totalPages),
+                  })
+                }
+                disabled={currentDisplayPage === totalPages}
+                aria-label="Trang sau"
+              >
+                {"›"}
+              </button>
+            </div>
+          )}
         </div>
 
         {isModalOpen && (
@@ -220,74 +476,76 @@ class Quanlyphong extends Component {
                 className="modal-close"
                 type="button"
                 onClick={this.closeModal}
+                title="Đóng"
               >
-                ×
+                &times;
               </button>
+
               <h2>
                 {modalMode === "add" ? "Thêm phòng mới" : "Chỉnh sửa phòng"}
               </h2>
-              <form onSubmit={this.handleSubmit}>
+
+              <form className="qp-room-form" onSubmit={this.handleSubmit}>
                 <label>
                   Số phòng *
                   <input
-                    className="modal-input"
                     type="text"
-                    value={currentRoom.number}
-                    onChange={this.handleChange("number")}
+                    value={currentRoom.RoomNumber}
+                    onChange={this.handleChange("RoomNumber")}
+                    required
+                    autoFocus
                   />
                 </label>
+
                 <label>
                   Loại phòng *
                   <select
-                    value={currentRoom.type}
-                    onChange={this.handleChange("type")}
+                    value={currentRoom.RoomTypeID}
+                    onChange={this.handleChange("RoomTypeID")}
+                    required
                   >
-                    <option value="">Chọn loại phòng</option>
-                    {ROOM_TYPES.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
+                    <option value="">
+                      {roomTypes.length > 0
+                        ? "Chọn loại phòng"
+                        : "Không có loại phòng"}
+                    </option>
+                    {roomTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
                       </option>
                     ))}
                   </select>
                 </label>
-                <label>
-                  Tầng *
-                  <input
-                    type="text"
-                    value={currentRoom.floor}
-                    onChange={this.handleChange("floor")}
-                  />
-                </label>
+
                 <label>
                   Trạng thái
                   <select
-                    value={currentRoom.status}
-                    onChange={this.handleChange("status")}
+                    value={currentRoom.Status}
+                    onChange={this.handleChange("Status")}
                   >
-                    {ROOM_STATUS.map((status) => (
+                    {statusOptions.map((status) => (
                       <option key={status} value={status}>
-                        {status}
+                        {getStatusLabel(status)}
                       </option>
                     ))}
                   </select>
                 </label>
-                <label>
-                  Ghi chú
-                  <textarea
-                    value={currentRoom.note}
-                    onChange={this.handleChange("note")}
-                  />
-                </label>
-                <div className="modal-buttons">
+
+                <div className="qp-modal-actions">
                   <button
-                    className="btn-secondary"
                     type="button"
+                    className="qp-cancel-btn"
                     onClick={this.closeModal}
+                    disabled={submitLoading}
                   >
                     Hủy
                   </button>
-                  <button className="btn-primary" type="submit">
-                    Lưu
+                  <button
+                    type="submit"
+                    className="qp-save-btn"
+                    disabled={submitLoading}
+                  >
+                    {submitLoading ? "Đang lưu..." : "Lưu"}
                   </button>
                 </div>
               </form>
