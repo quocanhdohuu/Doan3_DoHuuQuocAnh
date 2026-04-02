@@ -2,6 +2,8 @@ import React, { Component } from "react";
 import "../style/Loaiphong.css";
 import { FeatureHeader } from "./Common";
 
+const PAGE_SIZE = 4;
+
 class Loaiphong extends Component {
   state = {
     types: [],
@@ -17,6 +19,7 @@ class Loaiphong extends Component {
     },
     loading: true,
     error: null,
+    currentPage: 1,
   };
 
   componentDidMount() {
@@ -43,7 +46,7 @@ class Loaiphong extends Component {
         price: item.DefaultPrice,
       }));
 
-      this.setState({ types: mappedTypes, loading: false });
+      this.setState({ types: mappedTypes, loading: false, currentPage: 1 });
     } catch (error) {
       console.error("Error fetching room types:", error);
       this.setState({ error: error.message, loading: false });
@@ -172,32 +175,20 @@ class Loaiphong extends Component {
     }
   };
 
-  deleteType = async (typeId) => {
-    if (!window.confirm("Xóa loại phòng này?")) return;
-
-    try {
-      const response = await fetch(
-        `http://localhost:3000/api/get-room-types/${typeId}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      if (response.ok) {
-        await this.fetchRoomTypes(); // Refresh dữ liệu từ API
-      } else {
-        alert("Lỗi khi xóa loại phòng");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Lỗi: " + error.message);
-    }
-  };
-
   render() {
-    const { search, isModalOpen, modalMode, currentType, loading, error } =
-      this.state;
+    const {
+      search,
+      isModalOpen,
+      modalMode,
+      currentType,
+      loading,
+      error,
+      currentPage,
+    } = this.state;
     const filteredTypes = this.getFilteredTypes();
+    const totalPages = Math.max(1, Math.ceil(filteredTypes.length / PAGE_SIZE));
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    const paginatedTypes = filteredTypes.slice(startIndex, startIndex + PAGE_SIZE);
 
     return (
       <div className="loaiphong">
@@ -251,7 +242,9 @@ class Loaiphong extends Component {
                   type="text"
                   placeholder="Tìm kiếm loại phòng..."
                   value={search}
-                  onChange={(e) => this.setState({ search: e.target.value })}
+                  onChange={(e) =>
+                    this.setState({ search: e.target.value, currentPage: 1 })
+                  }
                 />
               </div>
               <div />
@@ -269,7 +262,7 @@ class Loaiphong extends Component {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTypes.map((typeItem) => (
+                  {paginatedTypes.map((typeItem) => (
                     <tr key={typeItem.id}>
                       <td>{typeItem.name}</td>
                       <td>{typeItem.description}</td>
@@ -281,12 +274,6 @@ class Loaiphong extends Component {
                           onClick={() => this.openEditModal(typeItem)}
                         >
                           <i className="fa fa-edit"></i>
-                        </button>
-                        <button
-                          className="btn-delete"
-                          onClick={() => this.deleteType(typeItem.id)}
-                        >
-                          <i className="fa fa-trash"></i>
                         </button>
                       </td>
                     </tr>
@@ -301,6 +288,49 @@ class Loaiphong extends Component {
                 </tbody>
               </table>
             </div>
+
+            {filteredTypes.length > 0 && (
+              <div className="lp-pagination">
+                <button
+                  type="button"
+                  className="lp-page-btn"
+                  onClick={() =>
+                    this.setState((prev) => ({
+                      currentPage: Math.max(prev.currentPage - 1, 1),
+                    }))
+                  }
+                  disabled={currentPage === 1}
+                  aria-label="Trang trước"
+                >
+                  ‹
+                </button>
+
+                {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    className={`lp-page-btn ${page === currentPage ? "active" : ""}`}
+                    onClick={() => this.setState({ currentPage: page })}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  className="lp-page-btn"
+                  onClick={() =>
+                    this.setState((prev) => ({
+                      currentPage: Math.min(prev.currentPage + 1, totalPages),
+                    }))
+                  }
+                  disabled={currentPage === totalPages}
+                  aria-label="Trang sau"
+                >
+                  ›
+                </button>
+              </div>
+            )}
           </div>
         )}
 

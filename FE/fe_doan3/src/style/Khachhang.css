@@ -289,3 +289,117 @@
 .save-btn:hover {
   background: #1749b1;
 }
+
+/* Sync modal form style with NhanTraPhong */
+.khachhang-page .modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(24, 28, 43, 0.54);
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 18px 18px;
+}
+
+.khachhang-page .modal-content {
+  width: 100%;
+  max-width: 560px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 22px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+  position: relative;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.khachhang-page .modal-content h2 {
+  margin: 0 36px 16px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.khachhang-page .modal-close {
+  background: transparent;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  color: #555;
+}
+
+.khachhang-page .add-customer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.khachhang-page .add-customer-form label {
+  display: block;
+  margin-bottom: 0;
+  font-weight: 700;
+  color: #222;
+}
+
+.khachhang-page .add-customer-form input,
+.khachhang-page .add-customer-form textarea,
+.khachhang-page .add-customer-form select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d7dfe9;
+  background: #fff;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.khachhang-page .add-customer-form input:focus,
+.khachhang-page .add-customer-form textarea:focus,
+.khachhang-page .add-customer-form select:focus {
+  border-color: #0a6cff;
+  outline: none;
+}
+
+.khachhang-page .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.khachhang-page .cancel-btn,
+.khachhang-page .save-btn {
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 8px 12px;
+  min-width: 96px;
+}
+
+.khachhang-page .cancel-btn {
+  background: #fff;
+  border: 1px solid #dbe1ea;
+  color: #1a1a1a;
+}
+
+.khachhang-page .save-btn {
+  background: #0a6cff;
+  color: #fff;
+}
+
+.khachhang-page .save-btn:hover {
+  background: #085bd7;
+}
+
+.khachhang-page .cancel-btn:disabled,
+.khachhang-page .save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

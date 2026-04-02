@@ -9,7 +9,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .qlgia-top h1 {
@@ -69,10 +69,13 @@
 }
 
 .qlgia-main {
-  padding: 20px;
+  padding: 18px 12px 24px 12px;
   background-color: #f8f8f8;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   border-radius: 16px;
+  min-height: 430px;
+  display: flex;
+  flex-direction: column;
 }
 .qlgia-actions {
   display: flex;
@@ -111,6 +114,7 @@
 
 .qlgia-table-wrapper {
   overflow-x: auto;
+  flex: 1;
 }
 
 .qlgia-table {
@@ -118,8 +122,8 @@
   border-collapse: collapse;
 }
 .qlgia-table thead th {
-  color: #53575a ;
-  background-color: transparent ;
+  color: #53575a;
+  background-color: transparent;
 }
 .qlgia-table tbody tr:hover {
   background: #fafbff;
@@ -158,6 +162,44 @@
   text-align: center;
   color: #7f8fa5;
   padding: 15px;
+}
+
+.qlgia-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 16px;
+  margin-right: 20px;
+  justify-content: flex-end;
+}
+
+.qlgia-page-btn {
+  min-width: 30px;
+  height: 30px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qlgia-page-btn:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.qlgia-page-btn.active {
+  color: #1d4ed8;
+  background: #e8f0ff;
+  border-color: #60a5fa;
+}
+
+.qlgia-page-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .qlgia-modal-overlay {
@@ -219,6 +261,16 @@
   color: #3d485f;
 }
 
+.qlgia-date-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.qlgia-date-row label {
+  margin-bottom: 12px;
+}
+
 .qlgia-modal-content input,
 .qlgia-modal-content select,
 .qlgia-modal-content textarea {
@@ -246,4 +298,11 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .qlgia-date-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
 }

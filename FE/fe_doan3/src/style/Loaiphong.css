@@ -9,7 +9,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .lp-top h1 {
@@ -23,10 +23,13 @@
 }
 
 .lp-main {
-  padding: 20px;
-  background-color: #f8f8f8;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: #f8f8f8;
   border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 18px 12px 24px 12px;
+  min-height: 430px;
+  display: flex;
+  flex-direction: column;
 }
 
 .btn-primary {
@@ -53,7 +56,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
 }
 
@@ -84,31 +87,35 @@
 
 .lp-table-wrapper {
   overflow-x: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .lp-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 15px;
 }
-.lp-table thead th {
-  color: #53575a ;
-  background-color: transparent ;
+.lp-table thead tr {
+  background: #fff;
+  color: #959595;
 }
 .lp-table tbody tr:hover {
-  background: #fafbff;
+  background: #f3f6fd;
 }
 .lp-table th,
 .lp-table td {
-  padding: 12px 10px;
-  border-bottom: 1px solid #e8ecf6;
+  padding: 14px 16px;
+  border-bottom: 1px solid #ececec;
   text-align: left;
   white-space: nowrap;
 }
 
 .lp-table th {
-  background: #fafbff;
   font-weight: 700;
-  color: #3f4a5e;
+  font-size: 1.05rem;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .tag-pill {
@@ -148,6 +155,44 @@
   text-align: center;
   color: #7f8fa5;
   padding: 15px;
+}
+
+.lp-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 16px;
+  margin-right: 20px;
+  justify-content: flex-end;
+}
+
+.lp-page-btn {
+  min-width: 30px;
+  height: 30px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lp-page-btn:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.lp-page-btn.active {
+  color: #1d4ed8;
+  background: #e8f0ff;
+  border-color: #60a5fa;
+}
+
+.lp-page-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .modal-overlay {
