@@ -453,7 +453,7 @@ BEGIN
 END
 EXEC sp_GetCustomerSummary
 
-
+---Thêm phòng-------------------------------------------------
 CREATE PROCEDURE AddRoom
     @RoomNumber NVARCHAR(50),
     @Status NVARCHAR(50),

@@ -6,6 +6,7 @@ const authRoutes = require("./routes/authRoutes");
 const rateRoutes = require("./routes/rateRoutes");
 const customerRoutes = require("./routes/customerRoutes");
 const receptionistRoutes = require("./routes/receptionistRoutes");
+const roomRoutes = require("./routes/roomRoutes");
 
 const app = express();
 
@@ -17,5 +18,6 @@ app.use("/api/login", authRoutes);
 app.use("/api/rates", rateRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/receptionists", receptionistRoutes);
+app.use("/api/rooms", roomRoutes);
 
 module.exports = app;
