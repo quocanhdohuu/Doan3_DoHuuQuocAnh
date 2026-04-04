@@ -997,7 +997,7 @@ END
 EXEC sp_RevenueThisMonth_WithStayCount
 
 ---	Lịch theo từng ngày của từng phòng
-CREATE PROCEDURE sp_GetRoomCalendar_Advanced
+ALTER PROCEDURE sp_GetRoomCalendar_Advanced
     @Month INT,
     @Year INT
 AS
@@ -1007,7 +1007,6 @@ BEGIN
     DECLARE @StartDate DATE = DATEFROMPARTS(@Year, @Month, 1)
     DECLARE @EndDate DATE = EOMONTH(@StartDate)
 
-    -- 📅 Tạo danh sách ngày
     ;WITH Dates AS (
         SELECT @StartDate AS [Date]
         UNION ALL
@@ -1016,7 +1015,9 @@ BEGIN
         WHERE [Date] < @EndDate
     ),
 
-    -- 🔴 Phòng đang sử dụng
+    -------------------------------------------------
+    -- 🔴 OCCUPIED
+    -------------------------------------------------
     Occupied AS (
         SELECT 
             rsh.RoomID,
@@ -1028,7 +1029,20 @@ BEGIN
         WHERE s.Status = 'CHECKED_IN'
     ),
 
-    -- 🔵 Tổng số phòng đã đặt theo RoomType
+    -------------------------------------------------
+    -- 🟤 DIRTY (ngày checkout)
+    -------------------------------------------------
+    Dirty AS (
+        SELECT 
+            rsh.RoomID,
+            CAST(rsh.CheckOutTime AS DATE) AS [Date]
+        FROM RoomStayHistory rsh
+        WHERE rsh.CheckOutTime IS NOT NULL
+    ),
+
+    -------------------------------------------------
+    -- 🔵 BOOKED
+    -------------------------------------------------
     BookedByType AS (
         SELECT 
             rr.RoomTypeID,
@@ -1042,7 +1056,9 @@ BEGIN
         GROUP BY rr.RoomTypeID, d.Date
     ),
 
-    -- 🔴 Số phòng đang occupied theo RoomType
+    -------------------------------------------------
+    -- 🔴 OCCUPIED COUNT
+    -------------------------------------------------
     OccupiedCount AS (
         SELECT 
             r.RoomTypeID,
@@ -1051,13 +1067,6 @@ BEGIN
         FROM Occupied o
         JOIN Rooms r ON r.RoomID = o.RoomID
         GROUP BY r.RoomTypeID, o.Date
-    ),
-
-    -- 🔢 Tổng số phòng mỗi loại
-    TotalRooms AS (
-        SELECT RoomTypeID, COUNT(*) AS TotalRooms
-        FROM Rooms
-        GROUP BY RoomTypeID
     )
 
     SELECT 
@@ -1067,10 +1076,24 @@ BEGIN
         d.Date,
 
         CASE 
-            -- 🔴 Đang ở
+            -------------------------------------------------
+            -- 🔧 MAINTENANCE (vẫn ưu tiên cao)
+            -------------------------------------------------
+            WHEN r.Status = 'MAINTENANCE' THEN 'MAINTENANCE'
+
+            -------------------------------------------------
+            -- 🟤 DIRTY (chỉ đúng ngày checkout)
+            -------------------------------------------------
+            WHEN di.RoomID IS NOT NULL THEN 'DIRTY'
+
+            -------------------------------------------------
+            -- 🔴 OCCUPIED
+            -------------------------------------------------
             WHEN o.RoomID IS NOT NULL THEN 'OCCUPIED'
 
-            -- 🔵 Đã đặt (có slot)
+            -------------------------------------------------
+            -- 🔵 BOOKED
+            -------------------------------------------------
             WHEN 
                 ISNULL(b.TotalBooked,0) > ISNULL(oc.TotalOccupied,0)
                 AND ROW_NUMBER() OVER (
@@ -1079,7 +1102,9 @@ BEGIN
                 ) <= (ISNULL(b.TotalBooked,0) - ISNULL(oc.TotalOccupied,0))
             THEN 'BOOKED'
 
-            -- 🟢 Trống
+            -------------------------------------------------
+            -- 🟢 AVAILABLE
+            -------------------------------------------------
             ELSE 'AVAILABLE'
         END AS Status
 
@@ -1089,6 +1114,9 @@ BEGIN
 
     LEFT JOIN Occupied o 
         ON o.RoomID = r.RoomID AND o.Date = d.Date
+
+    LEFT JOIN Dirty di
+        ON di.RoomID = r.RoomID AND di.Date = d.Date
 
     LEFT JOIN BookedByType b 
         ON b.RoomTypeID = r.RoomTypeID AND b.Date = d.Date
@@ -1100,7 +1128,7 @@ BEGIN
 
     OPTION (MAXRECURSION 1000)
 END
-EXEC sp_GetRoomCalendar_Advanced 3,2026
+EXEC sp_GetRoomCalendar_Advanced 4,2026
 
 --Load giá theo ngày(giá mặc định)-------------------------------------------------------------
 CREATE PROCEDURE sp_GetDefaultRate
