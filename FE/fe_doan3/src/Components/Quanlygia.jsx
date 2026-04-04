@@ -38,6 +38,21 @@ const buildDateRangeLabel = (startDate, endDate, fallback = "") => {
   return fallback;
 };
 
+const extractApiErrorMessage = (responseText, fallbackMessage) => {
+  if (!responseText) return fallbackMessage;
+
+  try {
+    const parsed = JSON.parse(responseText);
+    if (parsed && typeof parsed.error === "string" && parsed.error.trim()) {
+      return parsed.error.trim();
+    }
+  } catch {
+    // Ignore parse error and fallback to raw response text.
+  }
+
+  return responseText;
+};
+
 class Quanlygia extends Component {
   state = {
     search: "",
@@ -178,6 +193,141 @@ class Quanlygia extends Component {
     }));
   };
 
+  getDateOverlapMessage = () => {
+    const { modalMode } = this.state;
+    return modalMode === "edit"
+      ? "Khoảng thời gian bị trùng với giá khác của loại phòng này."
+      : "Khoảng thời gian này đã tồn tại giá cho loại phòng này.";
+  };
+
+  hasOverlappingRange = ({ roomTypeId, startDate, endDate, excludeRateId = null }) => {
+    const roomTypeIdText = String(roomTypeId);
+    const start = toInputDate(startDate);
+    const end = toInputDate(endDate);
+
+    if (!start || !end) return false;
+
+    return this.state.seasonalPrices.some((item) => {
+      if (String(item.roomTypeId) !== roomTypeIdText) return false;
+      if (excludeRateId !== null && String(item.id) === String(excludeRateId)) return false;
+
+      const itemStart = toInputDate(item.startDate);
+      const itemEnd = toInputDate(item.endDate);
+      if (!itemStart || !itemEnd) return false;
+
+      return start <= itemEnd && end >= itemStart;
+    });
+  };
+
+  hasDatePointConflict = ({ roomTypeId, date, excludeRateId = null }) => {
+    const roomTypeIdText = String(roomTypeId);
+    const selectedDate = toInputDate(date);
+    if (!selectedDate) return false;
+
+    return this.state.seasonalPrices.some((item) => {
+      if (String(item.roomTypeId) !== roomTypeIdText) return false;
+      if (excludeRateId !== null && String(item.id) === String(excludeRateId)) return false;
+
+      const itemStart = toInputDate(item.startDate);
+      const itemEnd = toInputDate(item.endDate);
+      if (!itemStart || !itemEnd) return false;
+
+      return selectedDate >= itemStart && selectedDate <= itemEnd;
+    });
+  };
+
+  getDateValidationContext = (priceDraft) => {
+    const roomTypeIdNum = Number(priceDraft.roomTypeId);
+    if (Number.isNaN(roomTypeIdNum)) {
+      return { roomTypeIdNum: null, excludeRateId: null };
+    }
+
+    return {
+      roomTypeIdNum,
+      excludeRateId: this.state.modalMode === "edit" ? priceDraft.id : null,
+    };
+  };
+
+  getDateValidationMessage = (priceDraft) => {
+    const { roomTypeId, startDate, endDate } = priceDraft;
+    if (!roomTypeId || !startDate || !endDate) return "";
+
+    if (startDate > endDate) {
+      return "Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc.";
+    }
+
+    const { roomTypeIdNum, excludeRateId } = this.getDateValidationContext(priceDraft);
+    if (roomTypeIdNum === null) return "Loại phòng không hợp lệ.";
+
+    const isOverlapping = this.hasOverlappingRange({
+      roomTypeId: roomTypeIdNum,
+      startDate,
+      endDate,
+      excludeRateId,
+    });
+
+    if (!isOverlapping) return "";
+    return this.getDateOverlapMessage();
+  };
+
+  getSingleDateConflictMessage = (priceDraft) => {
+    const { roomTypeId, startDate, endDate } = priceDraft;
+    if (!roomTypeId) return "";
+
+    const hasStartOnly = Boolean(startDate) && !endDate;
+    const hasEndOnly = Boolean(endDate) && !startDate;
+    if (!hasStartOnly && !hasEndOnly) return "";
+
+    const { roomTypeIdNum, excludeRateId } = this.getDateValidationContext(priceDraft);
+    if (roomTypeIdNum === null) return "Loại phòng không hợp lệ.";
+
+    const hasConflict = this.hasDatePointConflict({
+      roomTypeId: roomTypeIdNum,
+      date: hasStartOnly ? startDate : endDate,
+      excludeRateId,
+    });
+
+    if (!hasConflict) return "";
+    return this.getDateOverlapMessage();
+  };
+
+  handleScheduleInput = (field) => (e) => {
+    const value = e.target.value;
+    const { currentPrice } = this.state;
+    const nextPrice = { ...currentPrice, [field]: value };
+    const validationMessage =
+      this.getDateValidationMessage(nextPrice) ||
+      this.getSingleDateConflictMessage(nextPrice);
+
+    if (validationMessage) {
+      alert(validationMessage);
+      return;
+    }
+
+    this.setState({ currentPrice: nextPrice });
+  };
+
+  handleRoomTypeChange = (e) => {
+    const value = e.target.value;
+    const selected = this.state.roomTypes.find((item) => String(item.id) === value);
+    const { currentPrice } = this.state;
+    const nextPrice = {
+      ...currentPrice,
+      roomTypeId: value,
+      roomType: selected?.name || "",
+    };
+    const validationMessage =
+      this.getDateValidationMessage(nextPrice) ||
+      this.getSingleDateConflictMessage(nextPrice);
+
+    if (validationMessage) {
+      alert(validationMessage);
+      return;
+    }
+
+    this.setState({ currentPrice: nextPrice });
+  };
+
   handleSave = async (e) => {
     e.preventDefault();
     const { currentPrice, modalMode } = this.state;
@@ -188,21 +338,22 @@ class Quanlygia extends Component {
       return;
     }
 
-    if (startDate > endDate) {
-      alert("Ngay ket thuc phai lon hon hoac bang ngay bat dau.");
-      return;
-    }
-
     const roomTypeIdNum = Number(roomTypeId);
     if (Number.isNaN(roomTypeIdNum)) {
-      alert("Loai phong khong hop le.");
+      alert("Loại phòng không hợp lệ.");
       return;
     }
 
     const amountText = String(amount).trim();
     const isValidPrice = /^\d+(\.\d{1,2})?$/.test(amountText);
     if (!isValidPrice || Number(amountText) <= 0) {
-      alert("Gia phai la so lon hon 0.");
+      alert("Giá phải là số lớn hơn 0.");
+      return;
+    }
+
+    const dateValidationMessage = this.getDateValidationMessage(currentPrice);
+    if (dateValidationMessage) {
+      alert(dateValidationMessage);
       return;
     }
 
@@ -226,7 +377,9 @@ class Quanlygia extends Component {
 
       if (!response.ok) {
         const responseText = await response.text();
-        throw new Error(responseText || `API error: ${response.status}`);
+        throw new Error(
+          extractApiErrorMessage(responseText, `API error: ${response.status}`),
+        );
       }
 
       await this.fetchRates();
@@ -250,7 +403,9 @@ class Quanlygia extends Component {
 
       if (!response.ok) {
         const responseText = await response.text();
-        throw new Error(responseText || `API error: ${response.status}`);
+        throw new Error(
+          extractApiErrorMessage(responseText, `API error: ${response.status}`),
+        );
       }
 
       await this.fetchRates();
@@ -447,19 +602,7 @@ class Quanlygia extends Component {
                   <select
                     className="qlgia-modal-input"
                     value={currentPrice.roomTypeId || ""}
-                    onChange={(e) => {
-                      const selected = typeOptions.find(
-                        (item) => String(item.id) === e.target.value,
-                      );
-
-                      this.setState((prev) => ({
-                        currentPrice: {
-                          ...prev.currentPrice,
-                          roomTypeId: e.target.value,
-                          roomType: selected?.name || "",
-                        },
-                      }));
-                    }}
+                    onChange={this.handleRoomTypeChange}
                   >
                     <option value="">
                       {typeOptions.length > 0 ? "Chọn loại phòng" : "Không có loại phòng"}
@@ -488,7 +631,8 @@ class Quanlygia extends Component {
                       className="qlgia-modal-input"
                       type="date"
                       value={currentPrice.startDate || ""}
-                      onChange={this.handleInput("startDate")}
+                      onChange={this.handleScheduleInput("startDate")}
+                      max={currentPrice.endDate || undefined}
                     />
                   </label>
 
@@ -498,7 +642,8 @@ class Quanlygia extends Component {
                       className="qlgia-modal-input"
                       type="date"
                       value={currentPrice.endDate || ""}
-                      onChange={this.handleInput("endDate")}
+                      onChange={this.handleScheduleInput("endDate")}
+                      min={currentPrice.startDate || undefined}
                     />
                   </label>
                 </div>

@@ -1,5 +1,42 @@
 ﻿const { sql } = require("../config/db");
 
+const isValidDateString = (value) => {
+  if (!value || typeof value !== "string") {
+    return false;
+  }
+
+  const parsed = new Date(value);
+  return !Number.isNaN(parsed.getTime());
+};
+
+const hasDateOverlap = async ({
+  RoomTypeID,
+  StartDate,
+  EndDate,
+  excludeRateID = null,
+}) => {
+  const result = await sql.query`
+    SELECT TOP 1 RateID
+    FROM Rates
+    WHERE RoomTypeID = ${RoomTypeID}
+      AND (${excludeRateID} IS NULL OR RateID <> ${excludeRateID})
+      AND ${StartDate} <= EndDate
+      AND ${EndDate} >= StartDate
+  `;
+
+  return result.recordset.length > 0;
+};
+
+const isBusinessRuleError = (message = "") =>
+  message.includes("Ngay bat dau phai nho hon hoac bang ngay ket thuc") ||
+  message.includes("Khoang thoi gian nay da ton tai gia cho loai phong nay") ||
+  message.includes(
+    "Khoang thoi gian bi trung voi gia khac cua loai phong nay",
+  ) ||
+  message.includes("Ngày b?t d?u ph?i nh? hon ho?c b?ng ngày k?t thúc") ||
+  message.includes("Kho?ng th?i gian này dã t?n t?i giá cho lo?i phòng này") ||
+  message.includes("Kho?ng th?i gian b? trùng v?i giá khác c?a lo?i phòng này");
+
 const getRates = async (req, res) => {
   console.log("getRates called");
   try {
@@ -20,35 +57,56 @@ const addRate = async (req, res) => {
   try {
     const { RoomTypeID, Price, StartDate, EndDate, Season } = req.body;
 
-    const roomTypeIdNum = Number(RoomTypeID);
-    const priceNum = Number(Price);
-
     if (
-      !Number.isInteger(roomTypeIdNum) ||
-      roomTypeIdNum <= 0 ||
+      !Number.isInteger(RoomTypeID) ||
+      RoomTypeID <= 0 ||
       Price == null ||
-      Number.isNaN(priceNum) ||
+      Number.isNaN(Number(Price)) ||
       !StartDate ||
       !EndDate ||
       !Season
     ) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: RoomTypeID, Price, StartDate, EndDate, Season",
+        error:
+          "Thieu hoac sai tham so: RoomTypeID, Price, StartDate, EndDate, Season",
       });
     }
 
-    const request = new sql.Request();
-    request.input("RoomTypeID", sql.Int, roomTypeIdNum);
-    request.input("Price", sql.Decimal(18, 2), priceNum);
-    request.input("StartDate", sql.Date, StartDate);
-    request.input("EndDate", sql.Date, EndDate);
-    request.input("Season", sql.NVarChar(100), String(Season).trim());
+    if (!isValidDateString(StartDate) || !isValidDateString(EndDate)) {
+      return res
+        .status(400)
+        .json({ error: "StartDate hoac EndDate khong hop le" });
+    }
 
-    await request.execute("usp_InsertRate");
+    if (new Date(StartDate) > new Date(EndDate)) {
+      return res
+        .status(400)
+        .json({ error: "Ngay bat dau phai nho hon hoac bang ngay ket thuc" });
+    }
+
+    const duplicated = await hasDateOverlap({ RoomTypeID, StartDate, EndDate });
+    if (duplicated) {
+      return res.status(400).json({
+        error: "Khoang thoi gian nay da ton tai gia cho loai phong nay",
+      });
+    }
+
+    await sql.query`
+      EXEC usp_InsertRate
+        @RoomTypeID=${RoomTypeID},
+        @Price=${Price},
+        @StartDate=${StartDate},
+        @EndDate=${EndDate},
+        @Season=${Season}
+    `;
 
     return res.status(201).json({ message: "Them gia theo mua thanh cong" });
   } catch (err) {
     console.error("addRate Error:", err);
+    if (isBusinessRuleError(err.message)) {
+      return res.status(400).json({ error: err.message });
+    }
+
     return res.status(500).json({ error: "Loi server", detail: err.message });
   }
 };
@@ -59,48 +117,94 @@ const updateRate = async (req, res) => {
     const rateID = Number.parseInt(req.params.id, 10);
     const { RoomTypeID, Price, StartDate, EndDate, Season } = req.body;
 
-    const roomTypeIdNum = RoomTypeID == null ? null : Number(RoomTypeID);
-    const priceNum = Price == null ? null : Number(Price);
-
     if (!Number.isInteger(rateID) || rateID <= 0) {
       return res.status(400).json({ error: "RateID khong hop le" });
     }
 
     const hasUpdateFields =
-      roomTypeIdNum != null ||
-      priceNum != null ||
+      RoomTypeID != null ||
+      Price != null ||
       StartDate != null ||
       EndDate != null ||
       Season != null;
 
     if (!hasUpdateFields) {
-      return res.status(400).json({ error: "Can it nhat mot truong de cap nhat" });
+      return res
+        .status(400)
+        .json({ error: "Can it nhat mot truong de cap nhat" });
     }
 
     if (
-      roomTypeIdNum != null &&
-      (!Number.isInteger(roomTypeIdNum) || roomTypeIdNum <= 0)
+      RoomTypeID != null &&
+      (!Number.isInteger(RoomTypeID) || RoomTypeID <= 0)
     ) {
       return res.status(400).json({ error: "RoomTypeID khong hop le" });
     }
 
-    if (priceNum != null && Number.isNaN(priceNum)) {
+    if (Price != null && Number.isNaN(Number(Price))) {
       return res.status(400).json({ error: "Price phai la so hop le" });
     }
 
-    const request = new sql.Request();
-    request.input("RateID", sql.Int, rateID);
-    request.input("RoomTypeID", sql.Int, roomTypeIdNum);
-    request.input("Price", sql.Decimal(18, 2), priceNum);
-    request.input("StartDate", sql.Date, StartDate ?? null);
-    request.input("EndDate", sql.Date, EndDate ?? null);
-    request.input("Season", sql.NVarChar(100), Season == null ? null : String(Season).trim());
+    if (
+      (StartDate != null && !isValidDateString(StartDate)) ||
+      (EndDate != null && !isValidDateString(EndDate))
+    ) {
+      return res
+        .status(400)
+        .json({ error: "StartDate hoac EndDate khong hop le" });
+    }
 
-    await request.execute("usp_UpdateSeasonalRate");
+    const currentRateResult = await sql.query`
+      SELECT TOP 1 RateID, RoomTypeID, StartDate, EndDate
+      FROM Rates
+      WHERE RateID = ${rateID}
+    `;
+
+    if (currentRateResult.recordset.length === 0) {
+      return res.status(404).json({ error: "Khong tim thay gia can cap nhat" });
+    }
+
+    const currentRate = currentRateResult.recordset[0];
+    const nextRoomTypeID = RoomTypeID ?? currentRate.RoomTypeID;
+    const nextStartDate = StartDate ?? currentRate.StartDate;
+    const nextEndDate = EndDate ?? currentRate.EndDate;
+
+    if (new Date(nextStartDate) > new Date(nextEndDate)) {
+      return res
+        .status(400)
+        .json({ error: "Ngay bat dau phai nho hon hoac bang ngay ket thuc" });
+    }
+
+    const duplicated = await hasDateOverlap({
+      RoomTypeID: nextRoomTypeID,
+      StartDate: nextStartDate,
+      EndDate: nextEndDate,
+      excludeRateID: rateID,
+    });
+
+    if (duplicated) {
+      return res.status(400).json({
+        error: "Khoang thoi gian bi trung voi gia khac cua loai phong nay",
+      });
+    }
+
+    await sql.query`
+      EXEC usp_UpdateSeasonalRate
+        @RateID=${rateID},
+        @RoomTypeID=${RoomTypeID ?? null},
+        @Price=${Price ?? null},
+        @StartDate=${StartDate ?? null},
+        @EndDate=${EndDate ?? null},
+        @Season=${Season ?? null}
+    `;
 
     return res.json({ message: "Cap nhat gia theo mua thanh cong" });
   } catch (err) {
     console.error("updateRate Error:", err);
+    if (isBusinessRuleError(err.message)) {
+      return res.status(400).json({ error: err.message });
+    }
+
     return res.status(500).json({ error: "Loi server", detail: err.message });
   }
 };
@@ -114,9 +218,10 @@ const deleteRate = async (req, res) => {
       return res.status(400).json({ error: "RateID khong hop le" });
     }
 
-    const request = new sql.Request();
-    request.input("RateID", sql.Int, rateID);
-    await request.execute("usp_DeleteSeasonalRate");
+    await sql.query`
+      EXEC usp_DeleteSeasonalRate
+        @RateID=${rateID}
+    `;
 
     return res.json({ message: "Xoa gia theo mua thanh cong" });
   } catch (err) {
