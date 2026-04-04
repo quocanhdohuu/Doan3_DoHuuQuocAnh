@@ -7,6 +7,7 @@ const rateRoutes = require("./routes/rateRoutes");
 const customerRoutes = require("./routes/customerRoutes");
 const receptionistRoutes = require("./routes/receptionistRoutes");
 const roomRoutes = require("./routes/roomRoutes");
+const serviceRoutes = require("./routes/serviceRoutes");
 
 const app = express();
 
@@ -19,5 +20,6 @@ app.use("/api/rates", rateRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/receptionists", receptionistRoutes);
 app.use("/api/rooms", roomRoutes);
+app.use("/api/services", serviceRoutes);
 
 module.exports = app;
