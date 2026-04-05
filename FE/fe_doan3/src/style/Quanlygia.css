@@ -117,6 +117,7 @@
 .qlgia-table-wrapper {
   overflow-x: auto;
   flex: 1;
+  border-radius: 12px;
 }
 
 .qlgia-table {

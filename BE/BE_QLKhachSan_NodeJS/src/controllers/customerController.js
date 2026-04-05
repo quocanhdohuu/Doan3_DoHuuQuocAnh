@@ -1,12 +1,68 @@
 const { sql } = require("../config/db");
 
+const REPLACEMENT_CHAR_PATTERN = /\uFFFD/g;
+const MOJIBAKE_MARKER_PATTERN = /\u00C3|\u00C6|\u00C2|\u00EF\u00BF\u00BD/g;
+
+const normalizeMessage = (value) => String(value || "").replace(/\s+/g, " ").trim();
+
+const countBrokenEncodingMarkers = (value) => {
+  if (!value) return Number.POSITIVE_INFINITY;
+
+  const replacementCharCount = (value.match(REPLACEMENT_CHAR_PATTERN) || []).length;
+  const mojibakeCharCount = (value.match(MOJIBAKE_MARKER_PATTERN) || []).length;
+  return replacementCharCount * 5 + mojibakeCharCount * 3;
+};
+
+const tryRepairMojibake = (value) => {
+  const message = normalizeMessage(value);
+  if (!message) return "";
+
+  try {
+    return normalizeMessage(Buffer.from(message, "latin1").toString("utf8"));
+  } catch {
+    return message;
+  }
+};
+
+const pickReadableMessage = (value) => {
+  const original = normalizeMessage(value);
+  const repaired = tryRepairMojibake(original);
+
+  return countBrokenEncodingMarkers(repaired) < countBrokenEncodingMarkers(original)
+    ? repaired
+    : original;
+};
+
+const resolveFallbackMessage = (err, message) => {
+  const sqlNumber =
+    err?.number || err?.originalError?.info?.number || err?.originalError?.code;
+  const normalized = normalizeMessage(message).toLowerCase();
+
+  if (sqlNumber === 2627 || sqlNumber === 2601 || /unique key|duplicate/.test(normalized)) {
+    return "Dữ liệu đã tồn tại";
+  }
+
+  if (sqlNumber === 50000) {
+    return "Dữ liệu không hợp lệ theo quy tắc nghiệp vụ";
+  }
+
+  if (countBrokenEncodingMarkers(message) > 0) {
+    return "Có lỗi dữ liệu từ SQL Server";
+  }
+
+  return "";
+};
+
 const extractSqlErrorMessage = (err) => {
-  return (
+  const raw =
     err?.originalError?.info?.message ||
     err?.precedingErrors?.[0]?.message ||
     err?.message ||
-    "Loi server"
-  );
+    "";
+  const readable = pickReadableMessage(raw);
+  const fallback = resolveFallbackMessage(err, readable);
+
+  return fallback || readable || "Lỗi server";
 };
 
 const getCustomersFullInfo = async (req, res) => {
@@ -16,7 +72,9 @@ const getCustomersFullInfo = async (req, res) => {
     return res.json(result.recordset || []);
   } catch (err) {
     console.error("getCustomersFullInfo Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res
+      .status(500)
+      .json({ error: "Lỗi server", detail: extractSqlErrorMessage(err) });
   }
 };
 
@@ -27,7 +85,7 @@ const insertCustomer = async (req, res) => {
 
     if (!FullName || !Phone || !CCCD || !Email) {
       return res.status(400).json({
-        error: "Thieu tham so bat buoc: FullName, Phone, CCCD, Email",
+        error: "Thiếu tham số bắt buộc: FullName, Phone, CCCD, Email",
       });
     }
 
@@ -39,7 +97,9 @@ const insertCustomer = async (req, res) => {
         @Email=${Email}
     `;
 
-    return res.status(201).json({ message: "Them customer thanh cong" });
+    return res
+      .status(201)
+      .json({ message: "Thêm khách hàng thành công" });
   } catch (err) {
     console.error("insertCustomer Error:", err);
     const message = extractSqlErrorMessage(err);
@@ -62,7 +122,7 @@ const updateCustomer = async (req, res) => {
       !Email
     ) {
       return res.status(400).json({
-        error: "Du lieu khong hop le. Can id, FullName, Phone, CCCD, Email",
+        error: "Dữ liệu không hợp lệ. Cần id, FullName, Phone, CCCD, Email",
       });
     }
 
@@ -75,7 +135,7 @@ const updateCustomer = async (req, res) => {
         @Email=${Email}
     `;
 
-    return res.json({ message: "Cap nhat customer thanh cong" });
+    return res.json({ message: "Cập nhật khách hàng thành công" });
   } catch (err) {
     console.error("updateCustomer Error:", err);
     const message = extractSqlErrorMessage(err);

@@ -220,63 +220,65 @@ const Dichvu = () => {
           />
         </div>
 
-        <table className="dichvu-table">
-          <thead>
-            <tr>
-              <th>Mã DV</th>
-              <th>Tên dịch vụ</th>
-              <th>Giá</th>
-              <th>Trạng thái</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+        <div className="dichvu-table-wrap">
+          <table className="dichvu-table">
+            <thead>
               <tr>
-                <td colSpan="5">Đang tải dữ liệu...</td>
+                <th>Mã DV</th>
+                <th>Tên dịch vụ</th>
+                <th>Giá</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
               </tr>
-            ) : filteredList.length === 0 ? (
-              <tr>
-                <td colSpan="5">Không có dữ liệu dịch vụ.</td>
-              </tr>
-            ) : (
-              paginatedList.map((service) => (
-                <tr key={service.ServiceID}>
-                  <td>{service.ServiceID}</td>
-                  <td>{service.ServiceName}</td>
-                  <td>{formatCurrency(service.Price)} đ</td>
-                  <td>
-                    <span
-                      className={`service-status ${isActiveStatus(service.Status) ? "active" : "inactive"}`}
-                    >
-                      {isActiveStatus(service.Status)
-                        ? "Đang hoạt động"
-                        : "Tạm dừng"}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="icon-btn edit"
-                      title="Sửa"
-                      onClick={() => handleOpenModal(service)}
-                    >
-                      <i className="fa-regular fa-pen-to-square"></i>
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-btn delete"
-                      title="Xóa"
-                      onClick={() => handleDelete(service)}
-                    >
-                      <i className="fa-regular fa-trash-can"></i>
-                    </button>
-                  </td>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="5">Đang tải dữ liệu...</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : filteredList.length === 0 ? (
+                <tr>
+                  <td colSpan="5">Không có dữ liệu dịch vụ.</td>
+                </tr>
+              ) : (
+                paginatedList.map((service) => (
+                  <tr key={service.ServiceID}>
+                    <td>{service.ServiceID}</td>
+                    <td>{service.ServiceName}</td>
+                    <td>{formatCurrency(service.Price)} đ</td>
+                    <td>
+                      <span
+                        className={`service-status ${isActiveStatus(service.Status) ? "active" : "inactive"}`}
+                      >
+                        {isActiveStatus(service.Status)
+                          ? "Đang hoạt động"
+                          : "Tạm dừng"}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="icon-btn edit"
+                        title="Sửa"
+                        onClick={() => handleOpenModal(service)}
+                      >
+                        <i className="fa-regular fa-pen-to-square"></i>
+                      </button>
+                      <button
+                        type="button"
+                        className="icon-btn delete"
+                        title="Xóa"
+                        onClick={() => handleDelete(service)}
+                      >
+                        <i className="fa-regular fa-trash-can"></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {!loading && filteredList.length > 0 && (
           <div className="dichvu-pagination">
@@ -290,16 +292,18 @@ const Dichvu = () => {
               ‹
             </button>
 
-            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
-              <button
-                key={page}
-                type="button"
-                className={`dichvu-page-btn ${page === currentPage ? "active" : ""}`}
-                onClick={() => setCurrentPage(page)}
-              >
-                {page}
-              </button>
-            ))}
+            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map(
+              (page) => (
+                <button
+                  key={page}
+                  type="button"
+                  className={`dichvu-page-btn ${page === currentPage ? "active" : ""}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              ),
+            )}
 
             <button
               type="button"
@@ -318,7 +322,10 @@ const Dichvu = () => {
 
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-content" onClick={(event) => event.stopPropagation()}>
+          <div
+            className="modal-content"
+            onClick={(event) => event.stopPropagation()}
+          >
             <button
               className="modal-close"
               onClick={handleCloseModal}
@@ -328,7 +335,9 @@ const Dichvu = () => {
               &times;
             </button>
             <h2>
-              {editServiceId !== null ? "Chỉnh sửa dịch vụ" : "Thêm dịch vụ mới"}
+              {editServiceId !== null
+                ? "Chỉnh sửa dịch vụ"
+                : "Thêm dịch vụ mới"}
             </h2>
 
             <form className="add-service-form" onSubmit={handleSubmit}>
@@ -376,7 +385,11 @@ const Dichvu = () => {
                 >
                   Hủy
                 </button>
-                <button type="submit" className="save-btn" disabled={submitLoading}>
+                <button
+                  type="submit"
+                  className="save-btn"
+                  disabled={submitLoading}
+                >
                   {submitLoading ? "Đang lưu..." : "Lưu"}
                 </button>
               </div>

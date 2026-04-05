@@ -124,6 +124,7 @@
 .datphong__table-wrap {
   overflow-x: auto;
   flex: 1 1 auto;
+  border-radius: 12px;
 }
 
 .datphong__table {

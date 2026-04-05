@@ -520,47 +520,49 @@ class Hoadon extends Component {
         />
         <div className="hoadon-main">
           <h3>Phòng Chưa Thanh Toán</h3>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Số Phòng</th>
-                <th>Tên Khách</th>
-                <th>Ngày Check-in</th>
-                <th>Ngày Check-out</th>
-                <th>Tổng Tiền Dự Kiến</th>
-                <th>Hành Động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pendingRooms.map((room) => (
-                <tr key={room.id}>
-                  <td>{room.roomNumber}</td>
-                  <td>{room.guestName}</td>
-                  <td>{room.checkinDate}</td>
-                  <td>{room.checkoutDate}</td>
-                  <td>
-                    {(
-                      room.roomCharge +
-                      room.services.reduce((s, svc) => s + svc.price, 0) +
-                      room.minibar.reduce((s, mb) => s + mb.price, 0) +
-                      (Array.isArray(room.penalty)
-                        ? room.penalty.reduce((s, p) => s + p.price, 0)
-                        : room.penalty)
-                    ).toLocaleString()}{" "}
-                    VND
-                  </td>
-                  <td>
-                    <button
-                      className="btn-primary"
-                      onClick={() => this.openInvoiceModal(room)}
-                    >
-                      Tạo Hoá Đơn
-                    </button>
-                  </td>
+          <div className="hoadon-table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Số Phòng</th>
+                  <th>Tên Khách</th>
+                  <th>Ngày Check-in</th>
+                  <th>Ngày Check-out</th>
+                  <th>Tổng Tiền Dự Kiến</th>
+                  <th>Hành Động</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {pendingRooms.map((room) => (
+                  <tr key={room.id}>
+                    <td>{room.roomNumber}</td>
+                    <td>{room.guestName}</td>
+                    <td>{room.checkinDate}</td>
+                    <td>{room.checkoutDate}</td>
+                    <td>
+                      {(
+                        room.roomCharge +
+                        room.services.reduce((s, svc) => s + svc.price, 0) +
+                        room.minibar.reduce((s, mb) => s + mb.price, 0) +
+                        (Array.isArray(room.penalty)
+                          ? room.penalty.reduce((s, p) => s + p.price, 0)
+                          : room.penalty)
+                      ).toLocaleString()}{" "}
+                      VND
+                    </td>
+                    <td>
+                      <button
+                        className="btn-primary"
+                        onClick={() => this.openInvoiceModal(room)}
+                      >
+                        Tạo Hoá Đơn
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
         <div className="hoadon-history">
           <h3>Lịch Sử Hoá Đơn</h3>
@@ -573,28 +575,30 @@ class Hoadon extends Component {
               onChange={(e) => this.setState({ searchHistory: e.target.value })}
             />
           </div>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Số Phòng</th>
-                <th>Tên Khách</th>
-                <th>Ngày</th>
-                <th>Tổng Tiền</th>
-                <th>Trạng Thái</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredHistory.map((inv) => (
-                <tr key={inv.id}>
-                  <td>{inv.roomNumber}</td>
-                  <td>{inv.guestName}</td>
-                  <td>{inv.date}</td>
-                  <td>{inv.total.toLocaleString()} VND</td>
-                  <td>{inv.status}</td>
+          <div className="hoadon-table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Số Phòng</th>
+                  <th>Tên Khách</th>
+                  <th>Ngày</th>
+                  <th>Tổng Tiền</th>
+                  <th>Trạng Thái</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredHistory.map((inv) => (
+                  <tr key={inv.id}>
+                    <td>{inv.roomNumber}</td>
+                    <td>{inv.guestName}</td>
+                    <td>{inv.date}</td>
+                    <td>{inv.total.toLocaleString()} VND</td>
+                    <td>{inv.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
         {this.renderModal()}
       </div>

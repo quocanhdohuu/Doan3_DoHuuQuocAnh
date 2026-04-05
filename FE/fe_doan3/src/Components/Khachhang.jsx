@@ -142,7 +142,11 @@ const Khachhang = () => {
       }
 
       await fetchCustomers();
-      alert(isEdit ? "Cập nhật khách hàng thành công." : "Thêm khách hàng thành công.");
+      alert(
+        isEdit
+          ? "Cập nhật khách hàng thành công."
+          : "Thêm khách hàng thành công.",
+      );
       handleCloseModal();
     } catch (err) {
       setError(err.message || "Khong the luu thong tin khach hang.");
@@ -191,51 +195,53 @@ const Khachhang = () => {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <table className="khachhang-table">
-          <thead>
-            <tr>
-              <th>Mã KH</th>
-              <th>Họ và tên</th>
-              <th>Số điện thoại</th>
-              <th>CMND/CCCD</th>
-              <th>Email</th>
-              <th>Lưu trú</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+        <div className="khachhang-table-wrap">
+          <table className="khachhang-table">
+            <thead>
               <tr>
-                <td colSpan="7">Dang tai du lieu...</td>
+                <th>Mã KH</th>
+                <th>Họ và tên</th>
+                <th>Số điện thoại</th>
+                <th>CMND/CCCD</th>
+                <th>Email</th>
+                <th>Lưu trú</th>
+                <th>Thao tác</th>
               </tr>
-            ) : filteredList.length === 0 ? (
-              <tr>
-                <td colSpan="7">Khong co du lieu khach hang.</td>
-              </tr>
-            ) : (
-              paginatedList.map((kh) => (
-                <tr key={kh.CustomerID}>
-                  <td>{kh.CustomerID}</td>
-                  <td>{kh.FullName}</td>
-                  <td>{kh.Phone}</td>
-                  <td>{kh.CCCD || "-"}</td>
-                  <td>{kh.Email || "-"}</td>
-                  <td>{kh.TotalStays} lần</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="icon-btn edit"
-                      title="Sửa"
-                      onClick={() => handleOpenModal(kh)}
-                    >
-                      <i className="fa-regular fa-pen-to-square"></i>
-                    </button>
-                  </td>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="7">Dang tai du lieu...</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : filteredList.length === 0 ? (
+                <tr>
+                  <td colSpan="7">Khong co du lieu khach hang.</td>
+                </tr>
+              ) : (
+                paginatedList.map((kh) => (
+                  <tr key={kh.CustomerID}>
+                    <td>{kh.CustomerID}</td>
+                    <td>{kh.FullName}</td>
+                    <td>{kh.Phone}</td>
+                    <td>{kh.CCCD || "-"}</td>
+                    <td>{kh.Email || "-"}</td>
+                    <td>{kh.TotalStays} lần</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="icon-btn edit"
+                        title="Sửa"
+                        onClick={() => handleOpenModal(kh)}
+                      >
+                        <i className="fa-regular fa-pen-to-square"></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {!loading && filteredList.length > 0 && (
           <div className="kh-pagination">
@@ -249,16 +255,18 @@ const Khachhang = () => {
               ‹
             </button>
 
-            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
-              <button
-                key={page}
-                type="button"
-                className={`kh-page-btn ${page === currentPage ? "active" : ""}`}
-                onClick={() => setCurrentPage(page)}
-              >
-                {page}
-              </button>
-            ))}
+            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map(
+              (page) => (
+                <button
+                  key={page}
+                  type="button"
+                  className={`kh-page-btn ${page === currentPage ? "active" : ""}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              ),
+            )}
 
             <button
               type="button"
@@ -338,7 +346,11 @@ const Khachhang = () => {
                 >
                   Hủy
                 </button>
-                <button type="submit" className="save-btn" disabled={submitLoading}>
+                <button
+                  type="submit"
+                  className="save-btn"
+                  disabled={submitLoading}
+                >
                   {submitLoading ? "Đang lưu..." : "Lưu"}
                 </button>
               </div>

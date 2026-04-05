@@ -65,6 +65,7 @@
 
 .ntp-table-wrap {
   overflow-x: auto;
+  border-radius: 12px;
 }
 
 .ntp-table {

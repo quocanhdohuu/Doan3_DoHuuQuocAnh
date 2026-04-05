@@ -99,6 +99,7 @@
   overflow-x: auto;
   flex: 1;
   min-height: 0;
+  border-radius: 12px;
 }
 
 .lp-table {

@@ -1,9 +1,9 @@
 .hoadon {
   padding: 16px;
-  min-height: calc(100vh - 80px);
+  min-height: 100vh;
   box-sizing: border-box;
   width: 100%;
-  margin-bottom: 100px;
+  margin-bottom: 50px;
 }
 
 .hoadon-main,
@@ -22,11 +22,10 @@
   margin-bottom: 20px;
   font-weight: 700;
 }
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
+.hoadon-table-wrap {
+  border-radius: 12px;
+  flex: 1;
+  overflow-x: auto;
 }
 
 .table th,
@@ -39,6 +38,7 @@
 .table th {
   background-color: transparent;
   font-weight: bold;
+  color: #8b96a7;
 }
 
 .btn-primary {

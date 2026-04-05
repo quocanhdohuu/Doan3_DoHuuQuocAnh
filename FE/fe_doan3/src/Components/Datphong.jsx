@@ -116,6 +116,24 @@ class Datphong extends Component {
     this.loadInitialData();
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    const updates = {};
+
+    if (this.state.error && this.state.error !== prevState.error) {
+      window.alert(this.state.error);
+      updates.error = "";
+    }
+
+    if (this.state.notice && this.state.notice !== prevState.notice) {
+      window.alert(this.state.notice);
+      updates.notice = "";
+    }
+
+    if (Object.keys(updates).length > 0) {
+      this.setState(updates);
+    }
+  }
+
   loadInitialData = async () => {
     await Promise.all([
       this.fetchReservations(),
@@ -139,6 +157,12 @@ class Datphong extends Component {
     if (typeof body === "string" && body.trim()) return body;
 
     if (body && typeof body === "object") {
+      const detail =
+        (typeof body.detail === "string" && body.detail.trim()) ||
+        (typeof body.Detail === "string" && body.Detail.trim());
+
+      if (detail) return detail;
+
       return body.message || body.error || `API error: ${statusCode}`;
     }
 
@@ -509,8 +533,6 @@ class Datphong extends Component {
       lookupLoading,
       submitLoading,
       actionLoadingId,
-      error,
-      notice,
       showModal,
       modalMode,
       customerTab,
@@ -550,13 +572,6 @@ class Datphong extends Component {
             + Thêm lịch đặt
           </button>
         </div>
-
-        {error && (
-          <div className="datphong-alert datphong-alert--error">{error}</div>
-        )}
-        {notice && (
-          <div className="datphong-alert datphong-alert--success">{notice}</div>
-        )}
 
         <div className="datphong-main">
           <div className="datphong__filter">

@@ -46,6 +46,11 @@ tbody tr td {
     padding: 18px 12px 24px 12px;
     margin-top: 8px;
   }
+  .nhanvien-table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+  }
+
   table {
     width: 100%;
     border-collapse: collapse;

@@ -203,7 +203,9 @@ const Nhanvien = () => {
 
     if (
       isEdit &&
-      !window.confirm("Bạn có chắc chắn muốn cập nhật thông tin nhân viên này không?")
+      !window.confirm(
+        "Bạn có chắc chắn muốn cập nhật thông tin nhân viên này không?",
+      )
     ) {
       return;
     }
@@ -235,7 +237,11 @@ const Nhanvien = () => {
       }
 
       await fetchReceptionists();
-      alert(isEdit ? "Cập nhật nhân viên thành công." : "Thêm nhân viên thành công.");
+      alert(
+        isEdit
+          ? "Cập nhật nhân viên thành công."
+          : "Thêm nhân viên thành công.",
+      );
       handleCloseModal();
     } catch (err) {
       setError(err.message || "Không thể lưu thông tin nhân viên.");
@@ -251,7 +257,7 @@ const Nhanvien = () => {
 
     if (
       !window.confirm(
-        `Bạn có chắc chắn muốn xóa nhân viên \"${staff.FullName || staff.Email}\" không?`,
+        `Bạn có chắc chắn muốn xóa nhân viên "${staff.FullName || staff.Email}" không?`,
       )
     ) {
       return;
@@ -288,7 +294,11 @@ const Nhanvien = () => {
           title="Quản lý Nhân viên"
           description="Quản lý tài khoản nhân viên khách sạn"
         />
-        <button className="add-btn" type="button" onClick={() => handleOpenModal(null)}>
+        <button
+          className="add-btn"
+          type="button"
+          onClick={() => handleOpenModal(null)}
+        >
           + Thêm nhân viên
         </button>
       </div>
@@ -318,63 +328,65 @@ const Nhanvien = () => {
           />
         </div>
 
-        <table className="nhanvien-table">
-          <thead>
-            <tr>
-              <th>Họ và tên</th>
-              <th>Vai trò</th>
-              <th>Email</th>
-              <th>Số điện thoại</th>
-              <th>Ngày tạo</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+        <div className="nhanvien-table-wrap">
+          <table className="nhanvien-table">
+            <thead>
               <tr>
-                <td colSpan="6">Đang tải dữ liệu...</td>
+                <th>Họ và tên</th>
+                <th>Vai trò</th>
+                <th>Email</th>
+                <th>Số điện thoại</th>
+                <th>Ngày tạo</th>
+                <th>Thao tác</th>
               </tr>
-            ) : filteredList.length === 0 ? (
-              <tr>
-                <td colSpan="6">Không có dữ liệu nhân viên.</td>
-              </tr>
-            ) : (
-              paginatedList.map((nv) => (
-                <tr key={nv.UserID || nv.Email}>
-                  <td>{nv.FullName || "-"}</td>
-                  <td>{getRoleBadge(nv.Role)}</td>
-                  <td>{nv.Email || "-"}</td>
-                  <td>{nv.Phone || "-"}</td>
-                  <td>{formatCreatedAt(nv.CreatedAt)}</td>
-                  <td>
-                    <button
-                      className="icon-btn edit"
-                      type="button"
-                      title="Sửa"
-                      onClick={() => handleOpenModal(nv)}
-                      disabled={submitLoading || deletingUserId === nv.UserID}
-                    >
-                      <span role="img" aria-label="edit">
-                        <i className="fa-regular fa-pen-to-square"></i>
-                      </span>
-                    </button>
-                    <button
-                      className="icon-btn delete"
-                      type="button"
-                      title="Xóa"
-                      onClick={() => handleDelete(nv)}
-                      disabled={submitLoading || deletingUserId === nv.UserID}
-                    >
-                      <span role="img" aria-label="delete">
-                        <i className="fa-regular fa-trash-can"></i>
-                      </span>
-                    </button>
-                  </td>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="6">Đang tải dữ liệu...</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : filteredList.length === 0 ? (
+                <tr>
+                  <td colSpan="6">Không có dữ liệu nhân viên.</td>
+                </tr>
+              ) : (
+                paginatedList.map((nv) => (
+                  <tr key={nv.UserID || nv.Email}>
+                    <td>{nv.FullName || "-"}</td>
+                    <td>{getRoleBadge(nv.Role)}</td>
+                    <td>{nv.Email || "-"}</td>
+                    <td>{nv.Phone || "-"}</td>
+                    <td>{formatCreatedAt(nv.CreatedAt)}</td>
+                    <td>
+                      <button
+                        className="icon-btn edit"
+                        type="button"
+                        title="Sửa"
+                        onClick={() => handleOpenModal(nv)}
+                        disabled={submitLoading || deletingUserId === nv.UserID}
+                      >
+                        <span role="img" aria-label="edit">
+                          <i className="fa-regular fa-pen-to-square"></i>
+                        </span>
+                      </button>
+                      <button
+                        className="icon-btn delete"
+                        type="button"
+                        title="Xóa"
+                        onClick={() => handleDelete(nv)}
+                        disabled={submitLoading || deletingUserId === nv.UserID}
+                      >
+                        <span role="img" aria-label="delete">
+                          <i className="fa-regular fa-trash-can"></i>
+                        </span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {!loading && filteredList.length > 0 && (
           <div className="kh-pagination">
@@ -388,21 +400,25 @@ const Nhanvien = () => {
               ‹
             </button>
 
-            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
-              <button
-                key={page}
-                type="button"
-                className={`kh-page-btn ${page === currentPage ? "active" : ""}`}
-                onClick={() => setCurrentPage(page)}
-              >
-                {page}
-              </button>
-            ))}
+            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map(
+              (page) => (
+                <button
+                  key={page}
+                  type="button"
+                  className={`kh-page-btn ${page === currentPage ? "active" : ""}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              ),
+            )}
 
             <button
               type="button"
               className="kh-page-btn"
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
               disabled={currentPage === totalPages}
               aria-label="Trang sau"
             >
@@ -415,10 +431,18 @@ const Nhanvien = () => {
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={handleCloseModal} title="Đóng">
+            <button
+              className="modal-close"
+              onClick={handleCloseModal}
+              title="Đóng"
+            >
               &times;
             </button>
-            <h2>{editUserId !== null ? "Chỉnh sửa nhân viên" : "Thêm nhân viên mới"}</h2>
+            <h2>
+              {editUserId !== null
+                ? "Chỉnh sửa nhân viên"
+                : "Thêm nhân viên mới"}
+            </h2>
             <form
               key={editUserId !== null ? `edit-${editUserId}` : "add-new"}
               className="add-customer-form"
@@ -488,7 +512,9 @@ const Nhanvien = () => {
                   required={editUserId === null}
                   autoComplete="new-password"
                   placeholder={
-                    editUserId !== null ? "Để trống nếu không đổi" : "Nhập mật khẩu"
+                    editUserId !== null
+                      ? "Để trống nếu không đổi"
+                      : "Nhập mật khẩu"
                   }
                 />
               </label>
@@ -501,7 +527,11 @@ const Nhanvien = () => {
                 >
                   Hủy
                 </button>
-                <button type="submit" className="save-btn" disabled={submitLoading}>
+                <button
+                  type="submit"
+                  className="save-btn"
+                  disabled={submitLoading}
+                >
                   {submitLoading
                     ? "Đang lưu..."
                     : editUserId !== null
