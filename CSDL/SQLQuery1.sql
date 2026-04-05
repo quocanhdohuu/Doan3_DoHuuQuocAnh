@@ -771,27 +771,32 @@ END
 EXEC sp_Customers_GetAll
 
 --Load khách hàng và số lần lưu trú-------------------------------------------------
-CREATE PROCEDURE sp_GetCustomersFullInfo
+ALTER PROCEDURE sp_GetCustomersFullInfo
 AS
 BEGIN
     SET NOCOUNT ON;
 
     SELECT 
         c.CustomerID,
+        c.UserID,          
         c.FullName,
         c.Phone,
         c.CCCD,
         u.Email,
+
         COUNT(CASE WHEN s.Status = 'COMPLETED' THEN 1 END) AS TotalStays,
         ISNULL(SUM(i.TotalAmount),0) AS TotalSpent,
         MAX(s.ActualCheckIn) AS LastStay
+
     FROM Customers c
     LEFT JOIN Users u ON c.UserID = u.UserID
     LEFT JOIN Reservations r ON r.UserID = u.UserID
     LEFT JOIN Stays s ON s.ReservationID = r.ReservationID
     LEFT JOIN Invoices i ON i.StayID = s.StayID
+
     GROUP BY 
         c.CustomerID,
+        c.UserID,         
         c.FullName,
         c.Phone,
         c.CCCD,

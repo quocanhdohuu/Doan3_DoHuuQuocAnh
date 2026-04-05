@@ -37,7 +37,6 @@ class Loaiphong extends Component {
 
       const data = await response.json();
 
-      // Map API data to component state format
       const mappedTypes = data.map((item) => ({
         id: item.RoomTypeID,
         name: item.Name,
@@ -137,41 +136,33 @@ class Loaiphong extends Component {
 
     try {
       if (modalMode === "add") {
-        // POST request để thêm loại phòng mới
-        const response = await fetch(
-          "http://localhost:3000/api/get-room-types",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(apiPayload),
-          },
-        );
+        const response = await fetch("http://localhost:3000/api/get-room-types", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(apiPayload),
+        });
         if (response.ok) {
           this.setState({ isModalOpen: false });
-          await this.fetchRoomTypes(); // Refresh dữ liệu từ API
+          await this.fetchRoomTypes();
         } else {
           alert("Lỗi khi thêm loại phòng");
         }
       } else {
-        // PUT request để cập nhật loại phòng
-        const response = await fetch(
-          `http://localhost:3000/api/get-room-types/${id}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(apiPayload),
-          },
-        );
+        const response = await fetch(`http://localhost:3000/api/get-room-types/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(apiPayload),
+        });
         if (response.ok) {
           this.setState({ isModalOpen: false });
-          await this.fetchRoomTypes(); // Refresh dữ liệu từ API
+          await this.fetchRoomTypes();
         } else {
           alert("Lỗi khi cập nhật loại phòng");
         }
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Lỗi: " + error.message);
+      alert(`Lỗi: ${error.message}`);
     }
   };
 
@@ -197,7 +188,7 @@ class Loaiphong extends Component {
             title="Quản lý Loại phòng"
             description="Quản lý các loại phòng trong khách sạn"
           />
-          <button className="btn-primary" onClick={this.openAddModal}>
+          <button className="lp-btn lp-btn-primary" onClick={this.openAddModal}>
             + Thêm loại phòng
           </button>
         </div>
@@ -270,7 +261,7 @@ class Loaiphong extends Component {
                       <td>{typeItem.price.toLocaleString()}đ</td>
                       <td>
                         <button
-                          className="btn-edit"
+                          className="lp-btn-edit"
                           onClick={() => this.openEditModal(typeItem)}
                         >
                           <i className="fa fa-edit"></i>
@@ -335,9 +326,9 @@ class Loaiphong extends Component {
         )}
 
         {isModalOpen && (
-          <div className="modal-overlay" onClick={this.closeModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <button className="modal-close" onClick={this.closeModal}>
+          <div className="lp-modal-overlay" onClick={this.closeModal}>
+            <div className="lp-modal-content" onClick={(e) => e.stopPropagation()}>
+              <button className="lp-modal-close" onClick={this.closeModal}>
                 ×
               </button>
               <h2>
@@ -349,7 +340,7 @@ class Loaiphong extends Component {
                 <label>
                   Tên loại phòng *
                   <input
-                    className="modal-input"
+                    className="lp-modal-input"
                     type="text"
                     value={currentType.name}
                     onChange={this.handleChange("name")}
@@ -359,7 +350,7 @@ class Loaiphong extends Component {
                 <label>
                   Mô tả
                   <textarea
-                    className="modal-input"
+                    className="lp-modal-input"
                     value={currentType.description}
                     onChange={this.handleChange("description")}
                   />
@@ -368,7 +359,7 @@ class Loaiphong extends Component {
                 <label>
                   Sức chứa (người) *
                   <input
-                    className="modal-input"
+                    className="lp-modal-input"
                     type="number"
                     value={currentType.capacity}
                     onChange={this.handleChange("capacity")}
@@ -378,22 +369,22 @@ class Loaiphong extends Component {
                 <label>
                   Giá cơ bản (VNĐ) *
                   <input
-                    className="modal-input"
+                    className="lp-modal-input"
                     type="number"
                     value={currentType.price}
                     onChange={this.handleChange("price")}
                   />
                 </label>
 
-                <div className="modal-buttons">
+                <div className="lp-modal-buttons">
                   <button
-                    className="btn-secondary"
+                    className="lp-btn lp-btn-secondary"
                     type="button"
                     onClick={this.closeModal}
                   >
                     Hủy
                   </button>
-                  <button className="btn-primary" type="submit">
+                  <button className="lp-btn lp-btn-primary" type="submit">
                     Lưu
                   </button>
                 </div>

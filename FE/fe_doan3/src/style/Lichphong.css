@@ -109,7 +109,8 @@
 .lichphong-table thead th {
   position: sticky;
   top: 0;
-  background: #ffffff;
+  background: #e8f0ff;
+  color: #1e3a8a;
   z-index: 2;
 }
 
@@ -123,6 +124,10 @@
 
 .lichphong-table th:first-child {
   z-index: 4;
+}
+
+.lichphong-table thead th:first-child {
+  background: #dbe8ff;
 }
 
 .lichphong-table th,

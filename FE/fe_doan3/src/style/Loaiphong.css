@@ -1,4 +1,4 @@
-.loaiphong {
+﻿.loaiphong {
   padding: 16px;
   min-height: calc(100vh - 80px);
   box-sizing: border-box;
@@ -32,17 +32,27 @@
   flex-direction: column;
 }
 
-.btn-primary {
+.lp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+.lp-btn-primary {
   border: 0;
-  color: #fff;
-  background: #0066ff;
   padding: 10px 18px;
+  margin-right: 10px;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
+  background: #0a6cff;
+  color: #fff;
+  box-shadow: 0 8px 30px rgba(10, 108, 255, 0.25);
 }
 
-.btn-secondary {
+.lp-btn-secondary {
   border: 1px solid #ccd4e4;
   background: #fff;
   color: #3f4a5e;
@@ -130,8 +140,8 @@
   font-weight: 600;
 }
 
-.btn-edit,
-.btn-delete {
+.lp-btn-edit,
+.lp-btn-delete {
   border: 1px solid #ccd4e4;
   background: #fff;
   color: #25304b;
@@ -141,13 +151,13 @@
   margin-right: 6px;
 }
 
-.btn-delete {
+.lp-btn-delete {
   color: #f43f5e;
   border-color: #f43f5e;
 }
 
-.btn-edit:hover,
-.btn-delete:hover {
+.lp-btn-edit:hover,
+.lp-btn-delete:hover {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
@@ -195,7 +205,7 @@
   cursor: not-allowed;
 }
 
-.modal-overlay {
+.lp-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -209,7 +219,7 @@
   padding: 16px;
 }
 
-.modal-content {
+.lp-modal-content {
   width: 100%;
   max-width: 560px;
   background: #fff;
@@ -223,20 +233,32 @@
   box-sizing: border-box;
 }
 
-.modal-content h2 {
+.lp-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  color: #555;
+}
+
+.lp-modal-content h2 {
   margin: 0 0 14px;
 }
 
-.modal-content label {
+.lp-modal-content label {
   display: block;
   margin-bottom: 12px;
   font-size: 14px;
   color: #3d485f;
 }
 
-.modal-content input,
-.modal-content select,
-.modal-content textarea {
+.lp-modal-content input,
+.lp-modal-content select,
+.lp-modal-content textarea {
   width: 100%;
   border: 1px solid #d6dde8;
   border-radius: 8px;
@@ -246,19 +268,21 @@
   margin-top: 4px;
 }
 
-.modal-input {
+.lp-modal-input {
   max-width: 100%;
   box-sizing: border-box;
 }
 
-.modal-content textarea {
+.lp-modal-content textarea {
   min-height: 80px;
   resize: vertical;
 }
 
-.modal-buttons {
+.lp-modal-buttons {
   margin-top: 18px;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
+
+

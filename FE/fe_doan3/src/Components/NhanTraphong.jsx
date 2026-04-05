@@ -298,7 +298,7 @@ class NhanTraphong extends Component {
 
           {modalType === "walkin" && (
             <>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Họ tên *</label>
                 <input
                   placeholder="Họ tên *"
@@ -306,7 +306,7 @@ class NhanTraphong extends Component {
                   onChange={this.handleWalkInInput("name")}
                 />
               </div>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Số điện thoại *</label>
                 <input
                   placeholder="Số điện thoại *"
@@ -314,7 +314,7 @@ class NhanTraphong extends Component {
                   onChange={this.handleWalkInInput("phone")}
                 />
               </div>
-              <div className="field">
+              <div className="ntp-field">
                 <label>CMND/CCCD *</label>
                 <input
                   placeholder="CMND/CCCD *"
@@ -322,7 +322,7 @@ class NhanTraphong extends Component {
                   onChange={this.handleWalkInInput("identity")}
                 />
               </div>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Chọn phòng *</label>
                 <select
                   value={walkInForm.room}
@@ -333,7 +333,7 @@ class NhanTraphong extends Component {
                   <option value="407 (Standard)">407 (Standard)</option>
                 </select>
               </div>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Ngày trả phòng dự kiến *</label>
                 <input
                   type="date"
@@ -346,11 +346,11 @@ class NhanTraphong extends Component {
 
           {modalType === "checkin" && (
             <>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Khách hàng</label>
-                <div className="readonly">{currentItem?.guest}</div>
+                <div className="ntp-readonly">{currentItem?.guest}</div>
               </div>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Chọn phòng *</label>
                 <select>
                   <option>406 (Suite)</option>
@@ -362,13 +362,13 @@ class NhanTraphong extends Component {
 
           {modalType === "transfer" && (
             <>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Phòng hiện tại</label>
-                <div className="readonly">
+                <div className="ntp-readonly">
                   {currentItem?.room || "406 - Suite"}
                 </div>
               </div>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Phòng mới *</label>
                 <select
                   value={transferRoom}
@@ -379,7 +379,7 @@ class NhanTraphong extends Component {
                   <option value="503 - Premium">503 - Premium</option>
                 </select>
               </div>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Lý do chuyển phòng</label>
                 <textarea
                   rows={3}
@@ -388,7 +388,7 @@ class NhanTraphong extends Component {
                   onChange={this.handleTransferInput("transferNote")}
                 />
               </div>
-              <div className="note-box">
+              <div className="ntp-note-box">
                 Lưu ý: Tiền phòng sẽ được tính riêng theo từng phòng khách ở.
                 Phòng cũ sẽ chuyển sang trạng thái "Dọn dẹp".
               </div>
@@ -397,15 +397,15 @@ class NhanTraphong extends Component {
 
           {modalType === "extend" && (
             <>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Khách hàng</label>
-                <div className="readonly">{currentItem?.guest}</div>
+                <div className="ntp-readonly">{currentItem?.guest}</div>
               </div>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Phòng</label>
-                <div className="readonly">{currentItem?.room}</div>
+                <div className="ntp-readonly">{currentItem?.room}</div>
               </div>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Thông tin gia hạn</label>
                 <textarea
                   rows={3}
@@ -414,7 +414,7 @@ class NhanTraphong extends Component {
                   onChange={this.handleExtendInput("info")}
                 />
               </div>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Ngày Check-out mới *</label>
                 <input
                   type="date"
@@ -427,17 +427,17 @@ class NhanTraphong extends Component {
 
           {modalType === "service" && (
             <>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Khách hàng</label>
-                <div className="readonly">{currentItem?.guest}</div>
+                <div className="ntp-readonly">{currentItem?.guest}</div>
               </div>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Phòng</label>
-                <div className="readonly">{currentItem?.room}</div>
+                <div className="ntp-readonly">{currentItem?.room}</div>
               </div>
-              <div className="sub-title">Dịch vụ sử dụng</div>
+              <div className="ntp-sub-title">Dịch vụ sử dụng</div>
               {serviceItems.map((item) => (
-                <div key={item.id} className="minibar-row">
+                <div key={item.id} className="ntp-minibar-row">
                   <select
                     value={item.name}
                     onChange={(e) =>
@@ -460,7 +460,7 @@ class NhanTraphong extends Component {
                     }
                   />
                   <button
-                    className="btn-danger"
+                    className="ntp-btn-danger"
                     onClick={() => this.removeServiceItem(item.id)}
                   >
                     Xóa
@@ -468,12 +468,12 @@ class NhanTraphong extends Component {
                 </div>
               ))}
               <button
-                className="btn btn-secondary btn-add"
+                className="ntp-btn ntp-btn-secondary ntp-btn-add"
                 onClick={this.addServiceItem}
               >
                 Thêm dịch vụ
               </button>
-              <div className="total-row">
+              <div className="ntp-total-row">
                 <span>Tổng dịch vụ:</span>
                 <strong>{serviceTotal.toLocaleString()}đ</strong>
               </div>
@@ -482,13 +482,13 @@ class NhanTraphong extends Component {
 
           {modalType === "checkout" && (
             <>
-              <div className="field">
+              <div className="ntp-field">
                 <label>Khách hàng</label>
-                <div className="readonly">{currentItem?.guest}</div>
+                <div className="ntp-readonly">{currentItem?.guest}</div>
               </div>
-              <div className="sub-title">Minibar</div>
+              <div className="ntp-sub-title">Minibar</div>
               {minibarItems.map((item) => (
-                <div key={item.id} className="minibar-row">
+                <div key={item.id} className="ntp-minibar-row">
                   <select
                     value={item.name}
                     onChange={(e) =>
@@ -510,7 +510,7 @@ class NhanTraphong extends Component {
                     }
                   />
                   <button
-                    className="btn-danger"
+                    className="ntp-btn-danger"
                     onClick={() => this.removeMinibarItem(item.id)}
                   >
                     Xóa
@@ -518,13 +518,13 @@ class NhanTraphong extends Component {
                 </div>
               ))}
               <button
-                className="btn btn-secondary btn-add"
+                className="ntp-btn ntp-btn-secondary ntp-btn-add"
                 onClick={this.addMinibarItem}
               >
                 Thêm minibar
               </button>
-              <div className="sub-title">Phí phạt</div>
-              <div className="penalty-row">
+              <div className="ntp-sub-title">Phí phạt</div>
+              <div className="ntp-penalty-row">
                 <input
                   placeholder="Lý do phạt"
                   value={newPenalty.reason}
@@ -544,19 +544,19 @@ class NhanTraphong extends Component {
                     })
                   }
                 />
-                <button className="btn btn-secondary" onClick={this.addPenalty}>
+                <button className="ntp-btn ntp-btn-secondary" onClick={this.addPenalty}>
                   Thêm
                 </button>
               </div>
               {penalties.length > 0 && (
-                <div className="penalty-list">
+                <div className="ntp-penalty-list">
                   {penalties.map((p) => (
-                    <div key={p.id} className="penalty-item">
+                    <div key={p.id} className="ntp-penalty-item">
                       <span>{p.reason}</span>
-                      <div className="penalty-actions">
+                      <div className="ntp-penalty-actions">
                         <strong>{Number(p.amount).toLocaleString()}đ</strong>
                         <button
-                          className="btn btn-danger"
+                          className="ntp-btn ntp-btn-danger"
                           onClick={() => this.removePenalty(p.id)}
                         >
                           Xóa
@@ -566,7 +566,7 @@ class NhanTraphong extends Component {
                   ))}
                 </div>
               )}
-              <div className="total-row">
+              <div className="ntp-total-row">
                 <span>Tổng:</span>
                 <strong>{(subtotal + penaltyTotal).toLocaleString()}đ</strong>
               </div>
@@ -574,11 +574,11 @@ class NhanTraphong extends Component {
           )}
 
           <div className="nhan-modal-actions">
-            <button className="btn btn-secondary" onClick={this.closeModal}>
+            <button className="ntp-btn ntp-btn-secondary" onClick={this.closeModal}>
               {modalType === "service" ? "Đóng" : "Hủy"}
             </button>
             {modalType !== "service" && (
-              <button className="btn btn-primary" onClick={this.handleConfirmModal}>
+              <button className="ntp-btn ntp-btn-primary" onClick={this.handleConfirmModal}>
                 {modalType === "checkout"
                   ? "Xác nhận Check-out"
                   : modalType === "transfer"
@@ -599,20 +599,20 @@ class NhanTraphong extends Component {
 
     return (
       <div className="nhantraphong">
-        <div className="page-header">
+        <div className="ntp-page-header">
           <FeatureHeader
             title="Nhận/Trả phòng"
             description="Quản lý check-in và check-out khách hàng"
           />
           <button
-            className="btn btn-primary"
+            className="ntp-btn ntp-btn-primary"
             onClick={() => this.openModal("walkin")}
           >
             Walk-in
           </button>
         </div>
 
-        <div className="tab-panel">
+        <div className="ntp-tab-panel">
           <button
             className={activeTab === "stay" ? "active" : ""}
             onClick={() => this.changeTab("stay")}
@@ -627,12 +627,12 @@ class NhanTraphong extends Component {
           </button>
         </div>
 
-        <div className="section-card">
+        <div className="ntp-section-card">
           <h2>
             {activeTab === "stay" ? "Khách đang lưu trú" : "Đặt phòng chờ nhận"}
           </h2>
-          <div className="table-wrap">
-            <table>
+          <div className="ntp-table-wrap">
+            <table className="ntp-table">
               <thead>
                 <tr>
                   <th>Khách hàng</th>
@@ -653,27 +653,27 @@ class NhanTraphong extends Component {
                       <td>{item.checkInTime}</td>
                       <td>{item.checkOutPlan}</td>
                       <td>
-                        <div className="action-group">
+                        <div className="ntp-action-group">
                           <button
-                            className="icon-action"
+                            className="ntp-icon-action"
                             onClick={() => this.openModal("transfer", item)}
                           >
                             Chuyển phòng
                           </button>
                           <button
-                            className="icon-action"
+                            className="ntp-icon-action"
                             onClick={() => this.openModal("extend", item)}
                           >
                             Gia hạn
                           </button>
                           <button
-                            className="icon-action"
+                            className="ntp-icon-action"
                             onClick={() => this.openModal("service", item)}
                           >
                             Gọi dịch vụ
                           </button>
                           <button
-                            className="btn btn-primary"
+                            className="ntp-btn ntp-btn-primary"
                             onClick={() => this.openModal("checkout", item)}
                           >
                             Check-out
@@ -692,7 +692,7 @@ class NhanTraphong extends Component {
                       <td>{item.checkOut}</td>
                       <td>
                         <button
-                          className="btn btn-primary"
+                          className="ntp-btn ntp-btn-primary"
                           onClick={() => this.openModal("checkin", item)}
                         >
                           Check-in
