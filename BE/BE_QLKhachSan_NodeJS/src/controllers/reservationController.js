@@ -105,6 +105,33 @@ const toDateString = (value) => {
   return normalized;
 };
 
+const toDateTime = (value) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed;
+};
+
+const toPositiveDecimal = (value) => {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+};
+
 const extractSqlErrorMessage = (err) => {
   const raw =
     err?.originalError?.info?.message ||
@@ -365,6 +392,166 @@ const cancelReservation = async (req, res) => {
   }
 };
 
+const getWaitingCheckInCustomers = async (req, res) => {
+  console.log("getWaitingCheckInCustomers called");
+  try {
+    const request = new sql.Request();
+    const result = await request.execute("sp_GetWaitingCheckInCustomers");
+
+    return res.json(result.recordset || []);
+  } catch (err) {
+    return sendSqlError(res, err, "getWaitingCheckInCustomers");
+  }
+};
+
+const getCurrentStayingCustomers = async (req, res) => {
+  console.log("getCurrentStayingCustomers called");
+  try {
+    const request = new sql.Request();
+    const result = await request.execute("sp_GetCurrentStayingCustomers");
+
+    return res.json(result.recordset || []);
+  } catch (err) {
+    return sendSqlError(res, err, "getCurrentStayingCustomers");
+  }
+};
+
+const getAvailableRoomsForCheckIn = async (req, res) => {
+  console.log("getAvailableRoomsForCheckIn called", req.params, req.query);
+  try {
+    const reservationID = toPositiveInt(
+      req.params.reservationId || req.query.reservationId,
+    );
+
+    if (!reservationID) {
+      return res.status(400).json({
+        error: "Thieu hoac sai tham so: reservationId",
+      });
+    }
+
+    const request = new sql.Request();
+    request.input("ReservationID", sql.Int, reservationID);
+    const result = await request.execute("sp_GetAvailableRooms_ForCheckIn");
+
+    return res.json(result.recordset || []);
+  } catch (err) {
+    return sendSqlError(res, err, "getAvailableRoomsForCheckIn");
+  }
+};
+
+const checkInByReservationOneRoom = async (req, res) => {
+  console.log("checkInByReservationOneRoom called", req.body);
+  try {
+    const reservationID = toPositiveInt(req.body.ReservationID);
+    const roomID = toPositiveInt(req.body.RoomID);
+
+    if (!reservationID || !roomID) {
+      return res.status(400).json({
+        error: "Thieu hoac sai tham so: ReservationID, RoomID",
+      });
+    }
+
+    const request = new sql.Request();
+    request.input("ReservationID", sql.Int, reservationID);
+    request.input("RoomID", sql.Int, roomID);
+
+    const result = await request.execute("sp_CheckIn_ByReservation_OneRoom");
+    const payload = result.recordset?.[0] || null;
+
+    return res
+      .status(201)
+      .json(payload || { message: "Check-in theo dat phong thanh cong" });
+  } catch (err) {
+    return sendSqlError(res, err, "checkInByReservationOneRoom");
+  }
+};
+
+const checkInWalkInOneRoom = async (req, res) => {
+  console.log("checkInWalkInOneRoom called", req.body);
+  try {
+    const fullName = (req.body.FullName || "").trim();
+    const phone = (req.body.Phone || "").trim();
+    const cccd = (req.body.CCCD || "").trim();
+    const roomID = toPositiveInt(req.body.RoomID);
+    const expectedCheckOut = toDateString(req.body.ExpectedCheckOut);
+
+    if (!fullName || !phone || !cccd || !roomID || !expectedCheckOut) {
+      return res.status(400).json({
+        error:
+          "Thieu hoac sai tham so: FullName, Phone, CCCD, RoomID, ExpectedCheckOut(YYYY-MM-DD)",
+      });
+    }
+
+    const request = new sql.Request();
+    request.input("FullName", sql.NVarChar(150), fullName);
+    request.input("Phone", sql.NVarChar(20), phone);
+    request.input("CCCD", sql.NVarChar(20), cccd);
+    request.input("RoomID", sql.Int, roomID);
+    request.input("ExpectedCheckOut", sql.Date, expectedCheckOut);
+
+    const result = await request.execute("sp_CheckIn_WalkIn_OneRoom");
+    const payload = result.recordset?.[0] || null;
+
+    return res.status(201).json(payload || { message: "Check-in walk-in thanh cong" });
+  } catch (err) {
+    return sendSqlError(res, err, "checkInWalkInOneRoom");
+  }
+};
+
+const transferRoom = async (req, res) => {
+  console.log("transferRoom called", req.body);
+  try {
+    const stayID = toPositiveInt(req.body.StayID);
+    const oldRoomID = toPositiveInt(req.body.OldRoomID);
+    const newRoomID = toPositiveInt(req.body.NewRoomID);
+    const newRate = toPositiveDecimal(req.body.NewRate);
+
+    if (!stayID || !oldRoomID || !newRoomID || !newRate) {
+      return res.status(400).json({
+        error: "Thieu hoac sai tham so: StayID, OldRoomID, NewRoomID, NewRate",
+      });
+    }
+
+    const request = new sql.Request();
+    request.input("StayID", sql.Int, stayID);
+    request.input("OldRoomID", sql.Int, oldRoomID);
+    request.input("NewRoomID", sql.Int, newRoomID);
+    request.input("NewRate", sql.Decimal(12, 2), newRate);
+
+    const result = await request.execute("sp_TransferRoom");
+    const payload = result.recordset?.[0] || null;
+
+    return res.json(payload || { message: "Chuyen phong thanh cong" });
+  } catch (err) {
+    return sendSqlError(res, err, "transferRoom");
+  }
+};
+
+const extendStay = async (req, res) => {
+  console.log("extendStay called", req.params, req.body);
+  try {
+    const stayID = toPositiveInt(req.params.stayId || req.body.StayID);
+    const newCheckOut = toDateTime(req.body.NewCheckOut);
+
+    if (!stayID || !newCheckOut) {
+      return res.status(400).json({
+        error: "Thieu hoac sai tham so: StayID, NewCheckOut (ISO datetime)",
+      });
+    }
+
+    const request = new sql.Request();
+    request.input("StayID", sql.Int, stayID);
+    request.input("NewCheckOut", sql.DateTime, newCheckOut);
+
+    const result = await request.execute("sp_ExtendStay");
+    const payload = result.recordset?.[0] || null;
+
+    return res.json(payload || { message: "Gia han luu tru thanh cong" });
+  } catch (err) {
+    return sendSqlError(res, err, "extendStay");
+  }
+};
+
 module.exports = {
   createReservation,
   createReservationWithNewCustomer,
@@ -372,4 +559,11 @@ module.exports = {
   getAllReservations,
   updateReservation,
   cancelReservation,
+  getWaitingCheckInCustomers,
+  getCurrentStayingCustomers,
+  getAvailableRoomsForCheckIn,
+  checkInByReservationOneRoom,
+  checkInWalkInOneRoom,
+  transferRoom,
+  extendStay,
 };

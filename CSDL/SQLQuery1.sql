@@ -2121,7 +2121,7 @@ EXEC sp_GetWaitingCheckInCustomers
 
 
 ---Load thông tin khách hàng đang lưu trú-----------------------------------------------------
-CREATE PROCEDURE sp_GetCurrentStayingCustomers
+ALTER PROCEDURE sp_GetCurrentStayingCustomers
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -2136,24 +2136,32 @@ BEGIN
         r.CheckInDate,
         r.CheckOutDate,
 
-        rm.RoomID,
-        rm.RoomNumber,
+        rsh.RoomID,                -- ✅ lấy từ RoomStayHistory
+        rm.RoomNumber,             -- ✅ lấy từ Rooms
 
         r.Status,
         r.CreatedAt
 
     FROM Reservations r
+
     INNER JOIN Users u 
         ON r.UserID = u.UserID
 
     INNER JOIN Customers c 
         ON c.UserID = u.UserID
 
-    LEFT JOIN ReservationRooms rr 
-        ON r.ReservationID = rr.ReservationID
+    -------------------------------------------------
+    -- 🔥 JOIN đúng bảng phòng thực tế
+    -------------------------------------------------
+    INNER JOIN Stays s
+        ON s.ReservationID = r.ReservationID
 
-    LEFT JOIN Rooms rm 
-        ON rr.ID = rm.RoomID
+    INNER JOIN RoomStayHistory rsh
+        ON rsh.StayID = s.StayID
+        AND rsh.CheckOutTime IS NULL   -- chỉ lấy phòng đang ở
+
+    INNER JOIN Rooms rm
+        ON rm.RoomID = rsh.RoomID
 
     WHERE r.Status = 'CHECKED_IN'
 
@@ -2162,7 +2170,7 @@ END
 EXEC sp_GetCurrentStayingCustomers;
 
 ---CheckIn theo lịch đặt-----------------------------------------------
-CREATE PROCEDURE sp_CheckIn_ByReservation_OneRoom
+ALTER PROCEDURE sp_CheckIn_ByReservation_OneRoom
     @ReservationID INT,
     @RoomID INT
 AS
@@ -2229,6 +2237,10 @@ BEGIN
     SET Status = 'OCCUPIED'
     WHERE RoomID = @RoomID
 
+	--8. Update trạng thái Reservation
+	UPDATE Reservations
+	SET Status = 'CHECKED_IN'
+	WHERE ReservationID = @ReservationID
 END
 
 ---CheckIn theo khách WalkIn----------------------------------------------------------------
@@ -2790,6 +2802,68 @@ BEGIN
     END
 END
 
+
+--------------------------------------------------
+--------------999999999999999---------------------
+--------------------------------------------------
+---Load danh sách phòng đã đặt để checkIn KH đã đặt phòng
+CREATE PROCEDURE sp_GetAvailableRooms_ForCheckIn
+    @ReservationID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @CheckInDate DATE
+    DECLARE @CheckOutDate DATE
+
+    -------------------------------------------------
+    -- 1. Lấy thông tin reservation
+    -------------------------------------------------
+    SELECT 
+        @CheckInDate = CheckInDate,
+        @CheckOutDate = CheckOutDate
+    FROM Reservations
+    WHERE ReservationID = @ReservationID
+
+    -------------------------------------------------
+    -- 2. Lấy danh sách phòng phù hợp
+    -------------------------------------------------
+    SELECT 
+        r.RoomID,
+        r.RoomNumber,
+        rt.Name AS RoomType
+    FROM Rooms r
+    JOIN RoomTypes rt ON r.RoomTypeID = rt.RoomTypeID
+
+    WHERE 
+        -------------------------------------------------
+        -- đúng loại phòng trong reservation
+        -------------------------------------------------
+        r.RoomTypeID IN (
+            SELECT RoomTypeID
+            FROM ReservationRooms
+            WHERE ReservationID = @ReservationID
+        )
+
+        -------------------------------------------------
+        -- trạng thái phòng phải dùng được
+        -------------------------------------------------
+        AND r.Status = 'AVAILABLE'
+
+        -------------------------------------------------
+        -- không bị occupied trong khoảng thời gian
+        -------------------------------------------------
+        AND NOT EXISTS (
+            SELECT 1
+            FROM RoomStayHistory rsh
+            WHERE rsh.RoomID = r.RoomID
+              AND CAST(rsh.CheckInTime AS DATE) < @CheckOutDate
+              AND CAST(ISNULL(rsh.CheckOutTime, GETDATE()) AS DATE) > @CheckInDate
+        )
+
+    ORDER BY r.RoomNumber
+END
+EXEC sp_GetAvailableRooms_ForCheckIn 28
 
 select * from Customers
 select * from Guests

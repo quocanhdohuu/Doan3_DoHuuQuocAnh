@@ -8,8 +8,25 @@ const {
   getAllReservations,
   updateReservation,
   cancelReservation,
+  getWaitingCheckInCustomers,
+  getCurrentStayingCustomers,
+  getAvailableRoomsForCheckIn,
+  checkInByReservationOneRoom,
+  checkInWalkInOneRoom,
+  transferRoom,
+  extendStay,
 } = require("../controllers/reservationController");
 
+router.get("/waiting-checkin-customers", getWaitingCheckInCustomers);
+router.get("/current-staying-customers", getCurrentStayingCustomers);
+router.get(
+  "/:reservationId/available-rooms-for-checkin",
+  getAvailableRoomsForCheckIn,
+);
+router.post("/checkin/by-reservation", checkInByReservationOneRoom);
+router.post("/checkin/walkin", checkInWalkInOneRoom);
+router.post("/transfer-room", transferRoom);
+router.patch("/stays/:stayId/extend", extendStay);
 router.get("/", getAllReservations);
 router.get("/user/:userId/history", getReservationHistoryByUser);
 router.post("/", createReservation);

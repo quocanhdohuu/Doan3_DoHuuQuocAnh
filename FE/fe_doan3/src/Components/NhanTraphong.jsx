@@ -1,6 +1,11 @@
-import React, { Component } from "react";
+﻿import React, { Component } from "react";
 import "../style/NhanTraphong.css";
 import { FeatureHeader } from "./Common";
+
+const RESERVATIONS_API_URL = "http://localhost:3000/api/reservations";
+const WAITING_CHECKIN_CUSTOMERS_API_URL = `${RESERVATIONS_API_URL}/waiting-checkin-customers`;
+const CHECKIN_BY_RESERVATION_API_URL = `${RESERVATIONS_API_URL}/checkin/by-reservation`;
+const ROOM_TYPES_API_URL = "http://localhost:3000/api/get-room-types";
 
 class NhanTraphong extends Component {
   serviceOptions = [
@@ -42,6 +47,231 @@ class NhanTraphong extends Component {
     return `${timePart} ${this.formatInputDate(newDate)}`;
   };
 
+  componentDidMount() {
+    this.loadInitialData();
+  }
+
+  readResponseBody = async (response) => {
+    const text = await response.text();
+    if (!text) return null;
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  };
+
+  buildErrorMessage = (body, statusCode) => {
+    if (typeof body === "string" && body.trim()) return body;
+
+    if (body && typeof body === "object") {
+      const detail =
+        (typeof body.detail === "string" && body.detail.trim()) ||
+        (typeof body.Detail === "string" && body.Detail.trim());
+
+      if (detail) return detail;
+      return body.message || body.error || `API error: ${statusCode}`;
+    }
+
+    return `API error: ${statusCode}`;
+  };
+
+  request = async (url, options = {}) => {
+    const response = await fetch(url, options);
+    const body = await this.readResponseBody(response);
+
+    if (!response.ok) {
+      throw new Error(this.buildErrorMessage(body, response.status));
+    }
+
+    return body;
+  };
+
+  formatDateForInput = (value) => {
+    if (!value) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  formatDateForTable = (value) => {
+    const normalized = this.formatDateForInput(value);
+    if (!normalized) return "-";
+
+    const [year, month, day] = normalized.split("-");
+    return `${day}/${month}/${year}`;
+  };
+
+  loadInitialData = async () => {
+    await this.fetchRoomTypes();
+    await this.fetchWaitingCheckinCustomers();
+  };
+
+  fetchRoomTypes = async () => {
+    try {
+      const payload = await this.request(ROOM_TYPES_API_URL);
+      const rawItems = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : [];
+
+      const roomTypeMap = rawItems.reduce((acc, item) => {
+        const id = item?.RoomTypeID ?? item?.id;
+        const name = item?.Name ?? item?.name;
+
+        if (id !== null && id !== undefined && name) {
+          acc[String(id)] = String(name);
+        }
+
+        return acc;
+      }, {});
+
+      this.setState({ roomTypeMap });
+    } catch {
+      this.setState({ roomTypeMap: {} });
+    }
+  };
+
+  resolveRoomTypeName = (item) => {
+    if (item?.RoomTypeName) return item.RoomTypeName;
+    if (item?.RoomType) return item.RoomType;
+
+    const roomTypeId = item?.RoomTypeID;
+    if (roomTypeId !== null && roomTypeId !== undefined) {
+      const roomTypeName = this.state.roomTypeMap[String(roomTypeId)];
+      if (roomTypeName) return roomTypeName;
+      return `Loại #${roomTypeId}`;
+    }
+
+    return "-";
+  };
+
+  mapBookingFromApi = (item) => ({
+    id: item?.ReservationID ?? this.createId(),
+    reservationId: item?.ReservationID ?? null,
+    guest: item?.FullName ?? "",
+    roomType: this.resolveRoomTypeName(item),
+    checkIn: this.formatDateForTable(item?.CheckInDate),
+    checkOut: this.formatDateForTable(item?.CheckOutDate),
+  });
+
+  mapRoomFromApi = (item) => ({
+    roomId: item?.RoomID ?? item?.id ?? null,
+    roomNumber: item?.RoomNumber ?? "",
+    roomType: item?.RoomType ?? item?.RoomTypeName ?? "",
+  });
+
+  fetchWaitingCheckinCustomers = async () => {
+    try {
+      this.setState({ bookingLoading: true });
+      const payload = await this.request(WAITING_CHECKIN_CUSTOMERS_API_URL);
+      const rawItems = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : [];
+
+      this.setState({ bookingData: rawItems.map(this.mapBookingFromApi) });
+    } catch (err) {
+      this.setState({ bookingData: [] });
+      window.alert(err.message || "Không thể tải danh sách khách chờ check-in.");
+    } finally {
+      this.setState({ bookingLoading: false });
+    }
+  };
+
+  fetchAvailableRoomsForCheckin = async (reservationId) => {
+    if (!reservationId) return;
+
+    try {
+      this.setState({
+        availableRoomsLoading: true,
+        availableRooms: [],
+        selectedCheckinRoomId: "",
+      });
+
+      const payload = await this.request(
+        `${RESERVATIONS_API_URL}/${reservationId}/available-rooms-for-checkin`,
+      );
+      const rawItems = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : [];
+      const availableRooms = rawItems
+        .map(this.mapRoomFromApi)
+        .filter((room) => room.roomId !== null);
+
+      this.setState((prev) => {
+        const stillInCheckinModal =
+          prev.modalType === "checkin" &&
+          String(prev.currentItem?.reservationId) === String(reservationId);
+
+        if (!stillInCheckinModal) return null;
+
+        return {
+          availableRooms,
+          selectedCheckinRoomId: availableRooms[0]
+            ? String(availableRooms[0].roomId)
+            : "",
+        };
+      });
+    } catch (err) {
+      this.setState({ availableRooms: [], selectedCheckinRoomId: "" });
+      window.alert(err.message || "Không thể tải danh sách phòng khả dụng.");
+    } finally {
+      this.setState({ availableRoomsLoading: false });
+    }
+  };
+
+  confirmCheckin = async () => {
+    const { currentItem, selectedCheckinRoomId } = this.state;
+    const reservationId = currentItem?.reservationId;
+
+    if (!reservationId) {
+      window.alert("Không tìm thấy ReservationID.");
+      return;
+    }
+
+    if (!selectedCheckinRoomId) {
+      window.alert("Vui lòng chọn phòng để check-in.");
+      return;
+    }
+
+    try {
+      this.setState({ checkinSubmitting: true });
+      const response = await this.request(CHECKIN_BY_RESERVATION_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ReservationID: Number(reservationId),
+          RoomID: Number(selectedCheckinRoomId),
+        }),
+      });
+
+      window.alert(
+        response?.Message ||
+          response?.message ||
+          "Check-in thành công.",
+      );
+
+      this.closeModal();
+      await this.fetchWaitingCheckinCustomers();
+    } catch (err) {
+      window.alert(err.message || "Check-in thất bại.");
+    } finally {
+      this.setState({ checkinSubmitting: false });
+    }
+  };
+
   state = {
     activeTab: "stay",
     showModal: false,
@@ -56,15 +286,13 @@ class NhanTraphong extends Component {
         checkOutPlan: "07:00:00 12/10/2026",
       },
     ],
-    bookingData: [
-      {
-        id: 2,
-        guest: "Phạm Văn An",
-        roomType: "Suite",
-        checkIn: "20/3/2026",
-        checkOut: "12/10/2026",
-      },
-    ],
+    bookingData: [],
+    bookingLoading: false,
+    availableRooms: [],
+    availableRoomsLoading: false,
+    selectedCheckinRoomId: "",
+    checkinSubmitting: false,
+    roomTypeMap: {},
     walkInForm: {
       name: "",
       phone: "",
@@ -102,7 +330,17 @@ class NhanTraphong extends Component {
       nextState.serviceItems = this.getDefaultServiceItems();
     }
 
+    if (type === "checkin") {
+      nextState.availableRooms = [];
+      nextState.availableRoomsLoading = true;
+      nextState.selectedCheckinRoomId = "";
+    }
+
     this.setState(nextState);
+
+    if (type === "checkin" && item?.reservationId) {
+      this.fetchAvailableRoomsForCheckin(item.reservationId);
+    }
   };
 
   closeModal = () => {
@@ -118,6 +356,10 @@ class NhanTraphong extends Component {
       serviceItems: this.getDefaultServiceItems(),
       newPenalty: { reason: "", amount: "" },
       penalties: [],
+      availableRooms: [],
+      availableRoomsLoading: false,
+      selectedCheckinRoomId: "",
+      checkinSubmitting: false,
     });
   };
 
@@ -135,6 +377,10 @@ class NhanTraphong extends Component {
     this.setState({
       extendForm: { ...this.state.extendForm, [field]: e.target.value },
     });
+  };
+
+  handleCheckinRoomInput = (event) => {
+    this.setState({ selectedCheckinRoomId: event.target.value });
   };
 
   addMinibarItem = () => {
@@ -221,6 +467,11 @@ class NhanTraphong extends Component {
   handleConfirmModal = () => {
     const { modalType, currentItem, extendForm } = this.state;
 
+    if (modalType === "checkin") {
+      this.confirmCheckin();
+      return;
+    }
+
     if (modalType === "extend") {
       if (!extendForm.newCheckOut) {
         alert("Vui lòng chọn ngày Check-out mới.");
@@ -264,6 +515,10 @@ class NhanTraphong extends Component {
       serviceItems,
       newPenalty,
       penalties,
+      availableRooms,
+      availableRoomsLoading,
+      selectedCheckinRoomId,
+      checkinSubmitting,
     } = this.state;
 
     if (!modalType) return null;
@@ -278,6 +533,9 @@ class NhanTraphong extends Component {
       0,
     );
     const serviceTotal = serviceItems.reduce((sum, i) => sum + i.qty * i.price, 0);
+    const disableCheckinConfirm =
+      modalType === "checkin" &&
+      (availableRoomsLoading || checkinSubmitting || !selectedCheckinRoomId);
 
     return (
       <div className="nhan-modal-overlay" onClick={overlayClick}>
@@ -348,14 +606,35 @@ class NhanTraphong extends Component {
             <>
               <div className="ntp-field">
                 <label>Khách hàng</label>
-                <div className="ntp-readonly">{currentItem?.guest}</div>
+                <div className="ntp-readonly">{currentItem?.guest || "-"}</div>
+              </div>
+              <div className="ntp-field">
+                <label>Loại phòng</label>
+                <div className="ntp-readonly">{currentItem?.roomType || "-"}</div>
               </div>
               <div className="ntp-field">
                 <label>Chọn phòng *</label>
-                <select>
-                  <option>406 (Suite)</option>
-                  <option>407 (Standard)</option>
+                <select
+                  value={selectedCheckinRoomId}
+                  onChange={this.handleCheckinRoomInput}
+                  disabled={availableRoomsLoading || checkinSubmitting}
+                >
+                  <option value="">
+                    {availableRoomsLoading
+                      ? "Đang tải phòng khả dụng..."
+                      : "Chọn phòng"}
+                  </option>
+                  {availableRooms.map((room) => (
+                    <option key={room.roomId} value={room.roomId}>
+                      {room.roomNumber
+                        ? `${room.roomNumber}${room.roomType ? ` (${room.roomType})` : ""}`
+                        : `Phòng #${room.roomId}`}
+                    </option>
+                  ))}
                 </select>
+                {!availableRoomsLoading && availableRooms.length === 0 && (
+                  <small>Không có phòng trống phù hợp để check-in.</small>
+                )}
               </div>
             </>
           )}
@@ -578,14 +857,20 @@ class NhanTraphong extends Component {
               {modalType === "service" ? "Đóng" : "Hủy"}
             </button>
             {modalType !== "service" && (
-              <button className="ntp-btn ntp-btn-primary" onClick={this.handleConfirmModal}>
+              <button
+                className="ntp-btn ntp-btn-primary"
+                onClick={this.handleConfirmModal}
+                disabled={disableCheckinConfirm}
+              >
                 {modalType === "checkout"
                   ? "Xác nhận Check-out"
                   : modalType === "transfer"
                     ? "Xác nhận chuyển"
                     : modalType === "extend"
                       ? "Xác nhận gia hạn"
-                      : "Check-in"}
+                      : checkinSubmitting
+                        ? "Đang Check-in..."
+                        : "Check-in"}
               </button>
             )}
           </div>
@@ -595,7 +880,7 @@ class NhanTraphong extends Component {
   }
 
   render() {
-    const { activeTab, showModal, stayData, bookingData } = this.state;
+    const { activeTab, showModal, stayData, bookingData, bookingLoading } = this.state;
 
     return (
       <div className="nhantraphong">
@@ -683,7 +968,20 @@ class NhanTraphong extends Component {
                     </tr>
                   ))}
 
+                {activeTab === "pending" && bookingLoading && (
+                  <tr>
+                    <td colSpan="5">Đang tải danh sách đặt phòng chờ nhận...</td>
+                  </tr>
+                )}
+
+                {activeTab === "pending" && !bookingLoading && bookingData.length === 0 && (
+                  <tr>
+                    <td colSpan="5">Không có khách đang chờ check-in.</td>
+                  </tr>
+                )}
+
                 {activeTab === "pending" &&
+                  !bookingLoading &&
                   bookingData.map((item) => (
                     <tr key={item.id}>
                       <td>{item.guest}</td>
