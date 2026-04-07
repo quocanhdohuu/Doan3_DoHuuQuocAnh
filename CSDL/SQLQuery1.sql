@@ -2127,6 +2127,8 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT 
+        s.StayID, -- ✅ thêm dòng này
+
         r.ReservationID,
 
         ISNULL(c.CustomerID, g.GuestID) AS CustomerID,
@@ -2324,32 +2326,43 @@ EXEC sp_CheckIn_WalkIn_OneRoom
     @ExpectedCheckOut = '2026-04-08';
 
 ---Chuyển phòng------------------------------------------------------------------
-CREATE PROCEDURE sp_TransferRoom
+ALTER PROCEDURE sp_TransferRoom
     @StayID INT,
     @OldRoomID INT,
-    @NewRoomID INT,
-    @NewRate DECIMAL(12,2)
+    @NewRoomID INT
 AS
 BEGIN
     SET NOCOUNT ON;
+    BEGIN TRAN
 
-    DECLARE @Now DATETIME = GETDATE()
+    DECLARE 
+        @Now DATETIME = GETDATE(),
+        @NewRate DECIMAL(12,2)
 
     -------------------------------------------------
-    -- ❗ VALIDATE
+    -- VALIDATE
     -------------------------------------------------
 
-    -- 1. Phòng mới phải AVAILABLE
+    -- Không cho chuyển cùng phòng
+    IF @OldRoomID = @NewRoomID
+    BEGIN
+        RAISERROR(N'Phòng mới phải khác phòng cũ', 16, 1)
+        ROLLBACK
+        RETURN
+    END
+
+    -- Phòng mới phải available
     IF NOT EXISTS (
         SELECT 1 FROM Rooms 
         WHERE RoomID = @NewRoomID AND Status = 'AVAILABLE'
     )
     BEGIN
         RAISERROR(N'Phòng mới không khả dụng', 16, 1)
+        ROLLBACK
         RETURN
     END
 
-    -- 2. Phải tồn tại phòng cũ đang ở (chưa checkout)
+    -- Phòng cũ đang ở
     IF NOT EXISTS (
         SELECT 1 
         FROM RoomStayHistory
@@ -2359,37 +2372,44 @@ BEGIN
     )
     BEGIN
         RAISERROR(N'Không tìm thấy phòng hiện tại của khách', 16, 1)
+        ROLLBACK
         RETURN
     END
 
     -------------------------------------------------
-    -- 🟡 BƯỚC 1: ĐÓNG PHÒNG CŨ
+    -- 🟢 LẤY GIÁ PHÒNG MỚI
     -------------------------------------------------
+    SELECT @NewRate = rt.DefaultPrice
+    FROM Rooms r
+    JOIN RoomTypes rt ON r.RoomTypeID = rt.RoomTypeID
+    WHERE r.RoomID = @NewRoomID
 
+    -------------------------------------------------
+    -- 🟡 ĐÓNG PHÒNG CŨ
+    -------------------------------------------------
     UPDATE RoomStayHistory
     SET CheckOutTime = @Now
     WHERE StayID = @StayID
       AND RoomID = @OldRoomID
       AND CheckOutTime IS NULL
 
-    -- Update phòng cũ → DIRTY (chuẩn nghiệp vụ)
     UPDATE Rooms
-    SET Status = 'MAINTENANCE' -- hoặc 'DIRTY' nếu bạn có enum này
+    SET Status = 'DIRTY' -- chuẩn hơn MAINTENANCE
     WHERE RoomID = @OldRoomID
 
     -------------------------------------------------
-    -- 🟢 BƯỚC 2: TẠO PHÒNG MỚI
+    -- 🟢 TẠO PHÒNG MỚI
     -------------------------------------------------
-
     INSERT INTO RoomStayHistory
     (StayID, RoomID, CheckInTime, RateAtThatTime)
     VALUES
     (@StayID, @NewRoomID, @Now, @NewRate)
 
-    -- Update phòng mới → OCCUPIED
     UPDATE Rooms
     SET Status = 'OCCUPIED'
     WHERE RoomID = @NewRoomID
+
+    COMMIT
 END
 
 ---Gia hạn Lưu trú------------------------------------------------------------------------
@@ -2404,6 +2424,7 @@ BEGIN
     DECLARE 
         @ReservationID INT,
         @RoomID INT,
+        @CurrentCheckOut DATETIME,
         @Now DATETIME = GETDATE()
 
     -------------------------------------------------
@@ -2420,7 +2441,14 @@ BEGIN
     END
 
     -------------------------------------------------
-    -- 2. Validate thời gian
+    -- 2. Lấy checkout hiện tại
+    -------------------------------------------------
+    SELECT @CurrentCheckOut = ExpectedCheckOut
+    FROM Stays
+    WHERE StayID = @StayID
+
+    -------------------------------------------------
+    -- 3. Validate thời gian
     -------------------------------------------------
     IF @NewCheckOut <= @Now
     BEGIN
@@ -2429,8 +2457,15 @@ BEGIN
         RETURN
     END
 
+    IF @NewCheckOut <= @CurrentCheckOut
+    BEGIN
+        RAISERROR(N'Ngày checkout mới phải lớn hơn ngày checkout hiện tại', 16, 1)
+        ROLLBACK
+        RETURN
+    END
+
     -------------------------------------------------
-    -- 3. Lấy dữ liệu
+    -- 4. Lấy dữ liệu
     -------------------------------------------------
     SELECT @ReservationID = ReservationID
     FROM Stays
@@ -2449,7 +2484,7 @@ BEGIN
     END
 
     -------------------------------------------------
-    -- 4. Check conflict
+    -- 5. Check conflict
     -------------------------------------------------
     IF EXISTS (
         SELECT 1
@@ -2471,13 +2506,17 @@ BEGIN
     END
 
     -------------------------------------------------
-    -- 5. Update
+    -- 6. Update
     -------------------------------------------------
     IF @ReservationID IS NOT NULL
     BEGIN
         UPDATE Reservations
         SET CheckOutDate = @NewCheckOut
         WHERE ReservationID = @ReservationID
+
+        UPDATE Stays
+        SET ExpectedCheckOut = @NewCheckOut
+        WHERE StayID = @StayID
     END
     ELSE
     BEGIN
@@ -2488,6 +2527,7 @@ BEGIN
 
     COMMIT
 END
+select * from Stays
 
 ---Thêm dịch vụ sử dụng(Gọi dịch vụ)---------------------------------------------------
 CREATE PROCEDURE sp_AddServiceUsage
@@ -2575,7 +2615,7 @@ BEGIN
 END
 
 ---Load Dịch vụ đã sử dụng-----------------------------------------------------
-CREATE PROCEDURE sp_GetServiceUsageByStay
+ALTER PROCEDURE sp_GetServiceUsageByStay
     @StayID INT
 AS
 BEGIN
@@ -2591,9 +2631,8 @@ BEGIN
     FROM ServiceUsages su
     INNER JOIN Services s ON su.ServiceID = s.ServiceID
     WHERE su.StayID = @StayID
-    ORDER BY su.UsedDate DESC
 END
-
+EXEC sp_GetServiceUsageByStay 16
 ---Thêm minibarUsages-----------------------------------------------------------
 CREATE PROCEDURE sp_AddMinibarUsage
     @StayID INT,
@@ -2910,6 +2949,29 @@ BEGIN
     ORDER BY r.RoomNumber
 END
 EXEC sp_GetAvailableRooms_ForCheckIn 28
+
+----------------------------------------------------
+-------------1010101010101010-----------------------
+----------------------------------------------------
+---load minibar theo roomid(roomtypes)----------------------
+CREATE PROCEDURE sp_GetMinibarByRoom
+    @RoomID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        mi.MiniBarID,
+        mi.ItemName,
+        mi.Price
+    FROM Rooms r
+    JOIN MinibarItems mi 
+        ON r.RoomTypeID = mi.RoomTypeID
+    WHERE r.RoomID = @RoomID
+    ORDER BY mi.ItemName
+END
+EXEC sp_GetMinibarByRoom 1
+
 
 select * from Customers
 select * from Guests
