@@ -29,6 +29,7 @@ const {
   updatePenalty,
   deletePenalty,
   getPenaltyByStay,
+  getRoomStayHistoryCheckedOutByStay,
 } = require("../controllers/reservationController");
 
 router.get("/waiting-checkin-customers", getWaitingCheckInCustomers);
@@ -52,6 +53,10 @@ router.put("/minibar-usages/:id", updateMinibarUsage);
 router.delete("/minibar-usages/:id", deleteMinibarUsage);
 router.get("/rooms/:roomId/minibar-items", getMinibarByRoom);
 router.get("/stays/:stayId/penalties", getPenaltyByStay);
+router.get(
+  "/stays/:stayId/room-stay-history-checkedout",
+  getRoomStayHistoryCheckedOutByStay,
+);
 router.post("/stays/:stayId/penalties", addPenalty);
 router.put("/penalties/:penaltyId", updatePenalty);
 router.delete("/penalties/:penaltyId", deletePenalty);

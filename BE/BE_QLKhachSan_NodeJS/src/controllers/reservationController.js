@@ -866,6 +866,27 @@ const getPenaltyByStay = async (req, res) => {
   }
 };
 
+const getRoomStayHistoryCheckedOutByStay = async (req, res) => {
+  console.log("getRoomStayHistoryCheckedOutByStay called", req.params, req.query);
+  try {
+    const stayID = toPositiveInt(req.params.stayId || req.query.stayId);
+
+    if (!stayID) {
+      return res.status(400).json({
+        error: "Thieu hoac sai tham so: StayID",
+      });
+    }
+
+    const request = new sql.Request();
+    request.input("StayID", sql.Int, stayID);
+    const result = await request.execute("sp_GetRoomStayHistory_CheckedOut_ByStayID");
+
+    return res.json(result.recordset || []);
+  } catch (err) {
+    return sendSqlError(res, err, "getRoomStayHistoryCheckedOutByStay");
+  }
+};
+
 module.exports = {
   createReservation,
   createReservationWithNewCustomer,
@@ -894,4 +915,5 @@ module.exports = {
   updatePenalty,
   deletePenalty,
   getPenaltyByStay,
+  getRoomStayHistoryCheckedOutByStay,
 };

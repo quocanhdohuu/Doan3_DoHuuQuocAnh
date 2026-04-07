@@ -7,6 +7,7 @@ const WAITING_CHECKIN_CUSTOMERS_API_URL = `${RESERVATIONS_API_URL}/waiting-check
 const CURRENT_STAYING_CUSTOMERS_API_URL = `${RESERVATIONS_API_URL}/current-staying-customers`;
 const CHECKIN_BY_RESERVATION_API_URL = `${RESERVATIONS_API_URL}/checkin/by-reservation`;
 const CHECKIN_WALKIN_API_URL = `${RESERVATIONS_API_URL}/checkin/walkin`;
+const CHECKOUT_ROOM_API_URL = `${RESERVATIONS_API_URL}/checkout-room`;
 const TRANSFER_ROOM_API_URL = `${RESERVATIONS_API_URL}/transfer-room`;
 const EXTEND_STAY_API_URL = (stayId) =>
   `${RESERVATIONS_API_URL}/stays/${stayId}/extend`;
@@ -29,18 +30,6 @@ const ROOMS_API_URL = "http://localhost:3000/api/rooms";
 const ROOM_TYPES_API_URL = "http://localhost:3000/api/get-room-types";
 
 class NhanTraphong extends Component {
-  fallbackServiceOptions = [
-    { serviceId: 1, name: "Giặt ủi", label: "Giặt ủi - 50.000đ", price: 50000 },
-    { serviceId: 2, name: "Dọn phòng", label: "Dọn phòng - 30.000đ", price: 30000 },
-    {
-      serviceId: 3,
-      name: "Đưa đón sân bay",
-      label: "Đưa đón sân bay - 250.000đ",
-      price: 250000,
-    },
-    { serviceId: 4, name: "Bữa sáng", label: "Bữa sáng - 80.000đ", price: 80000 },
-  ];
-
   createId = () => Date.now() + Math.floor(Math.random() * 1000);
 
   getDefaultServiceItem = () => ({
@@ -316,16 +305,10 @@ class NhanTraphong extends Component {
         )
         .sort((a, b) => a.name.localeCompare(b.name, "vi"));
 
-      this.setState({
-        serviceOptions:
-          serviceOptions.length > 0 ? serviceOptions : this.fallbackServiceOptions,
-      });
+      this.setState({ serviceOptions });
     } catch (err) {
       this.setState((prev) => ({
-        serviceOptions:
-          prev.serviceOptions.length > 0
-            ? prev.serviceOptions
-            : this.fallbackServiceOptions,
+        serviceOptions: prev.serviceOptions,
       }));
 
       if (showError) {
@@ -459,11 +442,7 @@ class NhanTraphong extends Component {
 
   findServiceOptionByName = (name) => {
     const normalizedName = this.normalizeServiceName(name);
-    const options =
-      this.state.serviceOptions.length > 0
-        ? this.state.serviceOptions
-        : this.fallbackServiceOptions;
-    return options.find(
+    return this.state.serviceOptions.find(
       (option) => this.normalizeServiceName(option.name) === normalizedName,
     );
   };
@@ -1133,6 +1112,54 @@ class NhanTraphong extends Component {
     }
   };
 
+  confirmCheckout = async () => {
+    const { currentItem, checkoutSubmitting } = this.state;
+
+    if (checkoutSubmitting) return;
+
+    const stayId = Number(
+      currentItem?.stayId ??
+        currentItem?.StayID ??
+        currentItem?.stayID ??
+        currentItem?.StayId,
+    );
+
+    if (!Number.isInteger(stayId) || stayId < 1) {
+      window.alert("Không tìm thấy StayID hợp lệ để check-out.");
+      return;
+    }
+
+    try {
+      this.setState({ checkoutSubmitting: true });
+
+      const roomId = await this.resolveCheckoutRoomId(currentItem);
+      if (!Number.isInteger(roomId) || roomId < 1) {
+        window.alert("Không tìm thấy RoomID hợp lệ để check-out.");
+        return;
+      }
+
+      const response = await this.request(CHECKOUT_ROOM_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          StayID: stayId,
+          RoomID: roomId,
+        }),
+      });
+
+      window.alert(
+        response?.Message || response?.message || "Check-out phòng thành công.",
+      );
+
+      this.closeModal();
+      await this.fetchCurrentStayingCustomers();
+    } catch (err) {
+      window.alert(err.message || "Check-out phòng thất bại.");
+    } finally {
+      this.setState({ checkoutSubmitting: false });
+    }
+  };
+
   state = {
     activeTab: "stay",
     showModal: false,
@@ -1161,6 +1188,7 @@ class NhanTraphong extends Component {
     walkinSubmitting: false,
     transferSubmitting: false,
     extendSubmitting: false,
+    checkoutSubmitting: false,
     roomTypeMap: {},
     walkInForm: {
       name: "",
@@ -1282,6 +1310,7 @@ class NhanTraphong extends Component {
       walkinSubmitting: false,
       transferSubmitting: false,
       extendSubmitting: false,
+      checkoutSubmitting: false,
     });
   };
 
@@ -1882,6 +1911,11 @@ class NhanTraphong extends Component {
       return;
     }
 
+    if (modalType === "checkout") {
+      this.confirmCheckout();
+      return;
+    }
+
     this.closeModal();
   };
 
@@ -1916,6 +1950,7 @@ class NhanTraphong extends Component {
       walkinSubmitting,
       transferSubmitting,
       extendSubmitting,
+      checkoutSubmitting,
     } = this.state;
 
     if (!modalType) return null;
@@ -1955,11 +1990,14 @@ class NhanTraphong extends Component {
     const disableExtendConfirm =
       modalType === "extend" &&
       (extendSubmitting || !extendForm.newCheckOut);
+    const disableCheckoutConfirm =
+      modalType === "checkout" && checkoutSubmitting;
     const disableModalConfirm =
       disableCheckinConfirm ||
       disableWalkinConfirm ||
       disableTransferConfirm ||
-      disableExtendConfirm;
+      disableExtendConfirm ||
+      disableCheckoutConfirm;
 
     return (
       <div className="nhan-modal-overlay" onClick={overlayClick}>
@@ -2391,7 +2429,9 @@ class NhanTraphong extends Component {
                 disabled={disableModalConfirm}
               >
                 {modalType === "checkout"
-                  ? "Xác nhận Check-out"
+                  ? checkoutSubmitting
+                    ? "Đang Check-out..."
+                    : "Xác nhận Check-out"
                   : modalType === "transfer"
                     ? transferSubmitting
                       ? "Đang chuyển..."

@@ -9,6 +9,7 @@ const receptionistRoutes = require("./routes/receptionistRoutes");
 const roomRoutes = require("./routes/roomRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const reservationRoutes = require("./routes/reservationRoutes");
+const invoiceRoutes = require("./routes/invoiceRoutes");
 
 const app = express();
 
@@ -23,5 +24,6 @@ app.use("/api/receptionists", receptionistRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/reservations", reservationRoutes);
+app.use("/api/invoices", invoiceRoutes);
 
 module.exports = app;
