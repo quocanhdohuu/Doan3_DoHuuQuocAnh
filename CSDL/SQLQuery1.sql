@@ -1021,32 +1021,35 @@ BEGIN
     ),
 
     -------------------------------------------------
-    -- 🔴 OCCUPIED
+    -- 🟥 OCCUPIED (THEO STAY)
     -------------------------------------------------
     Occupied AS (
         SELECT 
             rsh.RoomID,
-            CAST(d.Date AS DATE) AS [Date]
-        FROM RoomStayHistory rsh
-        JOIN Stays s ON s.StayID = rsh.StayID
-        JOIN Dates d ON d.Date >= CAST(rsh.CheckInTime AS DATE)
-                    AND d.Date < CAST(ISNULL(rsh.CheckOutTime, GETDATE()) AS DATE)
+            d.Date
+        FROM Stays s
+        JOIN RoomStayHistory rsh ON rsh.StayID = s.StayID
+        JOIN Dates d 
+            ON d.Date >= CAST(s.ActualCheckIn AS DATE)
+           AND d.Date < CAST(ISNULL(s.ExpectedCheckOut, GETDATE()) AS DATE)
         WHERE s.Status = 'CHECKED_IN'
     ),
 
     -------------------------------------------------
-    -- 🟤 DIRTY (ngày checkout)
+    -- 🟤 DIRTY (1 NGÀY SAU CHECKOUT)
     -------------------------------------------------
     Dirty AS (
         SELECT 
             rsh.RoomID,
-            CAST(rsh.CheckOutTime AS DATE) AS [Date]
-        FROM RoomStayHistory rsh
-        WHERE rsh.CheckOutTime IS NOT NULL
+            CAST(s.ActualCheckOut AS DATE) AS Date
+        FROM Stays s
+        JOIN RoomStayHistory rsh ON rsh.StayID = s.StayID
+        WHERE s.Status = 'COMPLETED'
+          AND s.ActualCheckOut IS NOT NULL
     ),
 
     -------------------------------------------------
-    -- 🔵 BOOKED
+    -- 🔵 BOOKED (THEO LOẠI PHÒNG)
     -------------------------------------------------
     BookedByType AS (
         SELECT 
@@ -1055,14 +1058,15 @@ BEGIN
             SUM(rr.Quantity) AS TotalBooked
         FROM Reservations re
         JOIN ReservationRooms rr ON rr.ReservationID = re.ReservationID
-        JOIN Dates d ON d.Date >= re.CheckInDate
-                    AND d.Date < re.CheckOutDate
+        JOIN Dates d 
+            ON d.Date >= re.CheckInDate
+           AND d.Date < re.CheckOutDate
         WHERE re.Status = 'BOOKED'
         GROUP BY rr.RoomTypeID, d.Date
     ),
 
     -------------------------------------------------
-    -- 🔴 OCCUPIED COUNT
+    -- 🟥 COUNT OCCUPIED THEO TYPE
     -------------------------------------------------
     OccupiedCount AS (
         SELECT 
@@ -1074,6 +1078,9 @@ BEGIN
         GROUP BY r.RoomTypeID, o.Date
     )
 
+    -------------------------------------------------
+    -- MAIN
+    -------------------------------------------------
     SELECT 
         r.RoomID,
         r.RoomNumber,
@@ -1081,35 +1088,23 @@ BEGIN
         d.Date,
 
         CASE 
-            -------------------------------------------------
-            -- 🔧 MAINTENANCE (vẫn ưu tiên cao)
-            -------------------------------------------------
+            -----------------------------------------
             WHEN r.Status = 'MAINTENANCE' THEN 'MAINTENANCE'
 
-            -------------------------------------------------
-            -- 🟤 DIRTY (chỉ đúng ngày checkout)
-            -------------------------------------------------
-            WHEN di.RoomID IS NOT NULL THEN 'DIRTY'
-
-            -------------------------------------------------
-            -- 🔴 OCCUPIED
-            -------------------------------------------------
+            -----------------------------------------
             WHEN o.RoomID IS NOT NULL THEN 'OCCUPIED'
 
-            -------------------------------------------------
-            -- 🔵 BOOKED
-            -------------------------------------------------
+            -----------------------------------------
+            WHEN di.RoomID IS NOT NULL THEN 'DIRTY'
+
+            -----------------------------------------
             WHEN 
                 ISNULL(b.TotalBooked,0) > ISNULL(oc.TotalOccupied,0)
-                AND ROW_NUMBER() OVER (
-                    PARTITION BY r.RoomTypeID, d.Date 
-                    ORDER BY r.RoomID
-                ) <= (ISNULL(b.TotalBooked,0) - ISNULL(oc.TotalOccupied,0))
+                AND o.RoomID IS NULL
+                AND di.RoomID IS NULL
             THEN 'BOOKED'
 
-            -------------------------------------------------
-            -- 🟢 AVAILABLE
-            -------------------------------------------------
+            -----------------------------------------
             ELSE 'AVAILABLE'
         END AS Status
 
@@ -1779,7 +1774,7 @@ EXEC sp_GetReservationCountByDate
 -----------------555555555555555555-----------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------
 ---	Thêm lịch đặt của khách cũ (dựa theo thông tin khách hàng đã lưu)---------------------------------------------
-CREATE PROCEDURE sp_CreateReservation
+ALTER PROCEDURE sp_CreateReservation
     @UserID INT,
     @RoomTypeID INT,
     @Quantity INT,
@@ -1806,17 +1801,35 @@ BEGIN
         FROM Rooms
         WHERE RoomTypeID = @RoomTypeID;
 
-        -- 3. Số phòng đã được đặt trong khoảng thời gian
-        DECLARE @BookedRooms INT;
-        SELECT @BookedRooms = ISNULL(SUM(rr.Quantity), 0)
-        FROM ReservationRooms rr
-        JOIN Reservations r ON rr.ReservationID = r.ReservationID
-        WHERE rr.RoomTypeID = @RoomTypeID
-        AND r.Status IN ('BOOKED','CHECKED_IN')
-        AND (
-            r.CheckInDate < @CheckOutDate AND 
-            r.CheckOutDate > @CheckInDate
-        );
+        -- 3. Số phòng đã được đặt (Reservation)
+		DECLARE @BookedRooms INT;
+		SELECT @BookedRooms = ISNULL(SUM(rr.Quantity), 0)
+		FROM ReservationRooms rr
+		JOIN Reservations r ON rr.ReservationID = r.ReservationID
+		WHERE rr.RoomTypeID = @RoomTypeID
+		AND r.Status IN ('BOOKED','CHECKED_IN')
+		AND (
+			r.CheckInDate < @CheckOutDate AND 
+			r.CheckOutDate > @CheckInDate
+		);
+
+		-- 3.1 Số phòng đang OCCUPIED (Stay thật)
+		DECLARE @OccupiedRooms INT;
+		SELECT @OccupiedRooms = COUNT(DISTINCT rsh.RoomID)
+		FROM RoomStayHistory rsh
+		JOIN Rooms rm ON rsh.RoomID = rm.RoomID
+		JOIN Stays s ON rsh.StayID = s.StayID
+		WHERE rm.RoomTypeID = @RoomTypeID
+		AND s.Status = 'CHECKED_IN'
+		AND (
+			rsh.CheckInTime < @CheckOutDate AND 
+			ISNULL(rsh.CheckOutTime, s.ExpectedCheckOut) > @CheckInDate
+		);
+
+		-- 3.2 Tổng phòng đã bị chiếm
+		DECLARE @UsedRooms INT;
+		SET @UsedRooms = @BookedRooms + @OccupiedRooms;
+
 
         -- 4. Kiểm tra đủ phòng không
         IF (@TotalRooms - @BookedRooms < @Quantity)
@@ -1877,7 +1890,7 @@ EXEC sp_CreateReservation
     @CheckOutDate = '2026-04-12';
 
 -----Thêm lịch đặt khách mới (Lưu thông tin khách hàng mới)-------------------------------------
-CREATE PROCEDURE sp_CreateReservation_WithNewCustomer
+ALTER PROCEDURE sp_CreateReservation_WithNewCustomer
     @FullName NVARCHAR(150),
     @Phone NVARCHAR(20),
     @CCCD NVARCHAR(20),
@@ -1930,30 +1943,49 @@ BEGIN
         SET @CustomerID = SCOPE_IDENTITY();
 
         -------------------------------------------------
-        -- 4. CHECK PHÒNG TRỐNG
-        -------------------------------------------------
-        DECLARE @TotalRooms INT;
-        SELECT @TotalRooms = COUNT(*)
-        FROM Rooms
-        WHERE RoomTypeID = @RoomTypeID;
+		-- 4. CHECK PHÒNG TRỐNG
+		-------------------------------------------------
+		DECLARE @TotalRooms INT;
+		SELECT @TotalRooms = COUNT(*)
+		FROM Rooms
+		WHERE RoomTypeID = @RoomTypeID;
 
-        DECLARE @BookedRooms INT;
-        SELECT @BookedRooms = ISNULL(SUM(rr.Quantity), 0)
-        FROM ReservationRooms rr
-        JOIN Reservations r ON rr.ReservationID = r.ReservationID
-        WHERE rr.RoomTypeID = @RoomTypeID
-        AND r.Status IN ('BOOKED','CHECKED_IN')
-        AND (
-            r.CheckInDate < @CheckOutDate AND 
-            r.CheckOutDate > @CheckInDate
-        );
+		-- 4.1 Phòng đã BOOKED (Reservation)
+		DECLARE @BookedRooms INT;
+		SELECT @BookedRooms = ISNULL(SUM(rr.Quantity), 0)
+		FROM ReservationRooms rr
+		JOIN Reservations r ON rr.ReservationID = r.ReservationID
+		WHERE rr.RoomTypeID = @RoomTypeID
+		AND r.Status IN ('BOOKED','CHECKED_IN')
+		AND (
+			r.CheckInDate < @CheckOutDate AND 
+			r.CheckOutDate > @CheckInDate
+		);
 
-        IF (@TotalRooms - @BookedRooms < @Quantity)
-        BEGIN
-            RAISERROR(N'Không đủ phòng trống', 16, 1);
-            ROLLBACK;
-            RETURN;
-        END
+		-- 4.2 Phòng đang OCCUPIED (Stay thực tế)
+		DECLARE @OccupiedRooms INT;
+		SELECT @OccupiedRooms = COUNT(DISTINCT rsh.RoomID)
+		FROM RoomStayHistory rsh
+		JOIN Rooms rm ON rsh.RoomID = rm.RoomID
+		JOIN Stays s ON rsh.StayID = s.StayID
+		WHERE rm.RoomTypeID = @RoomTypeID
+		AND s.Status = 'CHECKED_IN'
+		AND (
+			rsh.CheckInTime < @CheckOutDate AND 
+			ISNULL(rsh.CheckOutTime, s.ExpectedCheckOut) > @CheckInDate
+		);
+
+		-- 4.3 Tổng phòng đã bị chiếm
+		DECLARE @UsedRooms INT;
+		SET @UsedRooms = @BookedRooms + @OccupiedRooms;
+
+		-- 4.4 Check phòng trống
+		IF (@TotalRooms - @UsedRooms < @Quantity)
+		BEGIN
+			RAISERROR(N'Không đủ phòng trống (đã tính cả phòng đang ở)', 16, 1);
+			ROLLBACK;
+			RETURN;
+		END
 
         -------------------------------------------------
         -- 5. LẤY GIÁ
@@ -2087,7 +2119,7 @@ EXEC sp_GetAllReservations;
 
 
 ---Sửa thông tin lịch đặt----------------------------------------------
-CREATE PROCEDURE sp_UpdateReservation
+ALTER PROCEDURE sp_UpdateReservation
     @ReservationID INT,
     @RoomTypeID INT,
     @Quantity INT,
@@ -2129,31 +2161,58 @@ BEGIN
         END
 
         -------------------------------------------------
-        -- 3. Check phòng trống (LOẠI TRỪ chính reservation này)
-        -------------------------------------------------
-        DECLARE @TotalRooms INT;
-        SELECT @TotalRooms = COUNT(*)
-        FROM Rooms
-        WHERE RoomTypeID = @RoomTypeID;
+		-- 3. Check phòng trống (LOẠI TRỪ chính reservation này)
+		-------------------------------------------------
+		DECLARE @TotalRooms INT;
+		SELECT @TotalRooms = COUNT(*)
+		FROM Rooms
+		WHERE RoomTypeID = @RoomTypeID;
 
-        DECLARE @BookedRooms INT;
-        SELECT @BookedRooms = ISNULL(SUM(rr.Quantity), 0)
-        FROM ReservationRooms rr
-        JOIN Reservations r ON rr.ReservationID = r.ReservationID
-        WHERE rr.RoomTypeID = @RoomTypeID
-        AND r.Status IN ('BOOKED','CHECKED_IN')
-        AND r.ReservationID <> @ReservationID
-        AND (
-            r.CheckInDate < @CheckOutDate AND 
-            r.CheckOutDate > @CheckInDate
-        );
+		-------------------------------------------------
+		-- 3.1 Phòng đã BOOKED (trừ chính nó)
+		-------------------------------------------------
+		DECLARE @BookedRooms INT;
+		SELECT @BookedRooms = ISNULL(SUM(rr.Quantity), 0)
+		FROM ReservationRooms rr
+		JOIN Reservations r ON rr.ReservationID = r.ReservationID
+		WHERE rr.RoomTypeID = @RoomTypeID
+		AND r.Status IN ('BOOKED','CHECKED_IN')
+		AND r.ReservationID <> @ReservationID
+		AND (
+			r.CheckInDate < @CheckOutDate AND 
+			r.CheckOutDate > @CheckInDate
+		);
 
-        IF (@TotalRooms - @BookedRooms < @Quantity)
-        BEGIN
-            RAISERROR(N'Không đủ phòng trống để cập nhật', 16, 1);
-            ROLLBACK;
-            RETURN;
-        END
+		-------------------------------------------------
+		-- 3.2 Phòng đang OCCUPIED (Stay thật)
+		-------------------------------------------------
+		DECLARE @OccupiedRooms INT;
+		SELECT @OccupiedRooms = COUNT(DISTINCT rsh.RoomID)
+		FROM RoomStayHistory rsh
+		JOIN Rooms rm ON rsh.RoomID = rm.RoomID
+		JOIN Stays s ON rsh.StayID = s.StayID
+		WHERE rm.RoomTypeID = @RoomTypeID
+		AND s.Status = 'CHECKED_IN'
+		AND (
+			rsh.CheckInTime < @CheckOutDate AND 
+			ISNULL(rsh.CheckOutTime, s.ExpectedCheckOut) > @CheckInDate
+		);
+
+		-------------------------------------------------
+		-- 3.3 Tổng phòng đã bị chiếm
+		-------------------------------------------------
+		DECLARE @UsedRooms INT;
+		SET @UsedRooms = @BookedRooms + @OccupiedRooms;
+
+		-------------------------------------------------
+		-- 3.4 Check đủ phòng
+		-------------------------------------------------
+		IF (@TotalRooms - @UsedRooms < @Quantity)
+		BEGIN
+			RAISERROR(N'Không đủ phòng trống để cập nhật (đã tính cả phòng đang ở)', 16, 1);
+			ROLLBACK;
+			RETURN;
+		END
 
         -------------------------------------------------
         -- 4. Lấy giá mới (nếu cần)
