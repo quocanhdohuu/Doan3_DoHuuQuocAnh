@@ -128,6 +128,24 @@ class Hoadon extends Component {
 
   mapPendingInvoiceFromApi = (item) => {
     const stayId = item?.StayID ?? item?.stayId ?? item?.id ?? null;
+    const guestName = String(
+      item?.GuesName ??
+        item?.GuestName ??
+        item?.guestName ??
+        item?.CustomerName ??
+        item?.customerName ??
+        "-",
+    );
+    const checkinRaw =
+      item?.ActualCheckIn ??
+      item?.actualCheckIn ??
+      item?.FirstCheckIn ??
+      item?.firstCheckIn;
+    const checkoutRaw =
+      item?.ActualCheckOut ??
+      item?.actualCheckOut ??
+      item?.LastCheckOut ??
+      item?.lastCheckOut;
     const roomCharge = this.getNumber(item?.RoomCharge ?? item?.roomCharge);
     const serviceCharge = this.getNumber(
       item?.ServiceCharge ?? item?.serviceCharge,
@@ -141,18 +159,17 @@ class Hoadon extends Component {
     const totalAmount = this.getNumber(item?.TotalAmount ?? item?.totalAmount);
 
     return {
-      id: stayId ?? Date.now() + Math.floor(Math.random() * 1000),
+      id: stayId ?? `${guestName}-${checkinRaw}-${checkoutRaw}`,
       stayId: stayId ?? null,
       roomNumber: String(
         item?.RoomNumber ?? item?.roomNumber ?? item?.SoPhong ?? "-",
       ),
-      guestName: String(item?.CustomerName ?? item?.customerName ?? "-"),
-      checkinDate: this.formatDateForTable(
-        item?.FirstCheckIn ?? item?.firstCheckIn,
+      guestName,
+      identityNumber: String(
+        item?.IdentityNumber ?? item?.identityNumber ?? "-",
       ),
-      checkoutDate: this.formatDateForTable(
-        item?.LastCheckOut ?? item?.lastCheckOut,
-      ),
+      checkinDate: this.formatDateForTable(checkinRaw),
+      checkoutDate: this.formatDateForTable(checkoutRaw),
       roomCharge,
       serviceCharge,
       minibarCharge,
@@ -793,13 +810,13 @@ class Hoadon extends Component {
               <tbody>
                 {pendingLoading && (
                   <tr>
-                    <td colSpan="6">Đang tải danh sách chưa thanh toán...</td>
+                    <td colSpan="5">Đang tải danh sách chưa thanh toán...</td>
                   </tr>
                 )}
 
                 {!pendingLoading && pendingError && (
                   <tr>
-                    <td colSpan="6">{pendingError}</td>
+                    <td colSpan="5">{pendingError}</td>
                   </tr>
                 )}
 
@@ -807,7 +824,7 @@ class Hoadon extends Component {
                   !pendingError &&
                   pendingRooms.length === 0 && (
                     <tr>
-                      <td colSpan="6">
+                      <td colSpan="5">
                         Không có khách check-out chưa thanh toán.
                       </td>
                     </tr>
