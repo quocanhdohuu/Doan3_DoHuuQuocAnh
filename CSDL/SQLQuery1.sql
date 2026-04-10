@@ -3588,6 +3588,217 @@ EXEC sp_GetReservationCountByMonth
     @Year = 2026,
     @Month = 4;
 
+----Biểu đồ trang Báo cáo-----------------------------------------------
+------------------------------------------------------------------------------------------------------
+-------------1212121212121212-------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------
+---Biểu đồ doanh thu từng ngày theo tháng-------------------------
+CREATE PROCEDURE sp_GetRevenueByDayInMonth
+    @Month INT,
+    @Year INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Tạo ngày đầu và cuối tháng
+    DECLARE @StartDate DATE = DATEFROMPARTS(@Year, @Month, 1);
+    DECLARE @EndDate DATE = EOMONTH(@StartDate);
+
+    -- Tạo bảng danh sách ngày trong tháng
+    ;WITH DateList AS (
+        SELECT @StartDate AS Ngay
+        UNION ALL
+        SELECT DATEADD(DAY, 1, Ngay)
+        FROM DateList
+        WHERE Ngay < @EndDate
+    )
+
+    SELECT 
+        DAY(d.Ngay) AS Ngay,
+        ISNULL(SUM(p.Amount), 0) AS DoanhThu
+    FROM DateList d
+    LEFT JOIN Invoices i
+        ON CAST(i.Date AS DATE) = d.Ngay
+        AND i.Status = 'PAID'
+    LEFT JOIN Payments p
+        ON p.InvoiceID = i.InvoiceID
+    GROUP BY d.Ngay
+    ORDER BY d.Ngay
+    OPTION (MAXRECURSION 31); -- tránh lỗi đệ quy
+END
+
+EXEC sp_GetRevenueByDayInMonth @Month = 3, @Year = 2026
+
+---Biểu đồ doanh thu theo kênh (Đặt phòng/ Walk-in)---------------
+CREATE PROCEDURE sp_GetRevenueByCustomerType
+    @Month INT,
+    @Year INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Tổng doanh thu trong tháng
+    DECLARE @TotalRevenue DECIMAL(18,2);
+
+    SELECT 
+        @TotalRevenue = ISNULL(SUM(i.TotalAmount), 0)
+    FROM Invoices i
+    WHERE 
+        MONTH(i.Date) = @Month
+        AND YEAR(i.Date) = @Year;
+
+    -- Doanh thu theo loại khách + %
+    SELECT 
+        t.CustomerType,
+        ISNULL(SUM(i.TotalAmount), 0) AS TotalRevenue,
+
+        CASE 
+            WHEN @TotalRevenue = 0 THEN 0
+            ELSE ROUND(ISNULL(SUM(i.TotalAmount), 0) * 100.0 / @TotalRevenue, 2)
+        END AS Percentage
+
+    FROM (
+        SELECT N'Walk-in' AS CustomerType
+        UNION ALL
+        SELECT N'Đặt trước'
+    ) t
+
+    LEFT JOIN Stays s 
+        ON (t.CustomerType = N'Walk-in' AND s.ReservationID IS NULL)
+        OR (t.CustomerType = N'Đặt trước' AND s.ReservationID IS NOT NULL)
+
+    LEFT JOIN Invoices i 
+        ON i.StayID = s.StayID
+        AND MONTH(i.Date) = @Month
+        AND YEAR(i.Date) = @Year
+
+    GROUP BY t.CustomerType
+END
+
+EXEC sp_GetRevenueByCustomerType @Month = 3, @Year = 2026
+
+---Biểu đồ doanh thu theo loại phòng------------------------------
+CREATE PROCEDURE sp_GetRevenueByRoomTypeInMonth
+    @Month INT,
+    @Year INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Đếm số phòng trong mỗi Stay (để tránh nhân đôi doanh thu)
+    ;WITH RoomCount AS (
+        SELECT 
+            StayID,
+            COUNT(DISTINCT RoomID) AS SoPhong
+        FROM RoomStayHistory
+        GROUP BY StayID
+    ),
+
+    RevenueData AS (
+        SELECT 
+            r.RoomTypeID,
+            SUM(p.Amount * 1.0 / rc.SoPhong) AS DoanhThu
+        FROM Payments p
+        INNER JOIN Invoices i 
+            ON p.InvoiceID = i.InvoiceID
+        INNER JOIN Stays s
+            ON i.StayID = s.StayID
+        INNER JOIN RoomStayHistory rsh
+            ON s.StayID = rsh.StayID
+        INNER JOIN RoomCount rc
+            ON rc.StayID = s.StayID
+        INNER JOIN Rooms r
+            ON rsh.RoomID = r.RoomID
+        WHERE 
+            MONTH(p.PaymentDate) = @Month
+            AND YEAR(p.PaymentDate) = @Year
+            AND i.Status = 'PAID'
+        GROUP BY r.RoomTypeID
+    )
+
+    SELECT 
+        rt.Name AS TenLoaiPhong,
+        ISNULL(rd.DoanhThu, 0) AS DoanhThu
+    FROM RoomTypes rt
+    LEFT JOIN RevenueData rd
+        ON rt.RoomTypeID = rd.RoomTypeID
+    ORDER BY DoanhThu DESC;
+END
+
+EXEC sp_GetRevenueByRoomTypeInMonth @Month = 3, @Year = 2026
+---Biểu đồ công suất theo loại phòng------------------------------
+CREATE PROCEDURE sp_GetRoomTypeUsagePercentInMonth
+    @Month INT,
+    @Year INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @StartDate DATE = DATEFROMPARTS(@Year, @Month, 1);
+    DECLARE @EndDate DATE = EOMONTH(@StartDate);
+
+    -- Lấy tất cả các ngày phòng được sử dụng (tính theo từng ngày)
+    ;WITH UsagePerDay AS (
+        SELECT 
+            r.RoomTypeID,
+            CAST(d.Ngay AS DATE) AS Ngay
+        FROM RoomStayHistory rsh
+        INNER JOIN Rooms r
+            ON rsh.RoomID = r.RoomID
+
+        -- Tách từng ngày sử dụng
+        CROSS APPLY (
+            SELECT DATEADD(DAY, v.number,
+                CASE 
+                    WHEN rsh.CheckInTime < @StartDate THEN @StartDate
+                    ELSE rsh.CheckInTime
+                END
+            ) AS Ngay
+            FROM master..spt_values v
+            WHERE v.type = 'P'
+              AND DATEADD(DAY, v.number,
+                    CASE 
+                        WHEN rsh.CheckInTime < @StartDate THEN @StartDate
+                        ELSE rsh.CheckInTime
+                    END
+                ) < 
+                CASE 
+                    WHEN rsh.CheckOutTime > DATEADD(DAY, 1, @EndDate) 
+                        THEN DATEADD(DAY, 1, @EndDate)
+                    ELSE rsh.CheckOutTime
+                END
+        ) d
+    ),
+
+    -- Đếm số lượt sử dụng theo loại phòng
+    RoomTypeUsage AS (
+        SELECT 
+            RoomTypeID,
+            COUNT(*) AS UsageCount
+        FROM UsagePerDay
+        GROUP BY RoomTypeID
+    ),
+
+    -- Tổng toàn bộ lượt sử dụng
+    TotalUsage AS (
+        SELECT COUNT(*) AS TotalCount
+        FROM UsagePerDay
+    )
+
+    SELECT 
+        rt.Name AS TenLoaiPhong,
+        ISNULL(
+            (rtu.UsageCount * 100.0) / tu.TotalCount,
+            0
+        ) AS PhanTramSuDung
+    FROM RoomTypes rt
+    LEFT JOIN RoomTypeUsage rtu
+        ON rt.RoomTypeID = rtu.RoomTypeID
+    CROSS JOIN TotalUsage tu
+    ORDER BY PhanTramSuDung DESC;
+END
+
+EXEC sp_GetRoomTypeUsagePercentInMonth @Month = 4, @Year = 2026
 
 select * from Customers
 select * from Guests
