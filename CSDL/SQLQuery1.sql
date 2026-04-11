@@ -287,6 +287,28 @@ EXEC sp_RegisterCustomer
     @Email = 'vanb@gmail.com',
     @PasswordHash = '123';
 
+--Đăng nhập và lấy các thông tin Khách hàng--------------------------------------------------
+CREATE PROCEDURE GetAccountInfoCustomer
+    @Email NVARCHAR(255),
+    @PasswordHash NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        u.Email,
+        u.PasswordHash,
+        u.Role,
+        c.FullName,
+        c.Phone
+    FROM Users u
+    INNER JOIN Customers c ON u.UserID = c.UserID
+    WHERE u.Email = @Email
+      AND u.PasswordHash = @PasswordHash
+END;
+EXEC GetAccountInfo @Email = 'customer1@gmail.com', @PasswordHash = '123456';
+select*from Customers
+
 --Đăng nhập và lấy các thông tin--------------------------------------------------
 alter PROCEDURE GetAccountInfo
     @Email NVARCHAR(255),
