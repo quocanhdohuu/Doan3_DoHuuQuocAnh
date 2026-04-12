@@ -1358,12 +1358,16 @@ BEGIN
     -- ROOM (gom theo StayID)
     -------------------------------------------------
     LEFT JOIN (
-        SELECT 
-            StayID,
-            SUM(RateAtThatTime) AS TotalRoomCharge
-        FROM RoomStayHistory
-        GROUP BY StayID
-    ) rh ON rh.StayID = s.StayID
+    SELECT 
+        StayID,
+		SUM(
+            CASE 
+                WHEN DATEDIFF(DAY, CheckInTime, CheckOutTime) = 0 
+                    THEN 1
+                ELSE DATEDIFF(DAY, CheckInTime, CheckOutTime)
+            END * RateAtThatTime) AS TotalRoomCharge
+    FROM RoomStayHistory
+    GROUP BY StayID) rh ON rh.StayID = s.StayID
 
     -------------------------------------------------
     -- SERVICE
@@ -1404,116 +1408,11 @@ BEGIN
     WHERE 
         s.Status = 'COMPLETED'
         AND (i.InvoiceID IS NULL OR i.Status != 'PAID')
+	ORDER BY s.ActualCheckOut DESC
 END
 EXEC sp_GetPendingInvoices
 select*from Guests
 select*from stays
-
------	Tạo hoá đơn
---CREATE PROCEDURE sp_CreateInvoice
---    @StayID INT
---AS
---BEGIN
---    DECLARE @InvoiceID INT
---    DECLARE @Total DECIMAL(14,2) = 0
-
---    -- 1. Tạo Invoice
---    INSERT INTO Invoices (StayID, TotalAmount, VAT, Status)
---    VALUES (@StayID, 0, 0, 'OPEN')
-
---    SET @InvoiceID = SCOPE_IDENTITY()
-
---    -----------------------------------
---    -- 2. ROOM CHARGE
---    -----------------------------------
---    INSERT INTO InvoiceDetails (InvoiceID, ItemType, ItemName, Quantity, UnitPrice, Amount)
---    SELECT 
---        @InvoiceID,
---        'ROOM',
---        r.RoomNumber,
---        DATEDIFF(DAY, rs.CheckInTime, rs.CheckOutTime),
---        rs.RateAtThatTime,
---        DATEDIFF(DAY, rs.CheckInTime, rs.CheckOutTime) * rs.RateAtThatTime
---    FROM RoomStayHistory rs
---    JOIN Rooms r ON rs.RoomID = r.RoomID
---    WHERE rs.StayID = @StayID
-
---    -----------------------------------
---    -- 3. SERVICES
---    -----------------------------------
---    INSERT INTO InvoiceDetails
---    SELECT
---        @InvoiceID,
---        'SERVICE',
---        s.ServiceName,
---        su.Quantity,
---        s.Price,
---        su.Quantity * s.Price
---    FROM ServiceUsages su
---    JOIN Services s ON su.ServiceID = s.ServiceID
---    WHERE su.StayID = @StayID
-
---    -----------------------------------
---    -- 4. MINIBAR
---    -----------------------------------
---    INSERT INTO InvoiceDetails
---    SELECT
---        @InvoiceID,
---        'MINIBAR',
---        m.ItemName,
---        mu.Quantity,
---        m.Price,
---        mu.Quantity * m.Price
---    FROM MinibarUsages mu
---    JOIN MinibarItems m ON mu.MinibarID = m.MinibarID
---    WHERE mu.StayID = @StayID
-
---    -----------------------------------
---    -- 5. PENALTIES
---    -----------------------------------
---    INSERT INTO InvoiceDetails
---    SELECT
---        @InvoiceID,
---        'PENALTY',
---        p.Reason,
---        1,
---        p.Amount,
---        p.Amount
---    FROM Penalties p
---    WHERE p.StayID = @StayID
-
---    -----------------------------------
---    -- 6. UPDATE TOTAL
---    -----------------------------------
---    SELECT @Total = SUM(Amount)
---    FROM InvoiceDetails
---    WHERE InvoiceID = @InvoiceID
-
---    UPDATE Invoices
---    SET TotalAmount = @Total
---    WHERE InvoiceID = @InvoiceID
-
---    SELECT @InvoiceID AS InvoiceID, @Total AS Total
---END
-
-----Thanh toán hoá đơn
---CREATE PROCEDURE sp_PayInvoice
---    @InvoiceID INT,
---    @Method NVARCHAR(20)
---AS
---BEGIN
---    DECLARE @Amount DECIMAL(14,2)
-
---    SELECT @Amount = TotalAmount FROM Invoices WHERE InvoiceID = @InvoiceID
-
---    INSERT INTO Payments (InvoiceID, PaymentMethod, Amount)
---    VALUES (@InvoiceID, @Method, @Amount)
-
---    UPDATE Invoices
---    SET Status = 'PAID'
---    WHERE InvoiceID = @InvoiceID
---END
-
 
 -----Tạo hoá đơn và thanh toán luôn---------------------------------------
 ALTER PROCEDURE sp_CreateAndPayInvoice
@@ -1702,6 +1601,7 @@ BEGIN
     JOIN Stays s ON i.StayID = s.StayID
     JOIN Guests g ON s.GuestID = g.GuestID
     WHERE i.Status = 'PAID'
+	ORDER BY i.Date DESC
 END
 EXEC sp_GetInvoiceHistory
 
