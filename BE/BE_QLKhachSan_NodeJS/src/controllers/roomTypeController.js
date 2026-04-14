@@ -1,5 +1,42 @@
 const { sql } = require("../config/db");
 
+const toPositiveInt = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+};
+
+const toDateString = (value) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    return null;
+  }
+
+  const [year, month, day] = normalized.split("-").map(Number);
+  const parsedDate = new Date(`${normalized}T00:00:00Z`);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return null;
+  }
+
+  if (
+    parsedDate.getUTCFullYear() !== year ||
+    parsedDate.getUTCMonth() + 1 !== month ||
+    parsedDate.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return normalized;
+};
+
 const getRoomTypes = async (req, res) => {
   console.log("getRoomTypes called");
   try {
@@ -98,4 +135,58 @@ const deleteRoomType = async (req, res) => {
   }
 };
 
-module.exports = { getRoomTypes, addRoomType, updateRoomType, deleteRoomType };
+const searchAvailableRoomTypes = async (req, res) => {
+  console.log("searchAvailableRoomTypes called", req.query, req.body);
+  try {
+    const checkInDate = toDateString(
+      req.query.CheckInDate || req.query.checkInDate || req.body?.CheckInDate,
+    );
+    const checkOutDate = toDateString(
+      req.query.CheckOutDate ||
+        req.query.checkOutDate ||
+        req.body?.CheckOutDate,
+    );
+    const numPeople = toPositiveInt(
+      req.query.NumPeople || req.query.numPeople || req.body?.NumPeople,
+    );
+    const numRooms = toPositiveInt(
+      req.query.NumRooms || req.query.numRooms || req.body?.NumRooms,
+    );
+
+    if (!checkInDate || !checkOutDate || !numPeople || !numRooms) {
+      return res.status(400).json({
+        error:
+          "Thieu hoac sai tham so: CheckInDate, CheckOutDate (yyyy-mm-dd), NumPeople, NumRooms",
+      });
+    }
+
+    if (checkInDate >= checkOutDate) {
+      return res.status(400).json({
+        error: "CheckOutDate phai lon hon CheckInDate",
+      });
+    }
+
+    const request = new sql.Request();
+    request.input("CheckInDate", sql.Date, checkInDate);
+    request.input("CheckOutDate", sql.Date, checkOutDate);
+    request.input("NumPeople", sql.Int, numPeople);
+    request.input("NumRooms", sql.Int, numRooms);
+
+    const result = await request.execute("sp_SearchAvailableRoomTypes");
+
+    return res.json(result.recordset || []);
+  } catch (err) {
+    console.error("searchAvailableRoomTypes Error:", err);
+    return res
+      .status(500)
+      .json({ error: "Loi server", detail: err.message, stack: err.stack });
+  }
+};
+
+module.exports = {
+  getRoomTypes,
+  addRoomType,
+  updateRoomType,
+  deleteRoomType,
+  searchAvailableRoomTypes,
+};

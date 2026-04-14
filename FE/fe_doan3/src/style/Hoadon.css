@@ -1,20 +1,32 @@
 .hoadon {
   padding: 16px;
-  min-height: 100vh;
+  min-height: calc(100vh - 80px);
   box-sizing: border-box;
   width: 100%;
-  margin-bottom: 50px;
+  margin-bottom: 20px;
 }
 
 .hoadon-main,
 .hoadon-history {
   padding: 18px 12px 24px 12px;
-  background-color: #f8f8f8;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: #f8f8f8;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   border-radius: 16px;
   margin-bottom: 20px;
-  margin-top: 38px;
+  display: flex;
+  flex-direction: column;
+  min-height: 430px;
 }
+
+.hoadon-main {
+  margin-top: 30px;
+  min-height: 540px;
+}
+
+.hoadon-history {
+  margin-top: 0;
+}
+
 .hoadon-main h3,
 .hoadon-history h3 {
   margin: 0;
@@ -28,17 +40,43 @@
   overflow-x: auto;
 }
 
+.hoadon-main .table,
+.hoadon-history .table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 15px;
+}
+
+.hoadon-main .table thead tr,
+.hoadon-history .table thead tr {
+  background: #fff;
+}
+
 .table th,
 .table td {
-  padding: 12px;
+  padding: 14px 16px;
   text-align: left;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #ececec;
 }
 
 .table th {
   background-color: transparent;
-  font-weight: bold;
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-bottom: 1px solid #e5e7eb;
   color: #8b96a7;
+}
+
+.hoadon-main .table tbody tr,
+.hoadon-history .table tbody tr {
+  background: #f8f8f8;
+  transition: background 0.15s;
+}
+
+.hoadon-main .table tbody tr:hover,
+.hoadon-history .table tbody tr:hover {
+  background: #f3f6fd;
 }
 
 .btn-primary {
@@ -64,7 +102,9 @@
 
 .search-box {
   position: relative;
-  width: 300px;
+  width: 100%;
+  min-width: 220px;
+  max-width: 100%;
   margin-bottom: 20px;
 }
 
@@ -84,6 +124,44 @@
   transform: translateY(-50%);
   color: #8b96a7;
   font-size: 14px;
+}
+
+.hoadon-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 16px;
+  margin-right: 20px;
+  justify-content: flex-end;
+}
+
+.hoadon-page-btn {
+  min-width: 30px;
+  height: 30px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hoadon-page-btn:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.hoadon-page-btn.active {
+  color: #1d4ed8;
+  background: #e8f0ff;
+  border-color: #60a5fa;
+}
+
+.hoadon-page-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .modal-overlay {

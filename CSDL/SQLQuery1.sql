@@ -3722,6 +3722,112 @@ END
 
 EXEC sp_GetRoomTypeUsagePercentInMonth @Month = 4, @Year = 2026
 
+
+
+-------------------------------------------------------------------------
+----------VAI TRÒ KHÁCH HÀNG---------------------------------------------
+-------------------------------------------------------------------------
+
+-------Tìm kiếm phòng trống(checkIn, checkOut, Số người, Số lượng phòng)
+CREATE PROCEDURE sp_SearchAvailableRoomTypes
+    @CheckInDate DATE,
+    @CheckOutDate DATE,
+    @NumPeople INT,
+    @NumRooms INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -------------------------------------------------
+    -- 1. Tổng số phòng mỗi loại
+    -------------------------------------------------
+    WITH TotalRooms AS (
+        SELECT 
+            r.RoomTypeID,
+            COUNT(*) AS TotalRooms
+        FROM Rooms r
+        GROUP BY r.RoomTypeID
+    ),
+
+    -------------------------------------------------
+    -- 2. Phòng đã được đặt (Reservation)
+    -------------------------------------------------
+    ReservedRooms AS (
+        SELECT 
+            rr.RoomTypeID,
+            SUM(rr.Quantity) AS ReservedCount
+        FROM ReservationRooms rr
+        JOIN Reservations res ON rr.ReservationID = res.ReservationID
+        WHERE res.Status IN ('BOOKED','CHECKED_IN')
+        AND (
+            res.CheckInDate < @CheckOutDate
+            AND res.CheckOutDate > @CheckInDate
+        )
+        GROUP BY rr.RoomTypeID
+    ),
+
+    -------------------------------------------------
+    -- 3. Phòng đang ở (Stay)
+    -------------------------------------------------
+    OccupiedRooms AS (
+        SELECT 
+            r.RoomTypeID,
+            COUNT(DISTINCT r.RoomID) AS OccupiedCount
+        FROM RoomStayHistory rsh
+        JOIN Rooms r ON rsh.RoomID = r.RoomID
+        JOIN Stays s ON s.StayID = rsh.StayID
+        WHERE s.Status = 'CHECKED_IN'
+        AND (
+            rsh.CheckInTime < @CheckOutDate
+            AND ISNULL(rsh.CheckOutTime, s.ExpectedCheckOut) > @CheckInDate
+        )
+        GROUP BY r.RoomTypeID
+    )
+
+    -------------------------------------------------
+    -- 4. Kết quả cuối
+    -------------------------------------------------
+    SELECT 
+        rt.RoomTypeID,
+        rt.Name,
+        rt.Capacity,
+        rt.DefaultPrice,
+
+        tr.TotalRooms,
+        ISNULL(rr.ReservedCount, 0) AS ReservedRooms,
+        ISNULL(oroom.OccupiedCount, 0) AS OccupiedRooms,
+
+        tr.TotalRooms 
+        - ISNULL(rr.ReservedCount, 0) 
+        - ISNULL(oroom.OccupiedCount, 0) AS AvailableRooms
+
+    FROM RoomTypes rt
+    JOIN TotalRooms tr ON rt.RoomTypeID = tr.RoomTypeID
+    LEFT JOIN ReservedRooms rr ON rt.RoomTypeID = rr.RoomTypeID
+    LEFT JOIN OccupiedRooms oroom ON rt.RoomTypeID = oroom.RoomTypeID
+
+    -------------------------------------------------
+    -- 5. Điều kiện lọc
+    -------------------------------------------------
+    WHERE 
+        (tr.TotalRooms 
+        - ISNULL(rr.ReservedCount, 0) 
+        - ISNULL(oroom.OccupiedCount, 0)) >= @NumRooms
+
+        AND (rt.Capacity * @NumRooms) >= @NumPeople
+
+    ORDER BY AvailableRooms DESC
+END
+
+EXEC sp_SearchAvailableRoomTypes 
+    @CheckInDate = '2026-04-10',
+    @CheckOutDate = '2026-04-12',
+    @NumPeople = 4,
+    @NumRooms = 2
+
+
+
+
 select * from Customers
 select * from Guests
 select * from InvoiceDetails

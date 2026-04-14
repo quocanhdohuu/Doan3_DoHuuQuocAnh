@@ -6,8 +6,11 @@ const {
   addRoomType,
   updateRoomType,
   deleteRoomType,
+  searchAvailableRoomTypes,
 } = require("../controllers/roomTypeController");
 
+router.get("/search-available", searchAvailableRoomTypes);
+router.post("/search-available", searchAvailableRoomTypes);
 router.get("/", getRoomTypes);
 router.post("/", addRoomType);
 router.put("/:id", updateRoomType);
