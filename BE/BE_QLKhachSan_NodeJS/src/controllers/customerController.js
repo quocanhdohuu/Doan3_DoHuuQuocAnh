@@ -65,6 +65,15 @@ const extractSqlErrorMessage = (err) => {
   return fallback || readable || "Lỗi server";
 };
 
+const toPositiveInt = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+};
+
 const getCustomersFullInfo = async (req, res) => {
   console.log("getCustomersFullInfo called");
   try {
@@ -107,6 +116,28 @@ const insertCustomer = async (req, res) => {
   }
 };
 
+const getReservationsByUser = async (req, res) => {
+  console.log("getReservationsByUser called", req.params, req.query);
+  try {
+    const userID = toPositiveInt(req.params.userId || req.query.userId || req.query.UserID);
+
+    if (!userID) {
+      return res.status(400).json({ error: "UserID khong hop le" });
+    }
+
+    const request = new sql.Request();
+    request.input("UserID", sql.Int, userID);
+
+    const result = await request.execute("sp_GetReservationsByUser");
+    return res.json(result.recordset || []);
+  } catch (err) {
+    console.error("getReservationsByUser Error:", err);
+    return res
+      .status(500)
+      .json({ error: "Loi server", detail: extractSqlErrorMessage(err) });
+  }
+};
+
 const updateCustomer = async (req, res) => {
   console.log("updateCustomer called", req.params, req.body);
   try {
@@ -146,5 +177,6 @@ const updateCustomer = async (req, res) => {
 module.exports = {
   getCustomersFullInfo,
   insertCustomer,
+  getReservationsByUser,
   updateCustomer,
 };

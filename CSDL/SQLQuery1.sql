@@ -288,7 +288,7 @@ EXEC sp_RegisterCustomer
     @PasswordHash = '123';
 
 --Đăng nhập và lấy các thông tin Khách hàng--------------------------------------------------
-CREATE PROCEDURE GetAccountInfoCustomer
+ALTER PROCEDURE GetAccountInfoCustomer
     @Email NVARCHAR(255),
     @PasswordHash NVARCHAR(255)
 AS
@@ -296,6 +296,7 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT 
+		u.UserID,
         u.Email,
         u.PasswordHash,
         u.Role,
@@ -306,7 +307,7 @@ BEGIN
     WHERE u.Email = @Email
       AND u.PasswordHash = @PasswordHash
 END;
-EXEC GetAccountInfo @Email = 'customer1@gmail.com', @PasswordHash = '123456';
+EXEC GetAccountInfoCustomer @Email = 'customer1@gmail.com', @PasswordHash = '123456';
 select*from Customers
 
 --Đăng nhập và lấy các thông tin--------------------------------------------------
@@ -3729,7 +3730,7 @@ EXEC sp_GetRoomTypeUsagePercentInMonth @Month = 4, @Year = 2026
 -------------------------------------------------------------------------
 
 -------Tìm kiếm phòng trống(checkIn, checkOut, Số người, Số lượng phòng)
-CREATE PROCEDURE sp_SearchAvailableRoomTypes
+ALTER PROCEDURE sp_SearchAvailableRoomTypes
     @CheckInDate DATE,
     @CheckOutDate DATE,
     @NumPeople INT,
@@ -3792,6 +3793,7 @@ BEGIN
         rt.Name,
         rt.Capacity,
         rt.DefaultPrice,
+		rt.Description,
 
         tr.TotalRooms,
         ISNULL(rr.ReservedCount, 0) AS ReservedRooms,
@@ -3825,6 +3827,111 @@ EXEC sp_SearchAvailableRoomTypes
     @NumPeople = 4,
     @NumRooms = 2
 
+---Lịch sử đặt phòng của khách hàng
+ALTER PROCEDURE sp_GetReservationsByUser
+    @UserID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        s.StayID,
+
+        r.ReservationID,
+        r.Status,
+
+        r.CheckInDate AS CheckIn,
+        r.CheckOutDate AS CheckOut,
+
+        rt.Name AS RoomType,
+        rr.Quantity,
+
+        -------------------------------------------------
+        -- Tổng tiền
+        -------------------------------------------------
+        CASE 
+            -- ✅ Đã ở xong → tính full
+            WHEN r.Status = 'COMPLETED' THEN
+                ISNULL(rh.TotalRoomCharge, 0)
+                + ISNULL(sv.TotalServiceCharge, 0)
+                + ISNULL(mb.TotalMinibarCharge, 0)
+                + ISNULL(pn.TotalPenalty, 0)
+
+            -- ✅ Chưa checkout → lấy giá đặt
+            ELSE
+                rr.PriceAtBooking * rr.Quantity
+        END AS TotalAmount
+
+    FROM Reservations r
+    JOIN ReservationRooms rr ON r.ReservationID = rr.ReservationID
+    JOIN RoomTypes rt ON rr.RoomTypeID = rt.RoomTypeID
+
+    LEFT JOIN Stays s ON s.ReservationID = r.ReservationID
+
+    -------------------------------------------------
+    -- ROOM (chỉ dùng khi COMPLETED)
+    -------------------------------------------------
+    LEFT JOIN (
+        SELECT 
+            StayID,
+            SUM(
+                CASE 
+                    WHEN DATEDIFF(HOUR, CheckInTime, CheckOutTime) <= 0 THEN 1
+                    ELSE CEILING(DATEDIFF(HOUR, CheckInTime, CheckOutTime) / 24.0)
+                END * RateAtThatTime
+            ) AS TotalRoomCharge
+        FROM RoomStayHistory
+        GROUP BY StayID
+    ) rh ON rh.StayID = s.StayID
+
+    -------------------------------------------------
+    -- SERVICE
+    -------------------------------------------------
+    LEFT JOIN (
+        SELECT 
+            su.StayID,
+            SUM(su.Quantity * sv.Price) AS TotalServiceCharge
+        FROM ServiceUsages su
+        JOIN Services sv ON su.ServiceID = sv.ServiceID
+        GROUP BY su.StayID
+    ) sv ON sv.StayID = s.StayID
+
+    -------------------------------------------------
+    -- MINIBAR
+    -------------------------------------------------
+    LEFT JOIN (
+        SELECT 
+            mu.StayID,
+            SUM(mu.Quantity * mi.Price) AS TotalMinibarCharge
+        FROM MinibarUsages mu
+        JOIN MinibarItems mi ON mu.MinibarID = mi.MinibarID
+        GROUP BY mu.StayID
+    ) mb ON mb.StayID = s.StayID
+
+    -------------------------------------------------
+    -- PENALTY
+    -------------------------------------------------
+    LEFT JOIN (
+        SELECT 
+            StayID,
+            SUM(Amount) AS TotalPenalty
+        FROM Penalties
+        GROUP BY StayID
+    ) pn ON pn.StayID = s.StayID
+
+    -------------------------------------------------
+    WHERE r.UserID = @UserID
+
+    ORDER BY 
+        CASE 
+            WHEN r.Status = 'BOOKED' THEN 1
+            WHEN r.Status = 'CHECKED_IN' THEN 2
+            WHEN r.Status = 'COMPLETED' THEN 3
+            WHEN r.Status = 'CANCELLED' THEN 4
+        END,
+        r.CheckInDate DESC
+END
+EXEC sp_GetReservationsByUser @UserID = 3
 
 
 

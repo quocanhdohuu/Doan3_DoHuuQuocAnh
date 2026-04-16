@@ -2,108 +2,141 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #ffffff;
+  min-height: 100vh;
+  padding: 24px;
   font-family: "Segoe UI", Arial, sans-serif;
+  background-image:
+    linear-gradient(rgba(12, 18, 34, 0.45), rgba(12, 18, 34, 0.45)),
+    url("../img/hotel_image.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .dangnhap-container {
   width: 100%;
-  max-width: 420px;
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-  padding: 35px 40px;
+  max-width: 430px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.25);
+  padding: 34px 34px 28px;
   box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #ffffff;
 }
 
 .dangnhap-top {
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 24px;
 }
 
 .dangnhap-top h3 {
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 700;
-  color: #111;
-  margin-bottom: 5px;
+  margin: 0 0 6px;
 }
 
 .dangnhap-top p {
   font-size: 14px;
-  color: #777;
   margin: 0;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .dangnhap-form label {
   display: block;
   font-size: 14px;
   font-weight: 600;
-  margin-bottom: 5px;
-  color: #000;
+  margin-bottom: 6px;
+  color: #ffffff;
 }
 
-.dangnhap-form input,
-.dangnhap-form select {
+.dangnhap-form input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 9px;
   outline: none;
   font-size: 14px;
-  background-color: #f9f9f9;
-  transition:
-    border-color 0.2s,
-    background-color 0.2s;
+  background-color: rgba(255, 255, 255, 0.9);
+  transition: border-color 0.2s;
   box-sizing: border-box;
-  max-width: 100%;
 }
 
-.dangnhap-form input:focus,
-.dangnhap-form select:focus {
-  background-color: #fff;
-  border-color: #999;
-}
-
-.quenmatkhau {
-  display: inline-block;
-  font-size: 13px;
-  color: #f05a5a;
-  text-decoration: none;
-  margin-top: 3px;
-  margin-bottom: 10px;
-}
-
-.quenmatkhau:hover {
-  text-decoration: underline;
+.dangnhap-form input:focus {
+  border-color: #1f88ff;
 }
 
 .dangnhap-button {
   width: 100%;
-  background-color: #000;
-  color: #fff;
+  background-color: #1f88ff;
+  color: #ffffff;
   font-size: 15px;
   font-weight: 600;
   border: none;
-  border-radius: 8px;
-  padding: 10px 0;
+  border-radius: 9px;
+  padding: 11px 0;
   cursor: pointer;
-  transition: background-color 0.3s;
-  margin-top: 10px;
-}
-
-.dangnhap-button:hover {
-  background-color: #333;
-}
-
-.dangnhap-form label:not(:first-of-type) {
+  transition: background-color 0.25s;
   margin-top: 12px;
 }
 
+.dangnhap-button:hover {
+  background-color: #1272df;
+}
+
+.dangnhap-button:disabled {
+  background-color: #7ca8d8;
+  cursor: not-allowed;
+}
+
+.dangnhap-form label:not(:first-of-type) {
+  margin-top: 13px;
+}
+
 .logo-hotel-login {
-  color: blue;
-  font-size: 68px;
+  color: #ffffff;
+  font-size: 62px;
   display: flex;
   justify-content: center;
+  margin-bottom: 10px;
+}
+
+.dangnhap-footer {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+
+.dangky-link {
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.dangky-link:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.dangnhap-message {
+  text-align: center;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+@media (max-width: 480px) {
+  .dangnhap-container {
+    padding: 26px 22px;
+  }
 }

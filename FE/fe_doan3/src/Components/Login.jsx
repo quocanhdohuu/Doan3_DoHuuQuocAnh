@@ -21,7 +21,7 @@ class LoginClass extends Component {
 
   handleSubmit = async (e) => {
     e.preventDefault();
-    this.setState({ loading: true });
+    this.setState({ loading: true, message: "" });
 
     const { email, password } = this.state;
 
@@ -35,10 +35,14 @@ class LoginClass extends Component {
         }),
       });
 
-      const result = await response.json();
+      let result = null;
+      try {
+        result = await response.json();
+      } catch {
+        result = null;
+      }
 
-      if (result.message === "Đăng nhập thành công") {
-        // Lưu user vào context
+      if (response.ok && result?.account) {
         this.props.login({
           name: result.account.FullName,
           email: result.account.Email,
@@ -51,7 +55,7 @@ class LoginClass extends Component {
         });
       } else {
         this.setState({
-          message: "Sai tài khoản hoặc mật khẩu",
+          message: result?.message || "Sai tài khoản hoặc mật khẩu",
           loading: false,
         });
       }
@@ -66,6 +70,8 @@ class LoginClass extends Component {
 
   render() {
     const { loading, message } = this.state;
+    const { onOpenRegister } = this.props;
+
     return (
       <div className="dangnhap">
         <div className="dangnhap-container">
@@ -84,6 +90,7 @@ class LoginClass extends Component {
               placeholder="Nhập email"
               onChange={this.handleChange}
               disabled={loading}
+              required
             />
 
             <label>Mật khẩu</label>
@@ -93,6 +100,7 @@ class LoginClass extends Component {
               placeholder="Nhập mật khẩu"
               onChange={this.handleChange}
               disabled={loading}
+              required
             />
 
             <button
@@ -104,16 +112,28 @@ class LoginClass extends Component {
             </button>
           </form>
 
-          {message && <p>{message}</p>}
+          <div className="dangnhap-footer">
+            <span>Chưa có tài khoản?</span>
+            <button
+              type="button"
+              className="dangky-link"
+              onClick={onOpenRegister}
+              disabled={loading}
+            >
+              Đăng ký khách hàng
+            </button>
+          </div>
+
+          {message && <p className="dangnhap-message">{message}</p>}
         </div>
       </div>
     );
   }
 }
 
-const Login = () => {
+const Login = ({ onOpenRegister }) => {
   const { login } = useAuth();
-  return <LoginClass login={login} />;
+  return <LoginClass login={login} onOpenRegister={onOpenRegister} />;
 };
 
 export default Login;
