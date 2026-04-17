@@ -3933,7 +3933,114 @@ BEGIN
 END
 EXEC sp_GetReservationsByUser @UserID = 3
 
+---Thông tin khách hàng-------------------------------------
+ALTER PROCEDURE sp_GetCustomerInfoByUserID
+    @UserID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
 
+    SELECT 
+        c.FullName,
+        u.Email,
+        c.Phone,
+        c.CCCD,
+        u.PasswordHash,
+
+        -------------------------------------------------
+        -- SỐ LẦN STAY
+        -------------------------------------------------
+        ISNULL(s.TotalStay, 0) AS TotalStay
+
+    FROM Users u
+    LEFT JOIN Customers c ON u.UserID = c.UserID
+
+    -------------------------------------------------
+    -- Đếm Stay
+    -------------------------------------------------
+    LEFT JOIN (
+        SELECT 
+            r.UserID,
+            COUNT(st.StayID) AS TotalStay
+        FROM Reservations r
+        JOIN Stays st ON r.ReservationID = st.ReservationID
+        GROUP BY r.UserID
+    ) s ON s.UserID = u.UserID
+
+    WHERE u.UserID = @UserID
+END
+EXEC sp_GetCustomerInfoByUserID @UserID = 3
+
+---Update thông tin khách hàng----------------------
+CREATE PROCEDURE sp_UpdateCustomerProfile
+    @UserID INT,
+    @Email NVARCHAR(150) = NULL,
+    @PasswordHash NVARCHAR(255) = NULL,
+    @FullName NVARCHAR(150) = NULL,
+    @Phone NVARCHAR(20) = NULL,
+    @CCCD NVARCHAR(20) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -------------------------------------------------
+        -- 1. Check email trùng (nếu có update email)
+        -------------------------------------------------
+        IF @Email IS NOT NULL
+        BEGIN
+            IF EXISTS (
+                SELECT 1 
+                FROM Users 
+                WHERE Email = @Email AND UserID <> @UserID
+            )
+            BEGIN
+                RAISERROR(N'Email đã tồn tại', 16, 1);
+                ROLLBACK;
+                RETURN;
+            END
+        END
+
+        -------------------------------------------------
+        -- 2. Update Users
+        -------------------------------------------------
+        UPDATE Users
+        SET 
+            Email = ISNULL(@Email, Email),
+            PasswordHash = ISNULL(@PasswordHash, PasswordHash)
+        WHERE UserID = @UserID;
+
+        -------------------------------------------------
+        -- 3. Update Customers
+        -------------------------------------------------
+        UPDATE Customers
+        SET 
+            FullName = ISNULL(@FullName, FullName),
+            Phone = ISNULL(@Phone, Phone),
+            CCCD = ISNULL(@CCCD, CCCD)
+        WHERE UserID = @UserID;
+
+        COMMIT;
+
+        PRINT N'Cập nhật thành công';
+    END TRY
+
+    BEGIN CATCH
+        ROLLBACK;
+
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END
+EXEC sp_UpdateCustomerProfile 
+    @UserID = 3,
+    @Email = 'customer1@gmail.com',
+    @PasswordHash = '123456',
+    @FullName = N'Trần Văn B',
+    @Phone = '0912345678',
+    @CCCD = '1234567890';
 
 select * from Customers
 select * from Guests

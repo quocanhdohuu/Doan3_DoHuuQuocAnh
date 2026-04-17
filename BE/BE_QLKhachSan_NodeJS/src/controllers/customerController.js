@@ -1,4 +1,5 @@
 const { sql } = require("../config/db");
+const crypto = require("crypto");
 
 const REPLACEMENT_CHAR_PATTERN = /\uFFFD/g;
 const MOJIBAKE_MARKER_PATTERN = /\u00C3|\u00C6|\u00C2|\u00EF\u00BF\u00BD/g;
@@ -74,6 +75,15 @@ const toPositiveInt = (value) => {
   return parsed;
 };
 
+const toNullableTrimmedString = (value) => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const trimmed = String(value).trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
 const getCustomersFullInfo = async (req, res) => {
   console.log("getCustomersFullInfo called");
   try {
@@ -138,6 +148,100 @@ const getReservationsByUser = async (req, res) => {
   }
 };
 
+const getCustomerInfoByUserID = async (req, res) => {
+  console.log("getCustomerInfoByUserID called", req.params, req.query);
+  try {
+    const userID = toPositiveInt(req.params.userId || req.query.userId || req.query.UserID);
+
+    if (!userID) {
+      return res.status(400).json({ error: "UserID khong hop le" });
+    }
+
+    const request = new sql.Request();
+    request.input("UserID", sql.Int, userID);
+
+    const result = await request.execute("sp_GetCustomerInfoByUserID");
+    const customerInfo = result.recordset?.[0];
+
+    if (!customerInfo) {
+      return res.status(404).json({ error: "Khong tim thay thong tin khach hang" });
+    }
+
+    return res.json(customerInfo);
+  } catch (err) {
+    console.error("getCustomerInfoByUserID Error:", err);
+    return res
+      .status(500)
+      .json({ error: "Loi server", detail: extractSqlErrorMessage(err) });
+  }
+};
+
+const updateCustomerProfile = async (req, res) => {
+  console.log("updateCustomerProfile called", req.params, req.body);
+  try {
+    const userID = toPositiveInt(req.params.userId || req.body?.userId || req.body?.UserID);
+    if (!userID) {
+      return res.status(400).json({ error: "UserID khong hop le" });
+    }
+
+    const email = toNullableTrimmedString(req.body?.Email);
+    const fullName = toNullableTrimmedString(req.body?.FullName);
+    const phone = toNullableTrimmedString(req.body?.Phone);
+    const cccd = toNullableTrimmedString(req.body?.CCCD);
+    const password = toNullableTrimmedString(req.body?.Password);
+    const passwordHashInput = toNullableTrimmedString(req.body?.PasswordHash);
+    const passwordHash = passwordHashInput || (password ? crypto.createHash("sha256").update(password).digest("hex") : null);
+
+    if (!email && !fullName && !phone && !cccd && !passwordHash) {
+      return res.status(400).json({
+        error: "Can it nhat 1 truong de cap nhat: Email, PasswordHash/Password, FullName, Phone, CCCD",
+      });
+    }
+
+    const checkRequest = new sql.Request();
+    checkRequest.input("UserID", sql.Int, userID);
+    const checkResult = await checkRequest.query(`
+      SELECT TOP 1 c.UserID
+      FROM Customers c
+      WHERE c.UserID = @UserID
+    `);
+
+    if (!checkResult.recordset?.length) {
+      return res.status(404).json({ error: "Khong tim thay khach hang" });
+    }
+
+    const request = new sql.Request();
+    request.input("UserID", sql.Int, userID);
+    request.input("Email", sql.NVarChar(150), email);
+    request.input("PasswordHash", sql.NVarChar(255), passwordHash);
+    request.input("FullName", sql.NVarChar(150), fullName);
+    request.input("Phone", sql.NVarChar(20), phone);
+    request.input("CCCD", sql.NVarChar(20), cccd);
+
+    await request.execute("sp_UpdateCustomerProfile");
+
+    return res.json({
+      message: "Cap nhat thong tin khach hang thanh cong",
+      data: {
+        UserID: userID,
+        Email: email,
+        FullName: fullName,
+        Phone: phone,
+        CCCD: cccd,
+      },
+    });
+  } catch (err) {
+    console.error("updateCustomerProfile Error:", err);
+    const message = extractSqlErrorMessage(err);
+
+    if (/email/i.test(message) && /ton tai|trung|exist/i.test(message)) {
+      return res.status(400).json({ error: "Email da ton tai" });
+    }
+
+    return res.status(400).json({ error: message || "Loi server" });
+  }
+};
+
 const updateCustomer = async (req, res) => {
   console.log("updateCustomer called", req.params, req.body);
   try {
@@ -178,5 +282,7 @@ module.exports = {
   getCustomersFullInfo,
   insertCustomer,
   getReservationsByUser,
+  getCustomerInfoByUserID,
+  updateCustomerProfile,
   updateCustomer,
 };
