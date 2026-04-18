@@ -3751,7 +3751,7 @@ BEGIN
     ),
 
     -------------------------------------------------
-    -- 2. Phòng đã được đặt (Reservation)
+    -- 2. Phòng đã được đặt
     -------------------------------------------------
     ReservedRooms AS (
         SELECT 
@@ -3768,7 +3768,7 @@ BEGIN
     ),
 
     -------------------------------------------------
-    -- 3. Phòng đang ở (Stay)
+    -- 3. Phòng đang ở
     -------------------------------------------------
     OccupiedRooms AS (
         SELECT 
@@ -3786,14 +3786,18 @@ BEGIN
     )
 
     -------------------------------------------------
-    -- 4. Kết quả cuối
+    -- 4. Kết quả
     -------------------------------------------------
     SELECT 
         rt.RoomTypeID,
         rt.Name,
         rt.Capacity,
-        rt.DefaultPrice,
-		rt.Description,
+        rt.Description,
+
+        -------------------------------------------------
+        -- 🎯 GIÁ (ƯU TIÊN THEO MÙA)
+        -------------------------------------------------
+        ISNULL(rate.Price, rt.DefaultPrice) AS Price,
 
         tr.TotalRooms,
         ISNULL(rr.ReservedCount, 0) AS ReservedRooms,
@@ -3809,7 +3813,18 @@ BEGIN
     LEFT JOIN OccupiedRooms oroom ON rt.RoomTypeID = oroom.RoomTypeID
 
     -------------------------------------------------
-    -- 5. Điều kiện lọc
+    -- 🔥 LẤY GIÁ THEO MÙA
+    -------------------------------------------------
+    OUTER APPLY (
+        SELECT TOP 1 r.Price
+        FROM Rates r
+        WHERE r.RoomTypeID = rt.RoomTypeID
+        AND @CheckInDate BETWEEN r.StartDate AND r.EndDate
+        ORDER BY r.StartDate DESC
+    ) rate
+
+    -------------------------------------------------
+    -- 5. Filter
     -------------------------------------------------
     WHERE 
         (tr.TotalRooms 
@@ -3820,7 +3835,6 @@ BEGIN
 
     ORDER BY AvailableRooms DESC
 END
-
 EXEC sp_SearchAvailableRoomTypes 
     @CheckInDate = '2026-04-10',
     @CheckOutDate = '2026-04-12',
@@ -4041,6 +4055,112 @@ EXEC sp_UpdateCustomerProfile
     @FullName = N'Trần Văn B',
     @Phone = '0912345678',
     @CCCD = '1234567890';
+
+
+---Đặt phòng trang Khách hàng---------------------------------------
+CREATE PROCEDURE sp_BookRoom
+    @UserID INT,
+    @RoomTypeID INT,
+    @CheckInDate DATE,
+    @CheckOutDate DATE,
+    @NumRooms INT,
+    @NumPeople INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        -------------------------------------------------
+        -- 1. CHECK NGÀY
+        -------------------------------------------------
+        IF (@CheckInDate >= @CheckOutDate)
+        BEGIN
+            RAISERROR(N'Ngày không hợp lệ', 16, 1);
+            RETURN;
+        END
+
+        -------------------------------------------------
+        -- 2. CHECK SỨC CHỨA
+        -------------------------------------------------
+        DECLARE @Capacity INT;
+
+        SELECT @Capacity = Capacity
+        FROM RoomTypes
+        WHERE RoomTypeID = @RoomTypeID;
+
+        IF (@Capacity * @NumRooms < @NumPeople)
+        BEGIN
+            RAISERROR(N'Số người vượt quá sức chứa', 16, 1);
+            RETURN;
+        END
+
+        -------------------------------------------------
+        -- 3. CHECK PHÒNG TRỐNG (GIỐNG SEARCH)
+        -------------------------------------------------
+        DECLARE @TotalRooms INT;
+        SELECT @TotalRooms = COUNT(*)
+        FROM Rooms
+        WHERE RoomTypeID = @RoomTypeID;
+
+        -- Reserved
+        DECLARE @ReservedRooms INT;
+        SELECT @ReservedRooms = ISNULL(SUM(rr.Quantity), 0)
+        FROM ReservationRooms rr
+        JOIN Reservations r ON rr.ReservationID = r.ReservationID
+        WHERE rr.RoomTypeID = @RoomTypeID
+        AND r.Status IN ('BOOKED','CHECKED_IN')
+        AND (
+            r.CheckInDate < @CheckOutDate
+            AND r.CheckOutDate > @CheckInDate
+        );
+
+        -- Occupied
+        DECLARE @OccupiedRooms INT;
+        SELECT @OccupiedRooms = COUNT(DISTINCT rsh.RoomID)
+        FROM RoomStayHistory rsh
+        JOIN Rooms rm ON rsh.RoomID = rm.RoomID
+        JOIN Stays s ON rsh.StayID = s.StayID
+        WHERE rm.RoomTypeID = @RoomTypeID
+        AND s.Status = 'CHECKED_IN'
+        AND (
+            rsh.CheckInTime < @CheckOutDate
+            AND ISNULL(rsh.CheckOutTime, s.ExpectedCheckOut) > @CheckInDate
+        );
+
+        DECLARE @AvailableRooms INT;
+        SET @AvailableRooms = @TotalRooms 
+                            - ISNULL(@ReservedRooms, 0)
+                            - ISNULL(@OccupiedRooms, 0);
+
+        IF (@AvailableRooms < @NumRooms)
+        BEGIN
+            RAISERROR(N'Không đủ phòng trống', 16, 1);
+            RETURN;
+        END
+
+        -------------------------------------------------
+        -- 4. GỌI PROC TẠO RESERVATION
+        -------------------------------------------------
+        EXEC sp_CreateReservation
+            @UserID = @UserID,
+            @RoomTypeID = @RoomTypeID,
+            @Quantity = @NumRooms,
+            @CheckInDate = @CheckInDate,
+            @CheckOutDate = @CheckOutDate;
+
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        RAISERROR(@ErrorMessage, 16, 1);
+    END CATCH
+END
+EXEC sp_BookRoom
+    @UserID = 3,
+    @RoomTypeID = 2,
+    @CheckInDate = '2026-04-18',
+    @CheckOutDate = '2026-04-20',
+    @NumRooms = 10,
+    @NumPeople = 10;
 
 select * from Customers
 select * from Guests

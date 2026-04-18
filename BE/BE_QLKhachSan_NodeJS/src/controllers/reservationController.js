@@ -3,12 +3,16 @@ const { sql } = require("../config/db");
 const REPLACEMENT_CHAR_PATTERN = /\uFFFD/g;
 const MOJIBAKE_MARKER_PATTERN = /\u00C3|\u00C6|\u00C2|\u00EF\u00BF\u00BD/g;
 
-const normalizeMessage = (value) => String(value || "").replace(/\s+/g, " ").trim();
+const normalizeMessage = (value) =>
+  String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const countBrokenEncodingMarkers = (value) => {
   if (!value) return Number.POSITIVE_INFINITY;
 
-  const replacementCharCount = (value.match(REPLACEMENT_CHAR_PATTERN) || []).length;
+  const replacementCharCount = (value.match(REPLACEMENT_CHAR_PATTERN) || [])
+    .length;
   const mojibakeCharCount = (value.match(MOJIBAKE_MARKER_PATTERN) || []).length;
   return replacementCharCount * 5 + mojibakeCharCount * 3;
 };
@@ -28,7 +32,8 @@ const pickReadableMessage = (value) => {
   const original = normalizeMessage(value);
   const repaired = tryRepairMojibake(original);
 
-  return countBrokenEncodingMarkers(repaired) < countBrokenEncodingMarkers(original)
+  return countBrokenEncodingMarkers(repaired) <
+    countBrokenEncodingMarkers(original)
     ? repaired
     : original;
 };
@@ -46,7 +51,11 @@ const resolveFallbackMessage = (err, message) => {
   const normalized = toLooseAscii(message);
   const compact = normalized.replace(/\s+/g, "");
 
-  if (sqlNumber === 2627 || sqlNumber === 2601 || /unique key|duplicate/.test(normalized)) {
+  if (
+    sqlNumber === 2627 ||
+    sqlNumber === 2601 ||
+    /unique key|duplicate/.test(normalized)
+  ) {
     return "Dữ liệu đã tồn tại";
   }
 
@@ -290,7 +299,9 @@ const createReservationWithNewCustomer = async (req, res) => {
     request.input("CheckInDate", sql.Date, checkInDate);
     request.input("CheckOutDate", sql.Date, checkOutDate);
 
-    const result = await request.execute("sp_CreateReservation_WithNewCustomer");
+    const result = await request.execute(
+      "sp_CreateReservation_WithNewCustomer",
+    );
     const payload = result.recordset?.[0] || null;
 
     return res
@@ -298,6 +309,53 @@ const createReservationWithNewCustomer = async (req, res) => {
       .json(payload || { message: "Tạo khách mới và đặt phòng thành công" });
   } catch (err) {
     return sendSqlError(res, err, "createReservationWithNewCustomer");
+  }
+};
+
+const bookRoom = async (req, res) => {
+  console.log("bookRoom called", req.body);
+  try {
+    const userID = toPositiveInt(req.body.UserID);
+    const customerID = toPositiveInt(req.body.CustomerID);
+    const roomTypeID = toPositiveInt(req.body.RoomTypeID);
+    const numRooms = toPositiveInt(req.body.NumRooms || req.body.Quantity);
+    const numPeople = toPositiveInt(req.body.NumPeople);
+    const checkInDate = toDateString(req.body.CheckInDate);
+    const checkOutDate = toDateString(req.body.CheckOutDate);
+
+    if (
+      (!userID && !customerID) ||
+      !roomTypeID ||
+      !numRooms ||
+      !numPeople ||
+      !checkInDate ||
+      !checkOutDate
+    ) {
+      return res.status(400).json({
+        error:
+          "Thieu hoac sai tham so: (UserID hoac CustomerID), RoomTypeID, CheckInDate, CheckOutDate, NumRooms, NumPeople",
+      });
+    }
+
+    const resolved = await resolveUserIDForReservation({ userID, customerID });
+    if (!resolved.userID) {
+      return res.status(resolved.status).json({ error: resolved.error });
+    }
+
+    const request = new sql.Request();
+    request.input("UserID", sql.Int, resolved.userID);
+    request.input("RoomTypeID", sql.Int, roomTypeID);
+    request.input("CheckInDate", sql.Date, checkInDate);
+    request.input("CheckOutDate", sql.Date, checkOutDate);
+    request.input("NumRooms", sql.Int, numRooms);
+    request.input("NumPeople", sql.Int, numPeople);
+
+    const result = await request.execute("sp_BookRoom");
+    const payload = result.recordset?.[0] || null;
+
+    return res.status(201).json(payload || { message: "Đặt phòng thành công" });
+  } catch (err) {
+    return sendSqlError(res, err, "bookRoom");
   }
 };
 
@@ -365,7 +423,9 @@ const updateReservation = async (req, res) => {
     const result = await request.execute("sp_UpdateReservation");
     const payload = result.recordset?.[0] || null;
 
-    return res.json(payload || { message: "Cập nhật lịch đặt phòng thành công" });
+    return res.json(
+      payload || { message: "Cập nhật lịch đặt phòng thành công" },
+    );
   } catch (err) {
     return sendSqlError(res, err, "updateReservation");
   }
@@ -490,7 +550,9 @@ const checkInWalkInOneRoom = async (req, res) => {
     const result = await request.execute("sp_CheckIn_WalkIn_OneRoom");
     const payload = result.recordset?.[0] || null;
 
-    return res.status(201).json(payload || { message: "Check-in walk-in thanh cong" });
+    return res
+      .status(201)
+      .json(payload || { message: "Check-in walk-in thanh cong" });
   } catch (err) {
     return sendSqlError(res, err, "checkInWalkInOneRoom");
   }
@@ -867,7 +929,11 @@ const getPenaltyByStay = async (req, res) => {
 };
 
 const getRoomStayHistoryCheckedOutByStay = async (req, res) => {
-  console.log("getRoomStayHistoryCheckedOutByStay called", req.params, req.query);
+  console.log(
+    "getRoomStayHistoryCheckedOutByStay called",
+    req.params,
+    req.query,
+  );
   try {
     const stayID = toPositiveInt(req.params.stayId || req.query.stayId);
 
@@ -879,7 +945,9 @@ const getRoomStayHistoryCheckedOutByStay = async (req, res) => {
 
     const request = new sql.Request();
     request.input("StayID", sql.Int, stayID);
-    const result = await request.execute("sp_GetRoomStayHistory_CheckedOut_ByStayID");
+    const result = await request.execute(
+      "sp_GetRoomStayHistory_CheckedOut_ByStayID",
+    );
 
     return res.json(result.recordset || []);
   } catch (err) {
@@ -890,6 +958,7 @@ const getRoomStayHistoryCheckedOutByStay = async (req, res) => {
 module.exports = {
   createReservation,
   createReservationWithNewCustomer,
+  bookRoom,
   getReservationHistoryByUser,
   getAllReservations,
   updateReservation,

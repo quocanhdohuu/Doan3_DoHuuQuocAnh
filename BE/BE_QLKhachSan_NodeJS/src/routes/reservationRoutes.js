@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   createReservation,
   createReservationWithNewCustomer,
+  bookRoom,
   getReservationHistoryByUser,
   getAllReservations,
   updateReservation,
@@ -62,6 +63,7 @@ router.put("/penalties/:penaltyId", updatePenalty);
 router.delete("/penalties/:penaltyId", deletePenalty);
 router.get("/", getAllReservations);
 router.get("/user/:userId/history", getReservationHistoryByUser);
+router.post("/book-room", bookRoom);
 router.post("/", createReservation);
 router.post("/new-customer", createReservationWithNewCustomer);
 router.put("/:id", updateReservation);
