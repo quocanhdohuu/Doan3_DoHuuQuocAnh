@@ -51,6 +51,21 @@ const getRoomTypes = async (req, res) => {
   }
 };
 
+const getRoomTypesWithPrice = async (req, res) => {
+  console.log("getRoomTypesWithPrice called");
+  try {
+    const request = new sql.Request();
+    const result = await request.execute("sp_GetRoomTypesWithPrice");
+    console.log("getRoomTypesWithPrice result rows:", result.recordset.length);
+    return res.json(result.recordset || []);
+  } catch (err) {
+    console.error("getRoomTypesWithPrice Error:", err);
+    return res
+      .status(500)
+      .json({ error: "Loi server", detail: err.message, stack: err.stack });
+  }
+};
+
 const addRoomType = async (req, res) => {
   console.log("addRoomType called", req.body);
   try {
@@ -185,6 +200,7 @@ const searchAvailableRoomTypes = async (req, res) => {
 
 module.exports = {
   getRoomTypes,
+  getRoomTypesWithPrice,
   addRoomType,
   updateRoomType,
   deleteRoomType,

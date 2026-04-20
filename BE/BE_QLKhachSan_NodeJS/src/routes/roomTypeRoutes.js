@@ -3,6 +3,7 @@ const router = express.Router();
 
 const {
   getRoomTypes,
+  getRoomTypesWithPrice,
   addRoomType,
   updateRoomType,
   deleteRoomType,
@@ -11,6 +12,7 @@ const {
 
 router.get("/search-available", searchAvailableRoomTypes);
 router.post("/search-available", searchAvailableRoomTypes);
+router.get("/with-price", getRoomTypesWithPrice);
 router.get("/", getRoomTypes);
 router.post("/", addRoomType);
 router.put("/:id", updateRoomType);

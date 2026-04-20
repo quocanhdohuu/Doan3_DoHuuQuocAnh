@@ -3856,25 +3856,30 @@ BEGIN
 
         r.CheckInDate AS CheckIn,
         r.CheckOutDate AS CheckOut,
-
         rt.Name AS RoomType,
+		rt.RoomTypeID,
         rr.Quantity,
 
         -------------------------------------------------
         -- Tổng tiền
         -------------------------------------------------
         CASE 
-            -- ✅ Đã ở xong → tính full
-            WHEN r.Status = 'COMPLETED' THEN
-                ISNULL(rh.TotalRoomCharge, 0)
-                + ISNULL(sv.TotalServiceCharge, 0)
-                + ISNULL(mb.TotalMinibarCharge, 0)
-                + ISNULL(pn.TotalPenalty, 0)
+		-- ✅ Đã ở xong → tính full
+		WHEN r.Status = 'COMPLETED' THEN
+			ISNULL(rh.TotalRoomCharge, 0)
+			+ ISNULL(sv.TotalServiceCharge, 0)
+			+ ISNULL(mb.TotalMinibarCharge, 0)
+			+ ISNULL(pn.TotalPenalty, 0)
 
-            -- ✅ Chưa checkout → lấy giá đặt
-            ELSE
-                rr.PriceAtBooking * rr.Quantity
-        END AS TotalAmount
+		-- ✅ Chưa checkout → phải nhân số đêm
+			ELSE
+				rr.PriceAtBooking 
+				* rr.Quantity
+				* CASE 
+					WHEN DATEDIFF(DAY, r.CheckInDate, r.CheckOutDate) <= 0 THEN 1
+					ELSE DATEDIFF(DAY, r.CheckInDate, r.CheckOutDate)
+				  END
+		END AS TotalAmount
 
     FROM Reservations r
     JOIN ReservationRooms rr ON r.ReservationID = rr.ReservationID
@@ -4161,6 +4166,42 @@ EXEC sp_BookRoom
     @CheckOutDate = '2026-04-20',
     @NumRooms = 10,
     @NumPeople = 10;
+
+---Load các loại phòng theo giá theo mùa(nếu không có giá theo mùa thì load giá mặc định)------
+ALTER PROCEDURE sp_GetRoomTypesWithPrice
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Today DATE = CAST(GETDATE() AS DATE);
+
+    SELECT 
+        rt.RoomTypeID,
+        rt.Name,
+        rt.Capacity,
+        rt.Description,
+
+        -------------------------------------------------
+        -- 🎯 CHỈ 1 GIÁ DUY NHẤT
+        -------------------------------------------------
+        ISNULL(rate.Price, rt.DefaultPrice) AS Price
+
+    FROM RoomTypes rt
+
+    -------------------------------------------------
+    -- LẤY GIÁ THEO MÙA
+    -------------------------------------------------
+    OUTER APPLY (
+        SELECT TOP 1 r.Price
+        FROM Rates r
+        WHERE r.RoomTypeID = rt.RoomTypeID
+        AND @Today BETWEEN r.StartDate AND r.EndDate
+        ORDER BY r.StartDate DESC
+    ) rate
+
+    ORDER BY Price ASC
+END
+EXEC sp_GetRoomTypesWithPrice
 
 select * from Customers
 select * from Guests
