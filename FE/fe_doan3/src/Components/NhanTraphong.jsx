@@ -246,6 +246,17 @@ class NhanTraphong extends Component {
     status: item?.Status ?? "",
   });
 
+  dedupeBySignature = (items, getSignature) => {
+    const seen = new Set();
+
+    return items.filter((item, index) => {
+      const signature = String(getSignature(item, index));
+      if (seen.has(signature)) return false;
+      seen.add(signature);
+      return true;
+    });
+  };
+
   normalizeRoomStatus = (status) =>
     String(status || "")
       .trim()
@@ -742,7 +753,11 @@ class NhanTraphong extends Component {
         : Array.isArray(payload?.data)
           ? payload.data
           : [];
-      const bookingData = rawItems.map(this.mapBookingFromApi);
+      const bookingData = this.dedupeBySignature(
+        rawItems.map(this.mapBookingFromApi),
+        (item) =>
+          `${item.reservationId ?? item.id ?? "reservation"}|${item.guest}|${item.roomType}|${item.checkIn}|${item.checkOut}`,
+      );
       const bookingTotalPages = Math.max(
         1,
         Math.ceil(bookingData.length / PAGE_SIZE),
@@ -774,7 +789,11 @@ class NhanTraphong extends Component {
         : Array.isArray(payload?.data)
           ? payload.data
           : [];
-      const stayData = rawItems.map(this.mapStayingFromApi);
+      const stayData = this.dedupeBySignature(
+        rawItems.map(this.mapStayingFromApi),
+        (item) =>
+          `${item.stayId ?? "stay"}|${item.reservationId ?? "reservation"}|${item.roomId ?? "room"}|${item.guest}|${item.checkInTime}|${item.checkOutPlan}`,
+      );
       const stayTotalPages = Math.max(
         1,
         Math.ceil(stayData.length / PAGE_SIZE),
@@ -2603,6 +2622,10 @@ class NhanTraphong extends Component {
       bookingStartIndex,
       bookingStartIndex + PAGE_SIZE,
     );
+    const tableBodyKey =
+      activeTab === "stay"
+        ? `stay-page-${safeStayPage}`
+        : `pending-page-${safeBookingPage}`;
 
     return (
       <div className="nhantraphong">
@@ -2651,7 +2674,7 @@ class NhanTraphong extends Component {
                   <th>Thao tác</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody key={tableBodyKey}>
                 {activeTab === "stay" && stayLoading && (
                   <tr>
                     <td colSpan="5">
@@ -2670,8 +2693,10 @@ class NhanTraphong extends Component {
 
                 {activeTab === "stay" &&
                   !stayLoading &&
-                  paginatedStayData.map((item) => (
-                    <tr key={item.id}>
+                  paginatedStayData.map((item, index) => (
+                    <tr
+                      key={`stay-${item.stayId ?? item.reservationId ?? item.roomId ?? item.id ?? "row"}-${index}`}
+                    >
                       <td>{item.guest}</td>
                       <td>{item.room}</td>
                       <td>{item.checkInTime}</td>
@@ -2725,8 +2750,10 @@ class NhanTraphong extends Component {
 
                 {activeTab === "pending" &&
                   !bookingLoading &&
-                  paginatedBookingData.map((item) => (
-                    <tr key={item.id}>
+                  paginatedBookingData.map((item, index) => (
+                    <tr
+                      key={`pending-${item.reservationId ?? item.id ?? "row"}-${index}`}
+                    >
                       <td>{item.guest}</td>
                       <td>{item.roomType}</td>
                       <td>{item.checkIn}</td>
