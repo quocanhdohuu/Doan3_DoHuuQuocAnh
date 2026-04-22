@@ -18,7 +18,7 @@
     ),
     linear-gradient(180deg, #efeff4 0%, #ececf2 38%, #e7e8ef 100%);
   color: var(--ink);
-  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-family: "times new roman", times, serif;
 }
 
 .customer-topbar {
