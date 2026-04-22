@@ -1,4 +1,4 @@
-﻿﻿﻿import React, { Component } from "react";
+﻿import React, { Component } from "react";
 import "../style/NhanTraphong.css";
 import { FeatureHeader } from "./Common";
 
@@ -775,10 +775,7 @@ class NhanTraphong extends Component {
           ? payload.data
           : [];
       const stayData = rawItems.map(this.mapStayingFromApi);
-      const stayTotalPages = Math.max(
-        1,
-        Math.ceil(stayData.length / PAGE_SIZE),
-      );
+      const stayTotalPages = Math.max(1, Math.ceil(stayData.length / PAGE_SIZE));
 
       this.setState((prev) => ({
         stayData,

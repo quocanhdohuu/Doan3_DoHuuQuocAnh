@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../AuthContext";
 import "../../style/Customer_main.css";
 import hotelImage from "../../img/hotel_image.png";
-import Profile from "./Profile";
 
 const ROOM_TYPES_API_URL =
   "http://localhost:3000/api/get-room-types/with-price";
@@ -117,7 +116,6 @@ function Customer_main() {
   const [checkOutDate, setCheckOutDate] = useState("");
   const [guestCount, setGuestCount] = useState(2);
   const [roomCount, setRoomCount] = useState(1);
-  const [isProfilePageOpen, setIsProfilePageOpen] = useState(false);
   const minDate = useMemo(() => new Date().toISOString().split("T")[0], []);
 
   useEffect(() => {
@@ -180,16 +178,6 @@ function Customer_main() {
     if (!Number.isFinite(next)) return;
     setter(Math.max(1, Math.floor(next)));
   };
-
-  if (isProfilePageOpen) {
-    return (
-      <Profile
-        user={user}
-        onBackToHome={() => setIsProfilePageOpen(false)}
-        onLogout={logout}
-      />
-    );
-  }
 
   const handleSearchAvailableRooms = async () => {
     if (!checkInDate || !checkOutDate) {
@@ -259,15 +247,12 @@ function Customer_main() {
             Đặt ngay
           </button>
 
-          <button
-            type="button"
+          <div
             className="customer-user-badge"
             title={user?.email || "Customer"}
-            onClick={() => setIsProfilePageOpen(true)}
-            aria-label="Open profile"
           >
             <i className="fa-regular fa-user" aria-hidden="true"></i>
-          </button>
+          </div>
 
           <button
             type="button"

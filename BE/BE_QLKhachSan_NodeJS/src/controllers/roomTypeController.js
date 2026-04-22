@@ -82,10 +82,12 @@ const addRoomType = async (req, res) => {
         @DefaultPrice=${DefaultPrice}
     `;
 
-    return res.status(201).json({
-      message: "Thêm loại phòng thành công",
-      data: result.recordset || [],
-    });
+    return res
+      .status(201)
+      .json({
+        message: "Thêm loại phòng thành công",
+        data: result.recordset || [],
+      });
   } catch (err) {
     console.error("addRoomType Error:", err);
     res
@@ -173,7 +175,7 @@ const searchAvailableRoomTypes = async (req, res) => {
       });
     }
 
-    if (checkInDate > checkOutDate) {
+    if (checkInDate >= checkOutDate) {
       return res.status(400).json({
         error: "CheckOutDate phai lon hon CheckInDate",
       });
