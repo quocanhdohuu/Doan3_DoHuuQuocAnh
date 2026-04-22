@@ -29,7 +29,6 @@ const SERVICES_API_URL = "http://localhost:3000/api/services";
 const ROOMS_API_URL = "http://localhost:3000/api/rooms";
 const AVAILABLE_ROOMS_API_URL = `${ROOMS_API_URL}/available`;
 const ROOM_TYPES_API_URL = "http://localhost:3000/api/get-room-types";
-const PAGE_SIZE = 4;
 
 class NhanTraphong extends Component {
   createId = () => Date.now() + Math.floor(Math.random() * 1000);
@@ -743,20 +742,9 @@ class NhanTraphong extends Component {
           ? payload.data
           : [];
       const bookingData = rawItems.map(this.mapBookingFromApi);
-      const bookingTotalPages = Math.max(
-        1,
-        Math.ceil(bookingData.length / PAGE_SIZE),
-      );
-
-      this.setState((prev) => ({
-        bookingData,
-        bookingCurrentPage: Math.min(
-          Math.max(prev.bookingCurrentPage, 1),
-          bookingTotalPages,
-        ),
-      }));
+      this.setState({ bookingData });
     } catch (err) {
-      this.setState({ bookingData: [], bookingCurrentPage: 1 });
+      this.setState({ bookingData: [] });
       window.alert(
         err.message || "Không thể tải danh sách khách chờ check-in.",
       );
@@ -775,17 +763,9 @@ class NhanTraphong extends Component {
           ? payload.data
           : [];
       const stayData = rawItems.map(this.mapStayingFromApi);
-      const stayTotalPages = Math.max(1, Math.ceil(stayData.length / PAGE_SIZE));
-
-      this.setState((prev) => ({
-        stayData,
-        stayCurrentPage: Math.min(
-          Math.max(prev.stayCurrentPage, 1),
-          stayTotalPages,
-        ),
-      }));
+      this.setState({ stayData });
     } catch (err) {
-      this.setState({ stayData: [], stayCurrentPage: 1 });
+      this.setState({ stayData: [] });
       window.alert(
         err.message || "Không thể tải danh sách khách đang lưu trú.",
       );
@@ -1232,10 +1212,8 @@ class NhanTraphong extends Component {
     currentItem: null,
     stayData: [],
     stayLoading: false,
-    stayCurrentPage: 1,
     bookingData: [],
     bookingLoading: false,
-    bookingCurrentPage: 1,
     availableRooms: [],
     availableRoomsLoading: false,
     walkinAvailableRooms: [],
@@ -2573,33 +2551,9 @@ class NhanTraphong extends Component {
       showModal,
       stayData,
       stayLoading,
-      stayCurrentPage,
       bookingData,
       bookingLoading,
-      bookingCurrentPage,
     } = this.state;
-
-    const stayTotalPages = Math.max(1, Math.ceil(stayData.length / PAGE_SIZE));
-    const safeStayPage = Math.min(Math.max(stayCurrentPage, 1), stayTotalPages);
-    const stayStartIndex = (safeStayPage - 1) * PAGE_SIZE;
-    const paginatedStayData = stayData.slice(
-      stayStartIndex,
-      stayStartIndex + PAGE_SIZE,
-    );
-
-    const bookingTotalPages = Math.max(
-      1,
-      Math.ceil(bookingData.length / PAGE_SIZE),
-    );
-    const safeBookingPage = Math.min(
-      Math.max(bookingCurrentPage, 1),
-      bookingTotalPages,
-    );
-    const bookingStartIndex = (safeBookingPage - 1) * PAGE_SIZE;
-    const paginatedBookingData = bookingData.slice(
-      bookingStartIndex,
-      bookingStartIndex + PAGE_SIZE,
-    );
 
     return (
       <div className="nhantraphong">
@@ -2643,7 +2597,7 @@ class NhanTraphong extends Component {
                   <th>{activeTab === "stay" ? "Phòng" : "Loại phòng"}</th>
                   <th>{activeTab === "stay" ? "Check-in" : "Ngày nhận"}</th>
                   <th>
-                    {activeTab === "stay" ? "Dự kiến check-out" : "Ngày trả"}
+                    {activeTab === "stay" ? "Check-out" : "Ngày trả"}
                   </th>
                   <th>Thao tác</th>
                 </tr>
@@ -2667,7 +2621,7 @@ class NhanTraphong extends Component {
 
                 {activeTab === "stay" &&
                   !stayLoading &&
-                  paginatedStayData.map((item) => (
+                  stayData.map((item) => (
                     <tr key={item.id}>
                       <td>{item.guest}</td>
                       <td>{item.room}</td>
@@ -2722,7 +2676,7 @@ class NhanTraphong extends Component {
 
                 {activeTab === "pending" &&
                   !bookingLoading &&
-                  paginatedBookingData.map((item) => (
+                  bookingData.map((item) => (
                     <tr key={item.id}>
                       <td>{item.guest}</td>
                       <td>{item.roomType}</td>
@@ -2742,101 +2696,6 @@ class NhanTraphong extends Component {
             </table>
           </div>
 
-          {activeTab === "stay" && !stayLoading && stayData.length > 0 && (
-            <div className="ntp-pagination">
-              <button
-                type="button"
-                className="ntp-page-btn"
-                onClick={() =>
-                  this.setState({
-                    stayCurrentPage: Math.max(safeStayPage - 1, 1),
-                  })
-                }
-                disabled={safeStayPage === 1}
-                aria-label="Trang trước"
-              >
-                ‹
-              </button>
-
-              {Array.from({ length: stayTotalPages }, (_, idx) => idx + 1).map(
-                (page) => (
-                  <button
-                    key={page}
-                    type="button"
-                    className={`ntp-page-btn ${page === safeStayPage ? "active" : ""}`}
-                    onClick={() => this.setState({ stayCurrentPage: page })}
-                  >
-                    {page}
-                  </button>
-                ),
-              )}
-
-              <button
-                type="button"
-                className="ntp-page-btn"
-                onClick={() =>
-                  this.setState({
-                    stayCurrentPage: Math.min(safeStayPage + 1, stayTotalPages),
-                  })
-                }
-                disabled={safeStayPage === stayTotalPages}
-                aria-label="Trang sau"
-              >
-                ›
-              </button>
-            </div>
-          )}
-
-          {activeTab === "pending" &&
-            !bookingLoading &&
-            bookingData.length > 0 && (
-              <div className="ntp-pagination">
-                <button
-                  type="button"
-                  className="ntp-page-btn"
-                  onClick={() =>
-                    this.setState({
-                      bookingCurrentPage: Math.max(safeBookingPage - 1, 1),
-                    })
-                  }
-                  disabled={safeBookingPage === 1}
-                  aria-label="Trang trước"
-                >
-                  ‹
-                </button>
-
-                {Array.from(
-                  { length: bookingTotalPages },
-                  (_, idx) => idx + 1,
-                ).map((page) => (
-                  <button
-                    key={page}
-                    type="button"
-                    className={`ntp-page-btn ${page === safeBookingPage ? "active" : ""}`}
-                    onClick={() => this.setState({ bookingCurrentPage: page })}
-                  >
-                    {page}
-                  </button>
-                ))}
-
-                <button
-                  type="button"
-                  className="ntp-page-btn"
-                  onClick={() =>
-                    this.setState({
-                      bookingCurrentPage: Math.min(
-                        safeBookingPage + 1,
-                        bookingTotalPages,
-                      ),
-                    })
-                  }
-                  disabled={safeBookingPage === bookingTotalPages}
-                  aria-label="Trang sau"
-                >
-                  ›
-                </button>
-              </div>
-            )}
         </div>
 
         {showModal && this.renderModal()}

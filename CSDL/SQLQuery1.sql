@@ -2519,6 +2519,14 @@ BEGIN
         @RoomTypeID INT,
         @RoomStatus NVARCHAR(20)
 
+	-------------------------------------------------
+	-- CHECK NGÀY CHECKOUT HỢP LỆ -------------------
+	-------------------------------------------------
+	IF (@ExpectedCheckOut < GETDATE())
+	BEGIN
+		RAISERROR(N'Ngày check-out phải lớn hơn thời điểm hiện tại', 16, 1);
+		RETURN;
+	END
     -------------------------------------------------
     -- ❗ 0. CHECK PHÒNG CÓ TỒN TẠI + TRỐNG KHÔNG
     -------------------------------------------------
@@ -3836,7 +3844,7 @@ BEGIN
     ORDER BY AvailableRooms DESC
 END
 EXEC sp_SearchAvailableRoomTypes 
-    @CheckInDate = '2026-04-10',
+    @CheckInDate = '2026-04-12',
     @CheckOutDate = '2026-04-12',
     @NumPeople = 4,
     @NumRooms = 2

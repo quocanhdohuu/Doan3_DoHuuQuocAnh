@@ -114,7 +114,7 @@ function Customer_main() {
   const [error, setError] = useState("");
   const [checkInDate, setCheckInDate] = useState("");
   const [checkOutDate, setCheckOutDate] = useState("");
-  const [guestCount, setGuestCount] = useState(2);
+  const [guestCount, setGuestCount] = useState(1);
   const [roomCount, setRoomCount] = useState(1);
   const minDate = useMemo(() => new Date().toISOString().split("T")[0], []);
 
