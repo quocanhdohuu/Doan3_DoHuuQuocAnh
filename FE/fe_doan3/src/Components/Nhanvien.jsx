@@ -23,6 +23,56 @@ const mapReceptionistFromApi = (item) => ({
   Phone: item?.Phone ?? "",
 });
 
+// Validation functions
+const validatePhone = (phone) => {
+  if (!phone || !phone.trim()) {
+    return "Số điện thoại không được để trống.";
+  }
+  const phoneRegex = /^(0[1-9][0-9]{8}|0[1-9][0-9]{9})$/;
+  const cleanedPhone = phone.replace(/\s/g, "");
+  if (!phoneRegex.test(cleanedPhone)) {
+    return "Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại Việt Nam (10-11 số, bắt đầu bằng 0).";
+  }
+  return "";
+};
+
+const validateEmail = (email) => {
+  if (!email || !email.trim()) {
+    return "Email không được để trống.";
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email.trim())) {
+    return "Email không hợp lệ.";
+  }
+  return "";
+};
+
+const validateFullName = (fullName) => {
+  if (!fullName || !fullName.trim()) {
+    return "Họ tên không được để trống.";
+  }
+  if (fullName.trim().length < 2) {
+    return "Họ tên phải có ít nhất 2 ký tự.";
+  }
+  if (fullName.trim().length > 100) {
+    return "Họ tên không được quá 100 ký tự.";
+  }
+  return "";
+};
+
+const validatePassword = (password, isRequired = false) => {
+  if (isRequired && (!password || !password.trim())) {
+    return "Mật khẩu không được để trống.";
+  }
+  if (password && password.trim().length < 6) {
+    return "Mật khẩu phải có ít nhất 6 ký tự.";
+  }
+  if (password && password.trim().length > 50) {
+    return "Mật khẩu không được quá 50 ký tự.";
+  }
+  return "";
+};
+
 const extractList = (payload) => {
   if (Array.isArray(payload)) {
     return payload;
@@ -191,13 +241,31 @@ const Nhanvien = () => {
 
     const isEdit = editUserId !== null;
 
-    if (!form.FullName.trim() || !form.Email.trim() || !form.Phone.trim()) {
-      alert("Vui lòng nhập đầy đủ họ tên, email và số điện thoại.");
+    // Validate FullName
+    const nameError = validateFullName(form.FullName);
+    if (nameError) {
+      alert(nameError);
       return;
     }
 
-    if (!isEdit && !form.Password.trim()) {
-      alert("Vui lòng nhập mật khẩu khi thêm nhân viên mới.");
+    // Validate Phone
+    const phoneError = validatePhone(form.Phone);
+    if (phoneError) {
+      alert(phoneError);
+      return;
+    }
+
+    // Validate Email
+    const emailError = validateEmail(form.Email);
+    if (emailError) {
+      alert(emailError);
+      return;
+    }
+
+    // Validate Password
+    const passwordError = validatePassword(form.Password, !isEdit);
+    if (passwordError) {
+      alert(passwordError);
       return;
     }
 

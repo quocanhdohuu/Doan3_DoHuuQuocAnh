@@ -51,6 +51,80 @@ const normalizeStatus = (status) => {
   return "unknown";
 };
 
+// Validation functions
+const validatePhone = (phone) => {
+  if (!phone || !phone.trim()) {
+    return "Số điện thoại không được để trống.";
+  }
+  const phoneRegex = /^(0[1-9][0-9]{8}|0[1-9][0-9]{9})$/;
+  const cleanedPhone = phone.replace(/\s/g, "");
+  if (!phoneRegex.test(cleanedPhone)) {
+    return "Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại Việt Nam (10-11 số, bắt đầu bằng 0).";
+  }
+  return "";
+};
+
+const validateCCCD = (cccd) => {
+  if (!cccd || !cccd.trim()) {
+    return "CMND/CCCD không được để trống.";
+  }
+  const cccdRegex = /^[0-9]{9,12}$/;
+  const cleanedCCCD = cccd.replace(/\s/g, "");
+  if (!cccdRegex.test(cleanedCCCD)) {
+    return "CMND/CCCD không hợp lệ. Vui lòng nhập 9-12 chữ số.";
+  }
+  return "";
+};
+
+const validateEmail = (email) => {
+  if (!email || !email.trim()) {
+    return ""; // Email is optional
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email.trim())) {
+    return "Email không hợp lệ.";
+  }
+  return "";
+};
+
+const validateFullName = (fullName) => {
+  if (!fullName || !fullName.trim()) {
+    return "Họ tên không được để trống.";
+  }
+  if (fullName.trim().length < 2) {
+    return "Họ tên phải có ít nhất 2 ký tự.";
+  }
+  if (fullName.trim().length > 100) {
+    return "Họ tên không được quá 100 ký tự.";
+  }
+  return "";
+};
+
+const validateDate = (dateStr, fieldName) => {
+  if (!dateStr || !dateStr.trim()) {
+    return `${fieldName} không được để trống.`;
+  }
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) {
+    return `${fieldName} không hợp lệ.`;
+  }
+  return "";
+};
+
+const validateQuantity = (quantity) => {
+  if (!quantity || !quantity.toString().trim()) {
+    return "Số lượng phòng không được để trống.";
+  }
+  const qty = Number(quantity);
+  if (!Number.isInteger(qty) || qty < 1) {
+    return "Số lượng phòng phải là số nguyên dương.";
+  }
+  if (qty > 100) {
+    return "Số lượng phòng không được vượt quá 100.";
+  }
+  return "";
+};
+
 const pad2 = (value) => String(value).padStart(2, "0");
 
 const formatDateForInput = (value) => {
@@ -348,31 +422,59 @@ class Datphong extends Component {
 
   validateForm = () => {
     const { modalMode, customerTab, form } = this.state;
-    const quantityNumber = Number(form.quantity);
 
-    if (!form.roomTypeId || !form.checkInDate || !form.checkOutDate) {
-      return "Vui lòng nhập đầy đủ thông tin đặt phòng.";
+    // Validate room and dates
+    if (!form.roomTypeId) {
+      return "Vui lòng chọn loại phòng.";
     }
 
-    if (!Number.isInteger(quantityNumber) || quantityNumber < 1) {
-      return "Số lượng phòng phải là số nguyên dương.";
+    const checkInError = validateDate(form.checkInDate, "Ngày nhận phòng");
+    if (checkInError) return checkInError;
+
+    const checkOutError = validateDate(form.checkOutDate, "Ngày trả phòng");
+    if (checkOutError) return checkOutError;
+
+    const checkInDate = new Date(form.checkInDate);
+    const checkOutDate = new Date(form.checkOutDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (checkInDate < today) {
+      return "Ngày nhận phòng không được trong quá khứ.";
     }
 
-    if (new Date(form.checkOutDate) <= new Date(form.checkInDate)) {
+    if (checkOutDate <= checkInDate) {
       return "Ngày trả phòng phải sau ngày nhận phòng.";
     }
 
-    if (modalMode === "create" && customerTab === "old" && !form.customerId) {
-      return "Vui lòng chọn khách hàng cũ.";
+    // Validate quantity
+    const quantityError = validateQuantity(form.quantity);
+    if (quantityError) return quantityError;
+
+    // Validate customer based on tab
+    if (modalMode === "create" && customerTab === "old") {
+      if (!form.customerId) {
+        return "Vui lòng chọn khách hàng.";
+      }
     }
 
     if (modalMode === "create" && customerTab === "new") {
-      if (
-        !form.newCustomer.fullName.trim() ||
-        !form.newCustomer.phone.trim() ||
-        !form.newCustomer.cccd.trim()
-      ) {
-        return "Vui lòng nhập họ tên, số điện thoại và CCCD cho khách mới.";
+      // Validate fullName
+      const nameError = validateFullName(form.newCustomer.fullName);
+      if (nameError) return nameError;
+
+      // Validate phone
+      const phoneError = validatePhone(form.newCustomer.phone);
+      if (phoneError) return phoneError;
+
+      // Validate CCCD
+      const cccdError = validateCCCD(form.newCustomer.cccd);
+      if (cccdError) return cccdError;
+
+      // Validate email (optional)
+      if (form.newCustomer.email) {
+        const emailError = validateEmail(form.newCustomer.email);
+        if (emailError) return emailError;
       }
     }
 

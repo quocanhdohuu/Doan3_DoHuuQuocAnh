@@ -30,6 +30,58 @@ const ROOMS_API_URL = "http://localhost:3000/api/rooms";
 const AVAILABLE_ROOMS_API_URL = `${ROOMS_API_URL}/available`;
 const ROOM_TYPES_API_URL = "http://localhost:3000/api/get-room-types";
 
+// Validation functions for Walkin form
+
+
+const validateCCCD = (cccd) => {
+  if (!cccd || !cccd.trim()) {
+    return "CMND/CCCD không được để trống.";
+  }
+  const cccdRegex = /^[0-9]{9,12}$/;
+  const cleanedCCCD = cccd.replace(/\s/g, "");
+  if (!cccdRegex.test(cleanedCCCD)) {
+    return "CMND/CCCD không hợp lệ. Vui lòng nhập 9-12 chữ số.";
+  }
+  return "";
+};
+
+
+
+const validateFullName = (fullName) => {
+  if (!fullName || !fullName.trim()) {
+    return "Họ tên không được để trống.";
+  }
+  if (fullName.trim().length < 2) {
+    return "Họ tên phải có ít nhất 2 ký tự.";
+  }
+  if (fullName.trim().length > 100) {
+    return "Họ tên không được quá 100 ký tự.";
+  }
+  return "";
+};
+
+const validateDate = (dateStr, fieldName) => {
+  if (!dateStr || !dateStr.trim()) {
+    return `${fieldName} không được để trống.`;
+  }
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) {
+    return `${fieldName} không hợp lệ.`;
+  }
+  return "";
+};
+
+const validateRoomId = (roomId) => {
+  if (!roomId) {
+    return "Vui lòng chọn phòng.";
+  }
+  const roomIdNum = Number(roomId);
+  if (!Number.isInteger(roomIdNum) || roomIdNum < 1) {
+    return "Phòng không hợp lệ.";
+  }
+  return "";
+};
+
 class NhanTraphong extends Component {
   createId = () => Date.now() + Math.floor(Math.random() * 1000);
 
@@ -958,15 +1010,49 @@ class NhanTraphong extends Component {
     const { walkInForm } = this.state;
     const fullName = walkInForm.name.trim();
     const cccd = walkInForm.identity.trim();
-    const roomId = Number(walkInForm.roomId);
+    const roomId = walkInForm.roomId;
     const expectedCheckOut = walkInForm.checkOut;
 
-    if (!fullName || !cccd || !walkInForm.roomId || !expectedCheckOut) {
-      window.alert("Vui lòng nhập đầy đủ thông tin walk-in.");
+    // Validate fullName
+    const nameError = validateFullName(fullName);
+    if (nameError) {
+      window.alert(nameError);
       return;
     }
 
-    if (!Number.isInteger(roomId) || roomId < 1) {
+    // Validate CCCD
+    const cccdError = validateCCCD(cccd);
+    if (cccdError) {
+      window.alert(cccdError);
+      return;
+    }
+
+    // Validate room selection
+    const roomError = validateRoomId(roomId);
+    if (roomError) {
+      window.alert(roomError);
+      return;
+    }
+
+    // Validate expected checkout date
+    const dateError = validateDate(expectedCheckOut, "Ngày trả phòng dự kiến");
+    if (dateError) {
+      window.alert(dateError);
+      return;
+    }
+
+    // Check that checkout date is in the future
+    const checkOutDate = new Date(expectedCheckOut);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (checkOutDate <= today) {
+      window.alert("Ngày trả phòng dự kiến phải sau ngày hôm nay.");
+      return;
+    }
+
+    const roomIdNum = Number(roomId);
+    if (!Number.isInteger(roomIdNum) || roomIdNum < 1) {
       window.alert("RoomID không hợp lệ.");
       return;
     }
@@ -979,7 +1065,7 @@ class NhanTraphong extends Component {
         body: JSON.stringify({
           FullName: fullName,
           CCCD: cccd,
-          RoomID: roomId,
+          RoomID: roomIdNum,
           ExpectedCheckOut: expectedCheckOut,
         }),
       });
@@ -2038,13 +2124,7 @@ class NhanTraphong extends Component {
       modalType === "checkin" &&
       (availableRoomsLoading || checkinSubmitting || !selectedCheckinRoomId);
     const disableWalkinConfirm =
-      modalType === "walkin" &&
-      (walkinSubmitting ||
-        walkinRoomsLoading ||
-        !walkInForm.name.trim() ||
-        !walkInForm.identity.trim() ||
-        !walkInForm.roomId ||
-        !walkInForm.checkOut);
+      modalType === "walkin" && (walkinSubmitting || walkinRoomsLoading);
     const disableTransferConfirm =
       modalType === "transfer" &&
       (transferSubmitting || transferRoomsLoading || !transferRoom);
@@ -2596,9 +2676,7 @@ class NhanTraphong extends Component {
                   <th>Khách hàng</th>
                   <th>{activeTab === "stay" ? "Phòng" : "Loại phòng"}</th>
                   <th>{activeTab === "stay" ? "Check-in" : "Ngày nhận"}</th>
-                  <th>
-                    {activeTab === "stay" ? "Check-out" : "Ngày trả"}
-                  </th>
+                  <th>{activeTab === "stay" ? "Check-out" : "Ngày trả"}</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
@@ -2695,7 +2773,6 @@ class NhanTraphong extends Component {
               </tbody>
             </table>
           </div>
-
         </div>
 
         {showModal && this.renderModal()}

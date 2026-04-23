@@ -23,6 +23,55 @@ const mapCustomerFromApi = (item) => ({
   LastStay: item.LastStay ?? null,
 });
 
+// Validation functions
+const validatePhone = (phone) => {
+  if (!phone || !phone.trim()) {
+    return "Số điện thoại không được để trống.";
+  }
+  const phoneRegex = /^(0[1-9][0-9]{8}|0[1-9][0-9]{9})$/;
+  const cleanedPhone = phone.replace(/\s/g, "");
+  if (!phoneRegex.test(cleanedPhone)) {
+    return "Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại Việt Nam (10-11 số, bắt đầu bằng 0).";
+  }
+  return "";
+};
+
+const validateCCCD = (cccd) => {
+  if (!cccd || !cccd.trim()) {
+    return ""; // CCCD is optional in Khachhang
+  }
+  const cccdRegex = /^[0-9]{9,12}$/;
+  const cleanedCCCD = cccd.replace(/\s/g, "");
+  if (!cccdRegex.test(cleanedCCCD)) {
+    return "CMND/CCCD không hợp lệ. Vui lòng nhập 9-12 chữ số.";
+  }
+  return "";
+};
+
+const validateEmail = (email) => {
+  if (!email || !email.trim()) {
+    return ""; // Email is optional
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email.trim())) {
+    return "Email không hợp lệ.";
+  }
+  return "";
+};
+
+const validateFullName = (fullName) => {
+  if (!fullName || !fullName.trim()) {
+    return "Họ tên không được để trống.";
+  }
+  if (fullName.trim().length < 2) {
+    return "Họ tên phải có ít nhất 2 ký tự.";
+  }
+  if (fullName.trim().length > 100) {
+    return "Họ tên không được quá 100 ký tự.";
+  }
+  return "";
+};
+
 const Khachhang = () => {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -112,9 +161,36 @@ const Khachhang = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.FullName.trim() || !form.Phone.trim()) {
-      alert("Vui long nhap ho ten va so dien thoai.");
+    // Validate FullName
+    const nameError = validateFullName(form.FullName);
+    if (nameError) {
+      alert(nameError);
       return;
+    }
+
+    // Validate Phone
+    const phoneError = validatePhone(form.Phone);
+    if (phoneError) {
+      alert(phoneError);
+      return;
+    }
+
+    // Validate CCCD (optional)
+    if (form.CCCD.trim()) {
+      const cccdError = validateCCCD(form.CCCD);
+      if (cccdError) {
+        alert(cccdError);
+        return;
+      }
+    }
+
+    // Validate Email (optional)
+    if (form.Email.trim()) {
+      const emailError = validateEmail(form.Email);
+      if (emailError) {
+        alert(emailError);
+        return;
+      }
     }
 
     const payload = {
