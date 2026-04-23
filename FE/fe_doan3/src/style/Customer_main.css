@@ -48,19 +48,26 @@
   gap: 22px;
 }
 
-.customer-nav a {
+.customer-nav a,
+.customer-nav-link {
   font-size: 14px;
   color: #4c5972;
   text-decoration: none;
+  background: transparent;
+  border: none;
   padding-bottom: 4px;
   border-bottom: 1px solid transparent;
+  font-family: inherit;
+  cursor: pointer;
   transition:
     color 0.24s ease,
     border-color 0.24s ease;
 }
 
 .customer-nav a:hover,
-.customer-nav a.active {
+.customer-nav a.active,
+.customer-nav-link:hover,
+.customer-nav-link.active {
   color: #112f57;
   border-color: #112f57;
 }
@@ -91,6 +98,12 @@
   place-items: center;
   color: #0f2748;
   background: #fff;
+  cursor: pointer;
+}
+
+.customer-user-badge.active {
+  color: #fff;
+  background: #0f2748;
 }
 
 .customer-logout-btn {
@@ -600,7 +613,7 @@
 
 .customer-footer {
   margin-top: 70px;
-  padding: 26px 22px 40px;
+  padding: 20px 20px 20px;
   border-top: 1px solid rgba(10, 42, 80, 0.1);
   display: flex;
   flex-wrap: wrap;
@@ -625,6 +638,33 @@
 
 .customer-footer-copy {
   font-size: 12px;
+}
+
+.customer-placeholder-section {
+  margin-top: 10px;
+  padding: 54px 32px;
+  border-radius: 16px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(10, 42, 80, 0.12);
+  box-shadow: 0 20px 30px rgba(13, 33, 63, 0.08);
+}
+
+.customer-placeholder-section h2 {
+  margin: 10px 0 12px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(34px, 4vw, 52px);
+  line-height: 1;
+  color: #0f2d56;
+}
+
+.customer-placeholder-section p {
+  color: #4b5a75;
+}
+
+.customer-account-summary {
+  margin: 0;
+  font-weight: 600;
 }
 
 @keyframes riseIn {

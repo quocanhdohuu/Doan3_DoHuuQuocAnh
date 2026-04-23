@@ -169,13 +169,13 @@ const searchAvailableRoomTypes = async (req, res) => {
     if (!checkInDate || !checkOutDate || !numPeople || !numRooms) {
       return res.status(400).json({
         error:
-          "Thieu hoac sai tham so: CheckInDate, CheckOutDate (yyyy-mm-dd), NumPeople, NumRooms",
+          "Thiếu hoặc sai tham số: CheckInDate, CheckOutDate (yyyy-mm-dd), NumPeople, NumRooms",
       });
     }
 
     if (checkInDate > checkOutDate) {
       return res.status(400).json({
-        error: "CheckOutDate phai lon hon CheckInDate",
+        error: "CheckOutDate phải lớn hơn CheckInDate",
       });
     }
 
