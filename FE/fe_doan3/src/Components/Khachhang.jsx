@@ -23,6 +23,15 @@ const mapCustomerFromApi = (item) => ({
   LastStay: item.LastStay ?? null,
 });
 
+const getErrorMessage = (err, fallbackMessage) => {
+  const rawMessage = err?.message;
+  if (!rawMessage) return fallbackMessage;
+  const parsed = JSON.parse(rawMessage);
+  if (parsed?.error) return parsed.error;
+
+  return rawMessage;
+};
+
 // Validation functions
 const validatePhone = (phone) => {
   if (!phone || !phone.trim()) {
@@ -80,13 +89,11 @@ const Khachhang = () => {
   const [form, setForm] = useState(getDefaultForm());
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      setError("");
 
       const response = await fetch(API_URL);
       if (!response.ok) {
@@ -97,7 +104,7 @@ const Khachhang = () => {
       setCustomers(Array.isArray(data) ? data.map(mapCustomerFromApi) : []);
       setCurrentPage(1);
     } catch (err) {
-      setError(err.message || "Khong the tai danh sach khach hang.");
+      alert(getErrorMessage(err, "Khong the tai danh sach khach hang."));
     } finally {
       setLoading(false);
     }
@@ -202,7 +209,6 @@ const Khachhang = () => {
 
     try {
       setSubmitLoading(true);
-      setError("");
 
       const isEdit = editCustomerId !== null;
       const url = isEdit ? `${API_URL}/${editCustomerId}` : API_URL;
@@ -225,7 +231,7 @@ const Khachhang = () => {
       );
       handleCloseModal();
     } catch (err) {
-      setError(err.message || "Khong the luu thong tin khach hang.");
+      alert(getErrorMessage(err, "Khong the luu thong tin khach hang."));
     } finally {
       setSubmitLoading(false);
     }
@@ -246,20 +252,6 @@ const Khachhang = () => {
           + Thêm khách hàng
         </button>
       </div>
-
-      {error && (
-        <div
-          style={{
-            backgroundColor: "#fee2e2",
-            color: "#991b1b",
-            borderRadius: "8px",
-            padding: "10px 12px",
-            marginBottom: "12px",
-          }}
-        >
-          {error}
-        </div>
-      )}
 
       <div className="khachhang-table-card">
         <div className="kh-search-box">
