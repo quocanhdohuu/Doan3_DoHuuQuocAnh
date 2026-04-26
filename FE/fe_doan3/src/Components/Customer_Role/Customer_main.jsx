@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import { useAuth } from "../AuthContext";
 import "../../style/Customer_main.css";
 import CustomerHomeContent from "./Customer_HomeContent";
@@ -42,10 +42,17 @@ function Customer_main() {
         <nav className="customer-nav">
           <button
             type="button"
+            className={getNavClassName(MENU_KEYS.ABOUT)}
+            onClick={() => setActivePage(MENU_KEYS.ABOUT)}
+          >
+            Về chúng tôi
+          </button>
+          <button
+            type="button"
             className={getNavClassName(MENU_KEYS.HOME)}
             onClick={() => setActivePage(MENU_KEYS.HOME)}
           >
-            Trang Chủ
+            Đặt phòng
           </button>
           <button
             type="button"
@@ -53,13 +60,6 @@ function Customer_main() {
             onClick={() => setActivePage(MENU_KEYS.EXPERIENCE)}
           >
             Trải nghiệm của bạn
-          </button>
-          <button
-            type="button"
-            className={getNavClassName(MENU_KEYS.ABOUT)}
-            onClick={() => setActivePage(MENU_KEYS.ABOUT)}
-          >
-            Về chúng tôi
           </button>
         </nav>
 

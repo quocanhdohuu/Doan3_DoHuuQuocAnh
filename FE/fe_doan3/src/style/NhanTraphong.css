@@ -1,6 +1,6 @@
 .nhantraphong {
   padding: 16px;
-  min-height: calc(100vh - 80px);
+  min-height: calc(110vh - 80px);
   box-sizing: border-box;
   width: 100%;
 }
@@ -56,7 +56,7 @@
   background-color: #f8f8f8;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border-radius: 16px;
-  min-height: 430px;
+  min-height: 440px;
   display: flex;
   flex-direction: column;
 }
@@ -361,4 +361,38 @@
   .ntp-penalty-row {
     grid-template-columns: 1fr;
   }
+}
+
+/* Pagination styles */
+.ntp-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding-top: 16px;
+  justify-content: flex-end;
+  padding-right: 20px;
+}
+
+.ntp-page-btn {
+  min-width: 30px;
+  height: 30px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ntp-page-btn:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.ntp-page-btn.active {
+  color: #1d4ed8;
+  background: #e8f0ff;
+  border-color: #60a5fa;
 }

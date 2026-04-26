@@ -1,4 +1,4 @@
-﻿import React, { Component } from "react";
+import React, { Component } from "react";
 import "../style/NhanTraphong.css";
 import { FeatureHeader } from "./Common";
 
@@ -179,6 +179,30 @@ class NhanTraphong extends Component {
     return body;
   };
 
+  extractArrayPayload = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (!payload || typeof payload !== "object") return [];
+
+    const candidateKeys = [
+      "data",
+      "Data",
+      "items",
+      "Items",
+      "result",
+      "Result",
+      "results",
+      "Results",
+      "customers",
+      "Customers",
+    ];
+
+    for (const key of candidateKeys) {
+      if (Array.isArray(payload?.[key])) return payload[key];
+    }
+
+    return [];
+  };
+
   formatDateForInput = (value) => {
     if (!value) return "";
     if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
@@ -233,26 +257,33 @@ class NhanTraphong extends Component {
   };
 
   loadInitialData = async () => {
-    await this.fetchRoomTypes();
-    await this.fetchServiceOptions();
+    const [roomTypeMap] = await Promise.all([
+      this.fetchRoomTypes(),
+      this.fetchServiceOptions(),
+    ]);
+
     await Promise.all([
-      this.fetchWaitingCheckinCustomers(),
-      this.fetchCurrentStayingCustomers(),
+      this.fetchWaitingCheckinCustomers(roomTypeMap),
+      this.fetchCurrentStayingCustomers(roomTypeMap),
     ]);
   };
 
   fetchRoomTypes = async () => {
     try {
       const payload = await this.request(ROOM_TYPES_API_URL);
-      const rawItems = Array.isArray(payload)
-        ? payload
-        : Array.isArray(payload?.data)
-          ? payload.data
-          : [];
+      const rawItems = this.extractArrayPayload(payload);
 
       const roomTypeMap = rawItems.reduce((acc, item) => {
-        const id = item?.RoomTypeID ?? item?.id;
-        const name = item?.Name ?? item?.name;
+        const id =
+          item?.RoomTypeID ??
+          item?.roomTypeId ??
+          item?.roomTypeID ??
+          item?.id;
+        const name =
+          item?.Name ??
+          item?.RoomTypeName ??
+          item?.roomTypeName ??
+          item?.name;
 
         if (id !== null && id !== undefined && name) {
           acc[String(id)] = String(name);
@@ -262,18 +293,26 @@ class NhanTraphong extends Component {
       }, {});
 
       this.setState({ roomTypeMap });
+      return roomTypeMap;
     } catch {
       this.setState({ roomTypeMap: {} });
+      return {};
     }
   };
 
-  resolveRoomTypeName = (item) => {
+  resolveRoomTypeName = (item, roomTypeMap = this.state.roomTypeMap) => {
     if (item?.RoomTypeName) return item.RoomTypeName;
+    if (item?.roomTypeName) return item.roomTypeName;
     if (item?.RoomType) return item.RoomType;
+    if (item?.roomType) return item.roomType;
 
-    const roomTypeId = item?.RoomTypeID;
+    const roomTypeId =
+      item?.RoomTypeID ??
+      item?.roomTypeId ??
+      item?.roomTypeID ??
+      item?.RoomTypeId;
     if (roomTypeId !== null && roomTypeId !== undefined) {
-      const roomTypeName = this.state.roomTypeMap[String(roomTypeId)];
+      const roomTypeName = roomTypeMap[String(roomTypeId)];
       if (roomTypeName) return roomTypeName;
       return `Loại #${roomTypeId}`;
     }
@@ -281,14 +320,27 @@ class NhanTraphong extends Component {
     return "-";
   };
 
-  mapBookingFromApi = (item) => ({
-    id: item?.ReservationID ?? this.createId(),
-    reservationId: item?.ReservationID ?? null,
-    guest: item?.FullName ?? "",
-    roomType: this.resolveRoomTypeName(item),
-    checkIn: this.formatDateForTable(item?.CheckInDate),
-    checkOut: this.formatDateForTable(item?.CheckOutDate),
-  });
+  mapBookingFromApi = (item, roomTypeMap = this.state.roomTypeMap) => {
+    const reservationId =
+      item?.ReservationID ??
+      item?.reservationId ??
+      item?.reservationID ??
+      item?.ReservationId ??
+      null;
+    const stt = item?.STT ?? item?.stt ?? null;
+
+    return {
+      id: reservationId ?? item?.STT ?? item?.stt ?? this.createId(),
+      stt,
+      reservationId,
+      guest: item?.FullName ?? item?.fullName ?? item?.CustomerName ?? "",
+      roomType: this.resolveRoomTypeName(item, roomTypeMap),
+      checkIn: this.formatDateForTable(item?.CheckInDate ?? item?.checkInDate),
+      checkOut: this.formatDateForTable(
+        item?.CheckOutDate ?? item?.checkOutDate,
+      ),
+    };
+  };
 
   mapRoomFromApi = (item) => ({
     roomId: item?.RoomID ?? item?.id ?? null,
@@ -383,37 +435,53 @@ class NhanTraphong extends Component {
     return ["AVAILABLE", "VACANT", "EMPTY"].includes(normalized);
   };
 
-  mapStayingFromApi = (item) => {
+  mapStayingFromApi = (item, roomTypeMap = this.state.roomTypeMap) => {
     const resolvedStayId =
       item?.StayID ??
       item?.StayId ??
       item?.stayId ??
+      item?.stayID ??
       item?.ID ??
       item?.Id ??
       item?.id ??
       null;
-    const roomNumber = item?.RoomNumber ? String(item.RoomNumber).trim() : "";
-    const roomType = this.resolveRoomTypeName(item);
+    const roomId =
+      item?.RoomID ?? item?.roomId ?? item?.RoomId ?? item?.roomID ?? null;
+    const roomNumberRaw = item?.RoomNumber ?? item?.roomNumber;
+    const roomNumber = roomNumberRaw ? String(roomNumberRaw).trim() : "";
+    const roomType = this.resolveRoomTypeName(item, roomTypeMap);
     const room = roomNumber
       ? `${roomNumber}${roomType && roomType !== "-" ? ` (${roomType})` : ""}`
-      : item?.RoomID
-        ? `Phòng #${item.RoomID}`
+      : roomId
+        ? `Phòng #${roomId}`
         : "-";
+    const stt = item?.STT ?? item?.stt ?? null;
 
     return {
       id:
         resolvedStayId ??
         item?.ReservationID ??
-        item?.RoomID ??
+        roomId ??
+        item?.STT ??
+        item?.stt ??
         this.createId(),
+      stt,
       stayId: resolvedStayId,
-      reservationId: item?.ReservationID ?? null,
-      roomId: item?.RoomID ?? item?.roomId ?? item?.RoomId ?? null,
+      reservationId:
+        item?.ReservationID ??
+        item?.reservationId ??
+        item?.ReservationId ??
+        null,
+      roomId,
       roomNumber,
-      guest: item?.FullName ?? "",
+      guest: item?.FullName ?? item?.fullName ?? item?.CustomerName ?? "",
       room,
-      checkInTime: this.formatDateTimeForTable(item?.CheckInDate),
-      checkOutPlan: this.formatDateTimeForTable(item?.CheckOutDate),
+      checkInTime: this.formatDateTimeForTable(
+        item?.CheckInDate ?? item?.checkInDate,
+      ),
+      checkOutPlan: this.formatDateTimeForTable(
+        item?.CheckOutDate ?? item?.checkOutDate,
+      ),
     };
   };
 
@@ -784,16 +852,16 @@ class NhanTraphong extends Component {
     throw lastError || new Error("Thêm minibar thất bại.");
   };
 
-  fetchWaitingCheckinCustomers = async () => {
+  fetchWaitingCheckinCustomers = async (
+    roomTypeMap = this.state.roomTypeMap,
+  ) => {
     try {
       this.setState({ bookingLoading: true });
       const payload = await this.request(WAITING_CHECKIN_CUSTOMERS_API_URL);
-      const rawItems = Array.isArray(payload)
-        ? payload
-        : Array.isArray(payload?.data)
-          ? payload.data
-          : [];
-      const bookingData = rawItems.map(this.mapBookingFromApi);
+      const rawItems = this.extractArrayPayload(payload);
+      const bookingData = rawItems.map((item) =>
+        this.mapBookingFromApi(item, roomTypeMap),
+      );
       this.setState({ bookingData });
     } catch (err) {
       this.setState({ bookingData: [] });
@@ -805,16 +873,16 @@ class NhanTraphong extends Component {
     }
   };
 
-  fetchCurrentStayingCustomers = async () => {
+  fetchCurrentStayingCustomers = async (
+    roomTypeMap = this.state.roomTypeMap,
+  ) => {
     try {
       this.setState({ stayLoading: true });
       const payload = await this.request(CURRENT_STAYING_CUSTOMERS_API_URL);
-      const rawItems = Array.isArray(payload)
-        ? payload
-        : Array.isArray(payload?.data)
-          ? payload.data
-          : [];
-      const stayData = rawItems.map(this.mapStayingFromApi);
+      const rawItems = this.extractArrayPayload(payload);
+      const stayData = rawItems.map((item) =>
+        this.mapStayingFromApi(item, roomTypeMap),
+      );
       this.setState({ stayData });
     } catch (err) {
       this.setState({ stayData: [] });
@@ -2673,6 +2741,7 @@ class NhanTraphong extends Component {
             <table className="ntp-table">
               <thead>
                 <tr>
+                  <th>STT</th>
                   <th>Khách hàng</th>
                   <th>{activeTab === "stay" ? "Phòng" : "Loại phòng"}</th>
                   <th>{activeTab === "stay" ? "Check-in" : "Ngày nhận"}</th>
@@ -2683,7 +2752,7 @@ class NhanTraphong extends Component {
               <tbody>
                 {activeTab === "stay" && stayLoading && (
                   <tr>
-                    <td colSpan="5">
+                    <td colSpan="6">
                       Đang tải danh sách khách đang lưu trú...
                     </td>
                   </tr>
@@ -2693,14 +2762,15 @@ class NhanTraphong extends Component {
                   !stayLoading &&
                   stayData.length === 0 && (
                     <tr>
-                      <td colSpan="5">Không có khách đang lưu trú.</td>
+                      <td colSpan="6">Không có khách đang lưu trú.</td>
                     </tr>
                   )}
 
                 {activeTab === "stay" &&
                   !stayLoading &&
-                  stayData.map((item) => (
+                  stayData.map((item, index) => (
                     <tr key={item.id}>
+                      <td>{item.stt ?? index + 1}</td>
                       <td>{item.guest}</td>
                       <td>{item.room}</td>
                       <td>{item.checkInTime}</td>
@@ -2738,7 +2808,7 @@ class NhanTraphong extends Component {
 
                 {activeTab === "pending" && bookingLoading && (
                   <tr>
-                    <td colSpan="5">
+                    <td colSpan="6">
                       Đang tải danh sách đặt phòng chờ nhận...
                     </td>
                   </tr>
@@ -2748,14 +2818,15 @@ class NhanTraphong extends Component {
                   !bookingLoading &&
                   bookingData.length === 0 && (
                     <tr>
-                      <td colSpan="5">Không có khách đang chờ check-in.</td>
+                      <td colSpan="6">Không có khách đang chờ check-in.</td>
                     </tr>
                   )}
 
                 {activeTab === "pending" &&
                   !bookingLoading &&
-                  bookingData.map((item) => (
+                  bookingData.map((item, index) => (
                     <tr key={item.id}>
+                      <td>{item.stt ?? index + 1}</td>
                       <td>{item.guest}</td>
                       <td>{item.roomType}</td>
                       <td>{item.checkIn}</td>

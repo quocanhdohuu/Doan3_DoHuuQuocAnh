@@ -2328,30 +2328,37 @@ BEGIN
         FROM RoomStayHistory rsh
         JOIN Stays s ON rsh.StayID = s.StayID
         GROUP BY s.ReservationID
+    ),
+    FinalData AS
+    (
+        SELECT 
+            r.ReservationID,
+            u.UserID,
+            c.CustomerID,
+            c.FullName,
+            c.Phone,
+            u.Email,
+            r.CheckInDate,
+            r.CheckOutDate,
+            er.RoomTypeID,
+            er.PriceAtBooking
+        FROM Reservations r
+        INNER JOIN Users u ON r.UserID = u.UserID
+        LEFT JOIN Customers c ON c.UserID = u.UserID
+        INNER JOIN ExpandedRooms er ON r.ReservationID = er.ReservationID
+        LEFT JOIN CheckedInCount cic ON r.ReservationID = cic.ReservationID
+
+        WHERE 
+            r.Status IN ('BOOKED', 'CHECKED_IN')
+            AND er.RowNum > ISNULL(cic.CheckedInRooms, 0)
     )
 
     SELECT 
-        r.ReservationID,
-        u.UserID,
-        c.CustomerID,
-        c.FullName,
-        c.Phone,
-        u.Email,
-        r.CheckInDate,
-        r.CheckOutDate,
-        er.RoomTypeID,
-        er.PriceAtBooking
-    FROM Reservations r
-    INNER JOIN Users u ON r.UserID = u.UserID
-    LEFT JOIN Customers c ON c.UserID = u.UserID
-    INNER JOIN ExpandedRooms er ON r.ReservationID = er.ReservationID
-    LEFT JOIN CheckedInCount cic ON r.ReservationID = cic.ReservationID
+        ROW_NUMBER() OVER (ORDER BY CheckInDate ASC) AS STT,
+        *
+    FROM FinalData
+    ORDER BY CheckInDate ASC;
 
-    WHERE 
-        r.Status IN ('BOOKED', 'CHECKED_IN')
-        AND er.RowNum > ISNULL(cic.CheckedInRooms, 0)
-
-    ORDER BY r.CheckInDate ASC;
 END
 EXEC sp_GetWaitingCheckInCustomers
 
@@ -2362,67 +2369,71 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    ;WITH FinalData AS
+    (
+        SELECT 
+            s.StayID,
+
+            r.ReservationID,
+
+            ISNULL(c.CustomerID, g.GuestID) AS CustomerID,
+
+            ISNULL(c.FullName, g.FullName) AS FullName,
+            ISNULL(c.Phone, N'Không có') AS Phone,
+            ISNULL(u.Email, N'Không có') AS Email,
+
+            -------------------------------------------------
+            -- CheckIn
+            -------------------------------------------------
+            ISNULL(r.CheckInDate, s.ActualCheckIn) AS CheckInDate,
+
+            -------------------------------------------------
+            -- CheckOut
+            -------------------------------------------------
+            s.ExpectedCheckOut AS CheckOutDate,
+
+            -------------------------------------------------
+            -- Phòng
+            -------------------------------------------------
+            rsh.RoomID,
+            rm.RoomNumber,
+
+            s.Status,
+            s.ActualCheckIn AS CreatedAt
+
+        FROM Stays s
+
+        INNER JOIN Guests g
+            ON g.GuestID = s.GuestID
+
+        LEFT JOIN Reservations r
+            ON s.ReservationID = r.ReservationID
+
+        LEFT JOIN Users u 
+            ON r.UserID = u.UserID
+
+        LEFT JOIN Customers c 
+            ON c.UserID = u.UserID
+
+        INNER JOIN RoomStayHistory rsh
+            ON rsh.StayID = s.StayID
+            AND rsh.CheckOutTime IS NULL
+
+        INNER JOIN Rooms rm
+            ON rm.RoomID = rsh.RoomID
+
+        WHERE s.Status = 'CHECKED_IN'
+          AND (r.Status IS NULL OR r.Status != 'CANCELLED')
+    )
+
     SELECT 
-        s.StayID, -- ✅ thêm dòng này
+        ROW_NUMBER() OVER (ORDER BY CheckInDate ASC) AS STT,
+        *
+    FROM FinalData
+    ORDER BY CheckInDate ASC;
 
-        r.ReservationID,
-
-        ISNULL(c.CustomerID, g.GuestID) AS CustomerID,
-
-        ISNULL(c.FullName, g.FullName) AS FullName,
-        ISNULL(c.Phone, N'Không có') AS Phone,
-        ISNULL(u.Email, N'Không có') AS Email,
-
-        -------------------------------------------------
-        -- ✅ CheckIn vẫn giữ logic cũ
-        -------------------------------------------------
-        ISNULL(r.CheckInDate, s.ActualCheckIn) AS CheckInDate,
-
-        -------------------------------------------------
-        -- 🔥 FIX: luôn lấy từ Stay
-        -------------------------------------------------
-        s.ExpectedCheckOut AS CheckOutDate,
-
-        -------------------------------------------------
-        -- Phòng
-        -------------------------------------------------
-        rsh.RoomID,
-        rm.RoomNumber,
-
-        s.Status,
-        s.ActualCheckIn AS CreatedAt
-
-    FROM Stays s
-
-    INNER JOIN Guests g
-        ON g.GuestID = s.GuestID
-
-    LEFT JOIN Reservations r
-        ON s.ReservationID = r.ReservationID
-
-    LEFT JOIN Users u 
-        ON r.UserID = u.UserID
-
-    LEFT JOIN Customers c 
-        ON c.UserID = u.UserID
-
-    INNER JOIN RoomStayHistory rsh
-        ON rsh.StayID = s.StayID
-        AND rsh.CheckOutTime IS NULL
-
-    INNER JOIN Rooms rm
-        ON rm.RoomID = rsh.RoomID
-
-    WHERE s.Status = 'CHECKED_IN'
-      AND (r.Status IS NULL OR r.Status != 'CANCELLED')
-
-    ORDER BY s.ActualCheckIn ASC;
 END
 EXEC sp_GetCurrentStayingCustomers;
-select * from Stays where Status = 'CHECKED_IN'
-select * from Stays
-select * from Guests
-select * from RoomStayHistory
 
 
 ---CheckIn theo lịch đặt-----------------------------------------------
