@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "../../style/Customer_main.css";
 import hotelImage from "../../img/hotel_image.png";
+import CustomerRoomCard from "./CustomerRoomCard";
 
 const ROOM_TYPES_API_URL =
   "http://localhost:3000/api/get-room-types/with-price";
@@ -106,7 +107,7 @@ const formatCurrency = (value) => {
   return `${amount.toLocaleString("vi-VN")} VND`;
 };
 
-function CustomerHomeContent({ user }) {
+function CustomerHomeContent({ user, onRoomSelect }) {
   const [roomTypes, setRoomTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -175,6 +176,16 @@ function CustomerHomeContent({ user }) {
     const next = Number(event.target.value);
     if (!Number.isFinite(next)) return;
     setter(Math.max(1, Math.floor(next)));
+  };
+
+  const handleRoomSelect = (room) => {
+    if (typeof onRoomSelect !== "function") return;
+    onRoomSelect(room, {
+      checkInDate,
+      checkOutDate,
+      guestCount,
+      roomCount,
+    });
   };
 
   const handleSearchAvailableRooms = async () => {
@@ -347,42 +358,13 @@ function CustomerHomeContent({ user }) {
           {!loading && !error && featuredRooms.length > 0 && (
             <div className="customer-room-grid">
               {featuredRooms.map((room) => (
-                <article className="customer-room-card" key={room.id}>
-                  <div className="customer-room-media">
-                    <img
-                      src={room.image || hotelImage}
-                      alt={room.name}
-                      onError={(event) => {
-                        event.currentTarget.src = hotelImage;
-                      }}
-                    />
-                  </div>
-
-                  <div className="customer-room-body">
-                    <h3>{room.name}</h3>
-                    <p>{room.description}</p>
-
-                    <div className="customer-room-meta">
-                      <div>
-                        <small>From</small>
-                        <strong>{formatCurrency(room.price)}</strong>
-                        <span>/ night</span>
-                      </div>
-                      <button type="button" aria-label={`Explore ${room.name}`}>
-                        <i className="fa-solid fa-arrow-right"></i>
-                      </button>
-                    </div>
-
-                    <span className="customer-capacity">
-                      {room.capacity || 2} guests
-                    </span>
-                    {room.availableRooms !== null && (
-                      <span className="customer-capacity customer-capacity--availability">
-                        {room.availableRooms} rooms available
-                      </span>
-                    )}
-                  </div>
-                </article>
+                <CustomerRoomCard
+                  key={room.id}
+                  room={room}
+                  fallbackImage={hotelImage}
+                  formatCurrency={formatCurrency}
+                  onSelect={handleRoomSelect}
+                />
               ))}
             </div>
           )}

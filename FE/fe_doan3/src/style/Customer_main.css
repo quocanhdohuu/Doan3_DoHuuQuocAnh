@@ -336,6 +336,7 @@
   background: #f8f9fd;
   border: 1px solid rgba(10, 42, 80, 0.08);
   box-shadow: 0 18px 30px rgba(13, 33, 63, 0.08);
+  cursor: pointer;
   transition:
     transform 0.25s ease,
     box-shadow 0.25s ease;
@@ -344,6 +345,11 @@
 .customer-room-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 22px 34px rgba(11, 28, 54, 0.16);
+}
+
+.customer-room-card:focus-visible {
+  outline: 3px solid rgba(17, 47, 87, 0.34);
+  outline-offset: 2px;
 }
 
 .customer-room-media {
@@ -667,6 +673,373 @@
   font-weight: 600;
 }
 
+.room-detail-page {
+  width: 100%;
+}
+
+.room-detail-shell {
+  width: min(1240px, calc(100% - 40px));
+  margin: 24px auto 0;
+  color: #13233f;
+}
+
+.room-detail-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #17335c;
+  padding: 9px 14px;
+  box-shadow: 0 10px 22px rgba(8, 28, 56, 0.12);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.room-detail-breadcrumb {
+  margin: 18px 0 18px;
+  color: #606f89;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.room-detail-breadcrumb span {
+  margin: 0 9px;
+}
+
+.room-detail-breadcrumb strong {
+  color: #111f37;
+  font-weight: 700;
+}
+
+.room-detail-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2.15fr) minmax(320px, 1fr);
+  gap: 16px;
+}
+
+.room-detail-main-visual {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  min-height: 590px;
+  margin: 0;
+}
+
+.room-detail-main-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.room-detail-main-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 26px 24px;
+  background: linear-gradient(
+    0deg,
+    rgba(5, 17, 34, 0.7) 0%,
+    rgba(5, 17, 34, 0.18) 65%,
+    rgba(5, 17, 34, 0) 100%
+  );
+  color: #edf5ff;
+}
+
+.room-detail-main-overlay h1 {
+  margin: 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(40px, 4.8vw, 64px);
+  line-height: 0.95;
+}
+
+.room-detail-main-meta {
+  margin-top: 11px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(239, 245, 255, 0.88);
+}
+
+.room-detail-side {
+  display: grid;
+  grid-template-rows: 1fr 1fr auto;
+  gap: 14px;
+}
+
+.room-detail-side > img {
+  width: 100%;
+  min-height: 140px;
+  max-height: 242px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.room-detail-book-card {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(12, 39, 71, 0.12);
+  box-shadow: 0 18px 28px rgba(9, 31, 62, 0.14);
+  padding: 20px;
+}
+
+.room-detail-book-top {
+  margin-bottom: 12px;
+}
+
+.room-detail-book-top small {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #68778f;
+}
+
+.room-detail-book-top strong {
+  margin-top: 4px;
+  display: block;
+  color: #0f2444;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 36px;
+}
+
+.room-detail-book-top p {
+  margin: 3px 0 0;
+  color: #6d7990;
+  font-size: 13px;
+}
+
+.room-detail-field {
+  margin-top: 14px;
+}
+
+.room-detail-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #68778f;
+}
+
+.room-detail-field input,
+.room-detail-field select {
+  width: 100%;
+  border: 1px solid rgba(15, 42, 79, 0.12);
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-family: inherit;
+  color: #102748;
+  background: #f8f9fd;
+}
+
+.room-detail-price-line {
+  margin-top: 11px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #4b5c78;
+  font-size: 14px;
+}
+
+.room-detail-price-line--total {
+  margin-top: 15px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(14, 40, 72, 0.12);
+  font-size: 27px;
+  color: #0f2444;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 700;
+}
+
+.room-detail-reserve-btn {
+  margin-top: 16px;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #153966 0%, #0e2748 100%);
+  color: #fff;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  min-height: 42px;
+  cursor: pointer;
+}
+
+.room-detail-book-note {
+  margin: 12px 0 0;
+  color: #637089;
+  font-size: 12px;
+}
+
+.room-detail-book-note i {
+  margin-right: 6px;
+}
+
+.room-detail-book-note--guest {
+  margin-top: 6px;
+}
+
+.room-detail-copy {
+  margin-top: 18px;
+  max-width: 760px;
+}
+
+.room-detail-copy p {
+  margin: 0;
+  color: #273853;
+  line-height: 1.72;
+}
+
+.room-detail-copy p + p {
+  margin-top: 9px;
+}
+
+.room-detail-amenities {
+  margin-top: 28px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(16, 45, 83, 0.1);
+  border-radius: 15px;
+  padding: 26px 26px 14px;
+}
+
+.room-detail-amenities h2,
+.room-detail-reviews h2 {
+  margin: 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(33px, 3.3vw, 45px);
+  color: #102d56;
+}
+
+.room-detail-amenity-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.room-detail-amenity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 10px 0;
+}
+
+.room-detail-amenity-item i {
+  margin-top: 4px;
+  color: #5d3b0d;
+}
+
+.room-detail-amenity-item h3 {
+  margin: 0;
+  color: #122d53;
+  font-size: 20px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+}
+
+.room-detail-amenity-item p {
+  margin: 4px 0 0;
+  color: #5a6880;
+  font-size: 13px;
+}
+
+.room-detail-reviews {
+  margin-top: 28px;
+}
+
+.room-detail-review-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.room-detail-review-head button {
+  border: none;
+  background: none;
+  color: #2f405d;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.room-detail-rating {
+  margin: 9px 0 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #775016;
+}
+
+.room-detail-rating span {
+  color: #1c2f4f;
+  margin-left: 5px;
+}
+
+.room-detail-review-list {
+  display: grid;
+  gap: 14px;
+}
+
+.room-detail-review-card {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(17, 45, 79, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.room-detail-review-card blockquote {
+  margin: 0;
+  color: #26334a;
+  font-size: clamp(20px, 2vw, 29px);
+  line-height: 1.36;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+}
+
+.room-detail-review-author {
+  margin-top: 17px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.room-detail-review-author > span {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #dce5f2;
+  color: #365173;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.room-detail-review-author strong {
+  display: block;
+  color: #102949;
+}
+
+.room-detail-review-author small {
+  color: #6f7b90;
+}
+
+.room-detail-empty {
+  width: min(720px, calc(100% - 40px));
+  margin: 38px auto 0;
+  border-radius: 14px;
+  border: 1px solid rgba(11, 39, 74, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  padding: 32px;
+}
+
 @keyframes riseIn {
   from {
     opacity: 0;
@@ -728,6 +1101,27 @@
   .customer-concierge-card img {
     height: 170px;
   }
+
+  .room-detail-hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .room-detail-main-visual {
+    min-height: 430px;
+  }
+
+  .room-detail-side {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .room-detail-book-card {
+    grid-column: 1 / -1;
+  }
+
+  .room-detail-amenity-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -766,5 +1160,487 @@
 
   .customer-footer {
     align-items: flex-start;
+  }
+
+  .room-detail-shell {
+    width: calc(100% - 24px);
+    margin-top: 14px;
+  }
+
+  .room-detail-main-visual {
+    min-height: 350px;
+  }
+
+  .room-detail-main-overlay {
+    padding: 16px 14px;
+  }
+
+  .room-detail-side {
+    grid-template-columns: 1fr;
+  }
+
+  .room-detail-amenities {
+    padding: 20px 16px 10px;
+  }
+
+  .room-detail-amenity-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .room-detail-review-card {
+    padding: 16px;
+  }
+
+.room-detail-review-card blockquote {
+    font-size: 22px;
+  }
+}
+
+.grand-room-page {
+  min-height: 100vh;
+  background: #efeff4;
+  color: #0f2444;
+  font-family: "Manrope", Arial, sans-serif;
+}
+
+.grand-room-nav {
+  height: 84px;
+  padding: 0 32px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  background: #f8f8fa;
+  border-bottom: 1px solid rgba(9, 26, 48, 0.08);
+}
+
+.grand-room-brand {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 43px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #0d2140;
+}
+
+.grand-room-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.grand-room-nav-links button {
+  border: none;
+  background: transparent;
+  color: #5a6479;
+  text-transform: uppercase;
+  letter-spacing: 0.17em;
+  font-size: 11px;
+  padding: 6px 0;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+}
+
+.grand-room-nav-links button.active,
+.grand-room-nav-links button:hover {
+  color: #1b2f4f;
+  border-color: #1b2f4f;
+}
+
+.grand-room-check-btn {
+  justify-self: end;
+  border: none;
+  background: linear-gradient(135deg, #0f3761 0%, #0a2a4b 100%);
+  color: #f5f9ff;
+  border-radius: 10px;
+  min-height: 42px;
+  min-width: 195px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.grand-room-hero {
+  height: min(66vw, 640px);
+  min-height: 390px;
+  overflow: hidden;
+}
+
+.grand-room-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.grand-room-main {
+  width: min(1140px, calc(100% - 34px));
+  margin: -96px auto 0;
+  position: relative;
+  z-index: 3;
+}
+
+.grand-room-actions {
+  margin: 0 0 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.grand-room-actions button {
+  border: 1px solid rgba(11, 37, 68, 0.16);
+  background: rgba(255, 255, 255, 0.92);
+  color: #17335d;
+  border-radius: 8px;
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.grand-room-actions button i {
+  margin-right: 6px;
+}
+
+.grand-room-panel {
+  background: rgba(246, 247, 250, 0.98);
+  border-radius: 12px;
+  border: 1px solid rgba(12, 34, 64, 0.09);
+  box-shadow: 0 18px 30px rgba(10, 31, 60, 0.1);
+  padding: 56px 62px 54px;
+}
+
+.grand-room-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 26px;
+}
+
+.grand-room-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.17em;
+  font-size: 10px;
+  color: #8d7b5a;
+}
+
+.grand-room-title {
+  margin: 14px 0 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(60px, 5vw, 82px);
+  line-height: 0.9;
+  color: #0c1f3d;
+}
+
+.grand-room-rate {
+  text-align: right;
+  padding-top: 12px;
+}
+
+.grand-room-rate p {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+  color: #717f96;
+}
+
+.grand-room-rate strong {
+  display: block;
+  margin-top: 8px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 53px;
+  color: #0e2344;
+}
+
+.grand-room-rate span {
+  color: #56627a;
+  font-size: 13px;
+}
+
+.grand-room-panel-body {
+  margin-top: 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 286px;
+  gap: 40px;
+}
+
+.grand-room-amenity-wrap h2 {
+  margin: 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 45px;
+  color: #132b50;
+}
+
+.grand-room-amenities {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 22px;
+}
+
+.grand-room-amenity {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.grand-room-amenity-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #e7e8ed;
+  display: grid;
+  place-items: center;
+  color: #112f57;
+  flex-shrink: 0;
+}
+
+.grand-room-amenity h3 {
+  margin: 0;
+  color: #0d2344;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.grand-room-amenity p {
+  margin: 4px 0 0;
+  color: #66738a;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.grand-room-specs {
+  background: #e9eaef;
+  border-radius: 10px;
+  padding: 22px;
+  align-self: start;
+}
+
+.grand-room-specs > p {
+  margin: 0 0 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 10px;
+  color: #8b785a;
+}
+
+.grand-room-spec-row {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(16, 41, 73, 0.1);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.grand-room-spec-row:last-child {
+  border-bottom: none;
+}
+
+.grand-room-spec-row span {
+  color: #6f7c91;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.grand-room-spec-row strong {
+  color: #0d2343;
+  font-size: 14px;
+}
+
+.grand-room-book-btn {
+  margin: 42px auto 0;
+  display: block;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #e8cc8e 0%, #e8bf67 100%);
+  color: #1f2b3f;
+  min-width: 256px;
+  min-height: 58px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+}
+
+.grand-room-story {
+  margin-top: 88px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 72px;
+  align-items: center;
+}
+
+.grand-room-story-media {
+  margin: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 22px 34px rgba(12, 36, 68, 0.11);
+}
+
+.grand-room-story-media img {
+  width: 100%;
+  display: block;
+  height: 610px;
+  object-fit: cover;
+}
+
+.grand-room-story-copy h2 {
+  margin: 13px 0 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: clamp(52px, 4.2vw, 72px);
+  line-height: 0.95;
+  color: #132a4e;
+}
+
+.grand-room-story-copy p {
+  color: #3f4f69;
+  line-height: 1.72;
+  max-width: 470px;
+}
+
+.grand-room-story-copy button {
+  margin-top: 16px;
+  border: none;
+  background: none;
+  color: #102849;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.grand-room-story-copy button i {
+  margin-left: 7px;
+}
+
+.grand-room-footer {
+  margin-top: 74px;
+  min-height: 88px;
+  border-top: 1px solid rgba(12, 34, 64, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 32px;
+}
+
+.grand-room-footer small {
+  color: #8c97aa;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+}
+
+.grand-room-footer div {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.grand-room-footer span {
+  color: #6b7890;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 10px;
+}
+
+@media (max-width: 1080px) {
+  .grand-room-nav {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    height: auto;
+    padding: 14px 18px;
+  }
+
+  .grand-room-nav-links,
+  .grand-room-check-btn {
+    justify-self: start;
+  }
+
+  .grand-room-hero {
+    height: 420px;
+  }
+
+  .grand-room-main {
+    margin-top: -48px;
+  }
+
+  .grand-room-panel {
+    padding: 28px;
+  }
+
+  .grand-room-panel-head,
+  .grand-room-panel-body,
+  .grand-room-story {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .grand-room-actions {
+    flex-wrap: wrap;
+  }
+
+  .grand-room-rate {
+    text-align: left;
+    padding-top: 0;
+  }
+
+  .grand-room-story {
+    gap: 24px;
+    margin-top: 44px;
+  }
+
+  .grand-room-story-media img {
+    height: 250px;
+  }
+}
+
+@media (max-width: 720px) {
+  .grand-room-brand {
+    font-size: 36px;
+  }
+
+  .grand-room-nav-links {
+    flex-wrap: wrap;
+    gap: 10px 14px;
+  }
+
+  .grand-room-main {
+    width: calc(100% - 20px);
+  }
+
+  .grand-room-actions button {
+    width: 100%;
+  }
+
+  .grand-room-title {
+    font-size: 52px;
+  }
+
+  .grand-room-amenities {
+    grid-template-columns: 1fr;
+  }
+
+  .grand-room-book-btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .grand-room-footer {
+    padding: 14px 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    height: auto;
+  }
+
+  .grand-room-footer div {
+    flex-wrap: wrap;
+    gap: 10px 16px;
   }
 }
