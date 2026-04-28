@@ -51,6 +51,13 @@ function Customer_main() {
     setActivePage(MENU_KEYS.ROOM_DETAIL);
   }, []);
 
+  const handleBookingSuccess = useCallback((message) => {
+    setSelectedRoom(null);
+    setBookingDraft(null);
+    setActivePage(MENU_KEYS.HOME);
+    window.alert(message || "Đặt phòng thành công.");
+  }, []);
+
   const currentContent = useMemo(() => {
     switch (activePage) {
       case MENU_KEYS.EXPERIENCE:
@@ -75,8 +82,8 @@ function Customer_main() {
             room={selectedRoom}
             bookingDraft={bookingDraft}
             onBack={handleBackToRoomDetail}
-            onBackToRooms={handleBackToRooms}
             onBookingDraftChange={setBookingDraft}
+            onBookingSuccess={handleBookingSuccess}
           />
         );
       case MENU_KEYS.HOME:
@@ -92,6 +99,7 @@ function Customer_main() {
     handleGoToExperience,
     handleGoToBookingConfirm,
     handleBackToRoomDetail,
+    handleBookingSuccess,
     handleRoomSelect,
   ]);
 

@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
+import { useAuth } from "../AuthContext";
 import "../../style/Booking_Confirm.css";
 import hotelImage from "../../img/hotel_image.png";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const BOOK_ROOM_API_URL = "http://localhost:3000/api/reservations/book-room";
 
 const toInputDate = (date) => {
   const year = date.getFullYear();
@@ -49,7 +51,61 @@ const normalizeGuestCount = (value, fallback) =>
 const normalizeRoomCount = (value) =>
   Math.max(1, Math.floor(Number(value) || 1));
 
-function Booking_Confirm({ room, bookingDraft, onBack, onBookingDraftChange }) {
+const resolveUserId = (user) => {
+  const candidates = [
+    user?.userId,
+    user?.UserID,
+    user?.id,
+    user?.ID,
+    user?.account?.UserID,
+  ];
+
+  for (const value of candidates) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+
+  return null;
+};
+
+const readResponseBody = async (response) => {
+  const text = await response.text();
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+};
+
+const buildErrorMessage = (body, statusCode) => {
+  if (typeof body === "string" && body.trim()) {
+    return body;
+  }
+
+  if (body && typeof body === "object") {
+    const detail =
+      (typeof body.detail === "string" && body.detail.trim()) ||
+      (typeof body.Detail === "string" && body.Detail.trim());
+
+    if (detail) return detail;
+    return body.message || body.error || `API error: ${statusCode}`;
+  }
+
+  return `API error: ${statusCode}`;
+};
+
+function Booking_Confirm({
+  room,
+  bookingDraft,
+  onBack,
+  onBookingDraftChange,
+  onBookingSuccess,
+}) {
+  const { user } = useAuth();
   const todayDate = useMemo(() => toInputDate(new Date()), []);
   const [checkInDate, setCheckInDate] = useState(
     bookingDraft?.checkInDate || todayDate,
@@ -64,6 +120,7 @@ function Booking_Confirm({ room, bookingDraft, onBack, onBookingDraftChange }) {
   const [roomCount, setRoomCount] = useState(
     normalizeRoomCount(bookingDraft?.roomCount),
   );
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   useEffect(() => {
     if (typeof onBookingDraftChange !== "function") return;
@@ -77,12 +134,11 @@ function Booking_Confirm({ room, bookingDraft, onBack, onBookingDraftChange }) {
 
   const roomName = room?.name || "Selected Room";
   const roomImage = room?.image || hotelImage;
+  const roomTypeId = Number(room?.id ?? room?.RoomTypeID ?? room?.roomTypeId);
   const nightlyRate = Math.max(0, Number(room?.price) || 0);
   const nights = getNightCount(checkInDate, checkOutDate);
   const subTotal = nightlyRate * nights * roomCount;
-  const taxesAndFees = subTotal * 0.088;
-  const serviceCharge = subTotal * 0.021;
-  const total = subTotal + taxesAndFees + serviceCharge;
+  const total = subTotal;
 
   const handleCheckInChange = (event) => {
     const nextCheckIn = event.target.value;
@@ -98,6 +154,57 @@ function Booking_Confirm({ room, bookingDraft, onBack, onBookingDraftChange }) {
     setCheckOutDate(
       nextCheckOut <= checkInDate ? addDays(checkInDate, 1) : nextCheckOut,
     );
+  };
+
+  const handleConfirmBooking = async () => {
+    if (submitLoading) return;
+
+    if (!Number.isFinite(roomTypeId) || roomTypeId <= 0) {
+      window.alert("Không tìm thấy RoomTypeID hợp lệ. Vui lòng chọn lại phòng.");
+      return;
+    }
+
+    const userId = resolveUserId(user);
+    if (!userId) {
+      window.alert("Không tìm thấy UserID. Vui lòng đăng nhập lại.");
+      return;
+    }
+
+    const payload = {
+      UserID: userId,
+      RoomTypeID: roomTypeId,
+      CheckInDate: checkInDate,
+      CheckOutDate: checkOutDate,
+      NumRooms: Number(roomCount),
+      NumPeople: Number(guestCount),
+    };
+
+    try {
+      setSubmitLoading(true);
+      const response = await fetch(BOOK_ROOM_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const body = await readResponseBody(response);
+      if (!response.ok) {
+        throw new Error(buildErrorMessage(body, response.status));
+      }
+
+      const successMessage =
+        body?.message || body?.Message || "Đặt phòng thành công.";
+
+      if (typeof onBookingSuccess === "function") {
+        onBookingSuccess(successMessage);
+      } else {
+        window.alert(successMessage);
+      }
+    } catch (error) {
+      window.alert(error?.message || "Đặt phòng thất bại. Vui lòng thử lại.");
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   return (
@@ -201,21 +308,18 @@ function Booking_Confirm({ room, bookingDraft, onBack, onBookingDraftChange }) {
               </span>
               <strong>{formatCurrency(subTotal)}</strong>
             </div>
-            <div className="booking-price-line">
-              <span>Taxes & city fees</span>
-              <strong>{formatCurrency(taxesAndFees)}</strong>
-            </div>
-            <div className="booking-price-line">
-              <span>Service charge</span>
-              <strong>{formatCurrency(serviceCharge)}</strong>
-            </div>
 
             <div className="booking-total-line">
               <span>Total reservation cost</span>
               <strong>{formatCurrency(total)}</strong>
             </div>
 
-            <button type="button" className="booking-confirm-btn">
+            <button
+              type="button"
+              className="booking-confirm-btn"
+              onClick={handleConfirmBooking}
+              disabled={submitLoading}
+            >
               Xác nhận đặt phòng <i className="fa-solid fa-arrow-right"></i>
             </button>
             <p className="booking-summary-note">

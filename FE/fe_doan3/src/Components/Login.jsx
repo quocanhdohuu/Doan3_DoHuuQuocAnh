@@ -43,7 +43,18 @@ class LoginClass extends Component {
       }
 
       if (response.ok && result?.account) {
+        const rawUserId =
+          result.account.UserID ??
+          result.account.userId ??
+          result.account.userID ??
+          null;
+        const parsedUserId = Number(rawUserId);
+
         this.props.login({
+          userId:
+            Number.isFinite(parsedUserId) && parsedUserId > 0
+              ? parsedUserId
+              : rawUserId,
           name: result.account.FullName,
           email: result.account.Email,
           role: result.account.Role,
