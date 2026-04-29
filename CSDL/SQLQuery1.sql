@@ -328,7 +328,35 @@ BEGIN
     FROM Users u
     INNER JOIN Customers c ON u.UserID = c.UserID
     WHERE u.Email = @Email
-      AND u.PasswordHash = @PasswordHash   
+      AND u.PasswordHash = @PasswordHash
+
+    UNION ALL
+
+    SELECT 
+		u.UserID,
+        u.Email,
+        u.PasswordHash,
+        u.Role,
+        r.FullName,
+        r.Phone
+    FROM Users u
+    INNER JOIN Receptionists r ON u.UserID = r.UserID
+    WHERE u.Email = @Email
+      AND u.PasswordHash = @PasswordHash
+
+    UNION ALL
+
+    SELECT 
+		u.UserID,
+        u.Email,
+        u.PasswordHash,
+        u.Role,
+        a.FullName,
+        a.Phone
+    FROM Users u
+    INNER JOIN Admin a ON u.UserID = a.UserID
+    WHERE u.Email = @Email
+      AND u.PasswordHash = @PasswordHash;
 END;
 
 EXEC GetAccountInfo @Email = 'admin@gmail.com', @PasswordHash = '123456';
