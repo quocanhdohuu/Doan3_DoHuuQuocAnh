@@ -9,7 +9,7 @@
 
 .booking-confirm-head h1 {
   margin: 22px 0 8px;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: clamp(48px, 6vw, 76px);
   line-height: 0.95;
   color: #0d2547;

@@ -160,7 +160,9 @@ function Booking_Confirm({
     if (submitLoading) return;
 
     if (!Number.isFinite(roomTypeId) || roomTypeId <= 0) {
-      window.alert("Không tìm thấy RoomTypeID hợp lệ. Vui lòng chọn lại phòng.");
+      window.alert(
+        "Không tìm thấy RoomTypeID hợp lệ. Vui lòng chọn lại phòng.",
+      );
       return;
     }
 
@@ -248,11 +250,11 @@ function Booking_Confirm({
           </article>
 
           <aside className="booking-summary-card">
-            <h2>Reservation Summary</h2>
+            <h2>Tóm tắt đặt phòng</h2>
 
             <div className="booking-edit-grid">
               <label htmlFor="booking-check-in">
-                Check-in
+                Ngày nhận
                 <input
                   id="booking-check-in"
                   type="date"
@@ -262,7 +264,7 @@ function Booking_Confirm({
                 />
               </label>
               <label htmlFor="booking-check-out">
-                Check-out
+                Ngày trả
                 <input
                   id="booking-check-out"
                   type="date"
@@ -272,7 +274,7 @@ function Booking_Confirm({
                 />
               </label>
               <label htmlFor="booking-guests">
-                Guests
+                Số khách
                 <input
                   id="booking-guests"
                   type="number"
@@ -287,7 +289,7 @@ function Booking_Confirm({
                 />
               </label>
               <label htmlFor="booking-room-count">
-                Rooms
+                Số phòng
                 <input
                   id="booking-room-count"
                   type="number"
@@ -310,7 +312,7 @@ function Booking_Confirm({
             </div>
 
             <div className="booking-total-line">
-              <span>Total reservation cost</span>
+              <span>Tổng chi phí đặt phòng</span>
               <strong>{formatCurrency(total)}</strong>
             </div>
 
@@ -323,7 +325,8 @@ function Booking_Confirm({
               Xác nhận đặt phòng <i className="fa-solid fa-arrow-right"></i>
             </button>
             <p className="booking-summary-note">
-              By confirming, you agree to our terms of service.
+              Bằng cách xác nhận, bạn đồng ý với điều khoản dịch vụ của chúng
+              tôi.
             </p>
           </aside>
         </div>
@@ -337,8 +340,8 @@ function Booking_Confirm({
               ></i>
             </span>
             <div>
-              <h3>Free cancellation</h3>
-              <p>Cancel up to 48 hours before check-in for a full refund.</p>
+              <h3>Miễn phí hủy phòng</h3>
+              <p>Hủy phòng lên đến 48 giờ trước khi nhận phòng để được hoàn tiền đầy đủ.</p>
             </div>
           </article>
 
@@ -347,9 +350,9 @@ function Booking_Confirm({
               <i className="fa-solid fa-concierge-bell" aria-hidden="true"></i>
             </span>
             <div>
-              <h3>24/7 concierge</h3>
+              <h3>24/7</h3>
               <p>
-                Our digital and on-site staff are ready to assist you anytime.
+                Đội ngũ nhân viên trực tuyến và tại chỗ của chúng tôi luôn sẵn sàng hỗ trợ bạn bất cứ lúc nào.
               </p>
             </div>
           </article>
@@ -359,10 +362,9 @@ function Booking_Confirm({
               <i className="fa-solid fa-shield-halved" aria-hidden="true"></i>
             </span>
             <div>
-              <h3>Safe booking</h3>
+              <h3>Đặt phòng an toàn</h3>
               <p>
-                Your transaction is protected by encryption and our guest
-                satisfaction guarantee.
+                Giao dịch của bạn được bảo vệ bởi mã hóa và cam kết hài lòng của khách hàng.
               </p>
             </div>
           </article>
