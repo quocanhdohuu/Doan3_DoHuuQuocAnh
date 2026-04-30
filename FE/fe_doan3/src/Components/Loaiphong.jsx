@@ -3,20 +3,72 @@ import "../style/Loaiphong.css";
 import { FeatureHeader } from "./Common";
 
 const PAGE_SIZE = 4;
+const ROOM_TYPES_API_URL = "http://localhost:3000/api/get-room-types";
+const LOCAL_IMAGE_BASE_URL = "http://localhost:3000/local-images/";
+
+const getFileNameFromPath = (value = "") => {
+  const normalized = String(value).trim().replace(/\\/g, "/");
+  const parts = normalized.split("/").filter(Boolean);
+  return parts.length > 0 ? parts[parts.length - 1] : "";
+};
+
+const buildLocalImageUrl = (fileName = "") => {
+  const cleanName = String(fileName).trim();
+  if (!cleanName) return "";
+  return `${LOCAL_IMAGE_BASE_URL}${encodeURIComponent(cleanName)}`;
+};
+
+const normalizeImageUrl = (value = "") => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  if (/^https?:\/\//i.test(raw) || /^data:image\//i.test(raw)) {
+    return raw;
+  }
+
+  if (raw.startsWith("/local-images/")) {
+    return `http://localhost:3000${raw}`;
+  }
+
+  if (raw.startsWith("local-images/")) {
+    return `http://localhost:3000/${raw}`;
+  }
+
+  const localSegment = raw.match(/local-images[\\/](.+)$/i);
+  if (localSegment?.[1]) {
+    return buildLocalImageUrl(getFileNameFromPath(localSegment[1]));
+  }
+
+  return buildLocalImageUrl(getFileNameFromPath(raw));
+};
+
+const getDefaultType = () => ({
+  id: null,
+  name: "",
+  description: "",
+  capacity: "",
+  price: "",
+  imageUrl: "",
+});
+
+const formatCurrency = (value) => {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "-";
+  return `${amount.toLocaleString("vi-VN")}đ`;
+};
 
 class Loaiphong extends Component {
+  constructor(props) {
+    super(props);
+    this.fileInputRef = React.createRef();
+  }
+
   state = {
     types: [],
     search: "",
     isModalOpen: false,
     modalMode: "add",
-    currentType: {
-      id: null,
-      name: "",
-      description: "",
-      capacity: "",
-      price: "",
-    },
+    currentType: getDefaultType(),
     loading: true,
     error: null,
     currentPage: 1,
@@ -29,20 +81,28 @@ class Loaiphong extends Component {
   fetchRoomTypes = async () => {
     try {
       this.setState({ loading: true, error: null });
-      const response = await fetch("http://localhost:3000/api/get-room-types");
+      const response = await fetch(ROOM_TYPES_API_URL);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const payload = await response.json();
+      const data = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : [];
 
       const mappedTypes = data.map((item) => ({
-        id: item.RoomTypeID,
-        name: item.Name,
-        description: item.Description,
-        capacity: item.Capacity,
-        price: item.DefaultPrice,
+        id: item?.RoomTypeID ?? item?.id ?? null,
+        name: item?.Name ?? item?.name ?? "",
+        description: item?.Description ?? item?.description ?? "",
+        capacity: item?.Capacity ?? item?.capacity ?? "",
+        price: item?.DefaultPrice ?? item?.price ?? "",
+        imageUrl: normalizeImageUrl(
+          item?.ImageUrl ?? item?.ImageURL ?? item?.Image ?? "",
+        ),
       }));
 
       this.setState({ types: mappedTypes, loading: false, currentPage: 1 });
@@ -56,43 +116,51 @@ class Loaiphong extends Component {
     const { types, search } = this.state;
     const q = search.toLowerCase().trim();
     if (!q) return types;
-    return types.filter(
-      (type) =>
-        type.name.toLowerCase().includes(q) ||
-        type.description.toLowerCase().includes(q),
-    );
+
+    return types.filter((type) => {
+      const name = String(type.name || "").toLowerCase();
+      const description = String(type.description || "").toLowerCase();
+      return name.includes(q) || description.includes(q);
+    });
+  };
+
+  resetFileInput = () => {
+    if (this.fileInputRef.current) {
+      this.fileInputRef.current.value = "";
+    }
   };
 
   openAddModal = () => {
-    this.setState({
-      isModalOpen: true,
-      modalMode: "add",
-      currentType: {
-        id: null,
-        name: "",
-        description: "",
-        capacity: "",
-        price: "",
+    this.setState(
+      {
+        isModalOpen: true,
+        modalMode: "add",
+        currentType: getDefaultType(),
       },
-    });
+      this.resetFileInput,
+    );
   };
 
   openEditModal = (typeItem) => {
-    this.setState({
-      isModalOpen: true,
-      modalMode: "edit",
-      currentType: {
-        id: typeItem.id,
-        name: typeItem.name,
-        description: typeItem.description,
-        capacity: typeItem.capacity,
-        price: typeItem.price,
+    this.setState(
+      {
+        isModalOpen: true,
+        modalMode: "edit",
+        currentType: {
+          id: typeItem.id,
+          name: typeItem.name,
+          description: typeItem.description,
+          capacity: typeItem.capacity,
+          price: typeItem.price,
+          imageUrl: normalizeImageUrl(typeItem.imageUrl || ""),
+        },
       },
-    });
+      this.resetFileInput,
+    );
   };
 
   closeModal = () => {
-    this.setState({ isModalOpen: false });
+    this.setState({ isModalOpen: false }, this.resetFileInput);
   };
 
   handleChange = (field) => (e) => {
@@ -102,64 +170,69 @@ class Loaiphong extends Component {
     }));
   };
 
+  handleImageSelect = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Vui lòng chọn đúng file ảnh.");
+      this.resetFileInput();
+      return;
+    }
+
+    const imageUrl = buildLocalImageUrl(file.name);
+    this.setState((prev) => ({
+      currentType: {
+        ...prev.currentType,
+        imageUrl,
+      },
+    }));
+  };
+
   handleSubmit = async (e) => {
     e.preventDefault();
-    const { types, modalMode, currentType } = this.state;
-    const { name, description, capacity, price, id } = currentType;
+    const { modalMode, currentType } = this.state;
+    const { name, description, capacity, price, imageUrl, id } = currentType;
 
-    if (!name || !description || !capacity || !price) {
+    if (!name || !capacity || !price) {
       alert("Vui lòng điền đủ các trường bắt buộc.");
       return;
     }
 
     const capacityNum = Number(capacity);
     const priceNum = Number(price);
-    if (Number.isNaN(capacityNum) || Number.isNaN(priceNum)) {
-      alert("Sức chứa và Giá phải là số.");
+    if (!Number.isFinite(capacityNum) || !Number.isFinite(priceNum)) {
+      alert("Sức chứa và giá phải là số hợp lệ.");
       return;
     }
 
-    const data = {
-      id: modalMode === "add" ? Math.max(0, ...types.map((t) => t.id)) + 1 : id,
-      name: name.trim(),
-      description: description.trim(),
-      capacity: capacityNum,
-      price: priceNum,
-    };
-
     const apiPayload = {
-      Name: data.name,
-      Description: data.description,
-      Capacity: data.capacity,
-      DefaultPrice: data.price,
+      Name: name.trim(),
+      Description: String(description || "").trim(),
+      Capacity: capacityNum,
+      DefaultPrice: priceNum,
+      ImageUrl: normalizeImageUrl(imageUrl),
     };
 
     try {
-      if (modalMode === "add") {
-        const response = await fetch("http://localhost:3000/api/get-room-types", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(apiPayload),
-        });
-        if (response.ok) {
-          this.setState({ isModalOpen: false });
-          await this.fetchRoomTypes();
-        } else {
-          alert("Lỗi khi thêm loại phòng");
-        }
-      } else {
-        const response = await fetch(`http://localhost:3000/api/get-room-types/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(apiPayload),
-        });
-        if (response.ok) {
-          this.setState({ isModalOpen: false });
-          await this.fetchRoomTypes();
-        } else {
-          alert("Lỗi khi cập nhật loại phòng");
-        }
+      const isEdit = modalMode === "edit";
+      const url = isEdit ? `${ROOM_TYPES_API_URL}/${id}` : ROOM_TYPES_API_URL;
+
+      const response = await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(apiPayload),
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        throw new Error(responseText || `API error: ${response.status}`);
       }
+
+      this.setState({ isModalOpen: false });
+      this.resetFileInput();
+      await this.fetchRoomTypes();
+      alert(isEdit ? "Cập nhật loại phòng thành công." : "Thêm loại phòng thành công.");
     } catch (error) {
       console.error("Error:", error);
       alert(`Lỗi: ${error.message}`);
@@ -176,9 +249,11 @@ class Loaiphong extends Component {
       error,
       currentPage,
     } = this.state;
+
     const filteredTypes = this.getFilteredTypes();
     const totalPages = Math.max(1, Math.ceil(filteredTypes.length / PAGE_SIZE));
-    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    const safePage = Math.min(currentPage, totalPages);
+    const startIndex = (safePage - 1) * PAGE_SIZE;
     const paginatedTypes = filteredTypes.slice(startIndex, startIndex + PAGE_SIZE);
 
     return (
@@ -249,6 +324,7 @@ class Loaiphong extends Component {
                     <th>Mô tả</th>
                     <th>Sức chứa</th>
                     <th>Giá cơ bản</th>
+                    <th>Ảnh</th>
                     <th>Thao tác</th>
                   </tr>
                 </thead>
@@ -256,13 +332,28 @@ class Loaiphong extends Component {
                   {paginatedTypes.map((typeItem) => (
                     <tr key={typeItem.id}>
                       <td>{typeItem.name}</td>
-                      <td>{typeItem.description}</td>
+                      <td>{typeItem.description || "-"}</td>
                       <td>{typeItem.capacity} người</td>
-                      <td>{typeItem.price.toLocaleString()}đ</td>
+                      <td>{formatCurrency(typeItem.price)}</td>
+                      <td>
+                        {typeItem.imageUrl ? (
+                          <img
+                            src={typeItem.imageUrl}
+                            alt={typeItem.name}
+                            className="lp-room-thumb"
+                            onError={(event) => {
+                              event.currentTarget.style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <span className="lp-no-image">Không có ảnh</span>
+                        )}
+                      </td>
                       <td>
                         <button
                           className="lp-btn-edit"
                           onClick={() => this.openEditModal(typeItem)}
+                          type="button"
                         >
                           <i className="fa fa-edit"></i>
                         </button>
@@ -271,7 +362,7 @@ class Loaiphong extends Component {
                   ))}
                   {filteredTypes.length === 0 && (
                     <tr>
-                      <td colSpan="5" className="empty-row">
+                      <td colSpan="6" className="empty-row">
                         Không có loại phòng phù hợp
                       </td>
                     </tr>
@@ -290,17 +381,17 @@ class Loaiphong extends Component {
                       currentPage: Math.max(prev.currentPage - 1, 1),
                     }))
                   }
-                  disabled={currentPage === 1}
+                  disabled={safePage === 1}
                   aria-label="Trang trước"
                 >
-                  ‹
+                  {"‹"}
                 </button>
 
                 {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
                   <button
                     key={page}
                     type="button"
-                    className={`lp-page-btn ${page === currentPage ? "active" : ""}`}
+                    className={`lp-page-btn ${page === safePage ? "active" : ""}`}
                     onClick={() => this.setState({ currentPage: page })}
                   >
                     {page}
@@ -315,10 +406,10 @@ class Loaiphong extends Component {
                       currentPage: Math.min(prev.currentPage + 1, totalPages),
                     }))
                   }
-                  disabled={currentPage === totalPages}
+                  disabled={safePage === totalPages}
                   aria-label="Trang sau"
                 >
-                  ›
+                  {"›"}
                 </button>
               </div>
             )}
@@ -328,7 +419,7 @@ class Loaiphong extends Component {
         {isModalOpen && (
           <div className="lp-modal-overlay" onClick={this.closeModal}>
             <div className="lp-modal-content" onClick={(e) => e.stopPropagation()}>
-              <button className="lp-modal-close" onClick={this.closeModal}>
+              <button className="lp-modal-close" onClick={this.closeModal} type="button">
                 ×
               </button>
               <h2>
@@ -336,6 +427,7 @@ class Loaiphong extends Component {
                   ? "Thêm loại phòng mới"
                   : "Chỉnh sửa loại phòng"}
               </h2>
+
               <form onSubmit={this.handleSubmit}>
                 <label>
                   Tên loại phòng *
@@ -344,6 +436,7 @@ class Loaiphong extends Component {
                     type="text"
                     value={currentType.name}
                     onChange={this.handleChange("name")}
+                    required
                   />
                 </label>
 
@@ -361,8 +454,10 @@ class Loaiphong extends Component {
                   <input
                     className="lp-modal-input"
                     type="number"
+                    min="1"
                     value={currentType.capacity}
                     onChange={this.handleChange("capacity")}
+                    required
                   />
                 </label>
 
@@ -371,10 +466,33 @@ class Loaiphong extends Component {
                   <input
                     className="lp-modal-input"
                     type="number"
+                    min="0"
                     value={currentType.price}
                     onChange={this.handleChange("price")}
+                    required
                   />
                 </label>
+
+                <label>
+                  Ảnh phòng
+                  <input
+                    ref={this.fileInputRef}
+                    className="lp-modal-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={this.handleImageSelect}
+                  />
+                </label>
+
+                {currentType.imageUrl && (
+                  <div className="lp-image-preview-wrap">
+                    <img
+                      src={currentType.imageUrl}
+                      alt="Preview"
+                      className="lp-image-preview"
+                    />
+                  </div>
+                )}
 
                 <div className="lp-modal-buttons">
                   <button
