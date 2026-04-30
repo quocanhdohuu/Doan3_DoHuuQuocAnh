@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../AuthContext";
 import "../../style/Booking_Confirm.css";
-import hotelImage from "../../img/hotel_image.png";
+import { DEFAULT_ROOM_IMAGE, normalizeRoomImageUrl } from "./RoomImageUtils";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const BOOK_ROOM_API_URL = "http://localhost:3000/api/reservations/book-room";
@@ -133,7 +133,7 @@ function Booking_Confirm({
   }, [checkInDate, checkOutDate, guestCount, roomCount, onBookingDraftChange]);
 
   const roomName = room?.name || "Selected Room";
-  const roomImage = room?.image || hotelImage;
+  const roomImage = normalizeRoomImageUrl(room?.image) || DEFAULT_ROOM_IMAGE;
   const roomTypeId = Number(room?.id ?? room?.RoomTypeID ?? room?.roomTypeId);
   const nightlyRate = Math.max(0, Number(room?.price) || 0);
   const nights = getNightCount(checkInDate, checkOutDate);
@@ -235,7 +235,7 @@ function Booking_Confirm({
                 src={roomImage}
                 alt={roomName}
                 onError={(event) => {
-                  event.currentTarget.src = hotelImage;
+                  event.currentTarget.src = DEFAULT_ROOM_IMAGE;
                 }}
               />
             </figure>

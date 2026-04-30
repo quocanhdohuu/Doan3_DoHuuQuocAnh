@@ -1,88 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "../../style/Customer_main.css";
-import hotelImage from "../../img/hotel_image.png";
 import CustomerRoomCard from "./CustomerRoomCard";
+import {
+  DEFAULT_ROOM_IMAGE,
+  getRoomImageFromApiItem,
+} from "./RoomImageUtils";
 
 const ROOM_TYPES_API_URL =
   "http://localhost:3000/api/get-room-types/with-price";
 const SEARCH_AVAILABLE_ROOM_TYPES_API_URL =
   "http://localhost:3000/api/get-room-types/search-available";
 
-const normalizeTextKey = (value) =>
-  String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .replace(/\s+/g, "");
-
-const roomImageAssets = import.meta.glob("../../img/*.{png,jpg,jpeg,webp}", {
-  eager: true,
-  import: "default",
-});
-
-const roomImageByKey = Object.entries(roomImageAssets).reduce(
-  (acc, [path, imageUrl]) => {
-    const fileName =
-      path
-        .split("/")
-        .pop()
-        ?.replace(/\.[^.]+$/, "") || "";
-    const key = normalizeTextKey(fileName);
-    if (key) {
-      acc[key] = imageUrl;
-    }
-    return acc;
-  },
-  {},
-);
-
-const excludedImageKeys = new Set(["hotelimage", "test"]);
-
-const resolveRoomTypeImage = (roomTypeName, apiImageUrl) => {
-  const normalizedRoomName = normalizeTextKey(roomTypeName);
-  const hasDigits = normalizedRoomName.match(/\d+$/);
-  const suffixNumber = hasDigits ? hasDigits[0] : "";
-  const baseName = suffixNumber
-    ? normalizedRoomName.slice(0, -suffixNumber.length)
-    : normalizedRoomName;
-
-  const candidateKeys = [
-    normalizedRoomName,
-    suffixNumber === "1" ? baseName : "",
-    baseName,
-  ].filter(Boolean);
-
-  for (const key of candidateKeys) {
-    if (roomImageByKey[key]) {
-      return roomImageByKey[key];
-    }
-  }
-
-  const fuzzyMatch = Object.entries(roomImageByKey).find(
-    ([key]) =>
-      !excludedImageKeys.has(key) &&
-      (normalizedRoomName.includes(key) ||
-        (baseName && key.includes(baseName)) ||
-        (baseName && baseName.includes(key))),
-  );
-
-  if (fuzzyMatch) {
-    return fuzzyMatch[1];
-  }
-
-  if (apiImageUrl) {
-    return apiImageUrl;
-  }
-
-  return hotelImage;
-};
-
 const normalizeRoomType = (item, index) => {
   const rawAvailableRooms = item?.AvailableRooms ?? item?.availableRooms;
   const availableRoomsNumber = Number(rawAvailableRooms);
-  const apiImageUrl = item?.ImageURL ?? item?.Image ?? item?.thumbnail ?? "";
   const name = item?.Name ?? item?.name ?? `Room Type ${index + 1}`;
 
   return {
@@ -94,7 +25,7 @@ const normalizeRoomType = (item, index) => {
       "Thoughtfully curated comfort for discerning travelers.",
     capacity: Number(item?.Capacity ?? item?.capacity ?? 2),
     price: Number(item?.Price ?? item?.DefaultPrice ?? item?.price ?? 0),
-    image: resolveRoomTypeImage(name, apiImageUrl),
+    image: getRoomImageFromApiItem(item) || DEFAULT_ROOM_IMAGE,
     availableRooms: Number.isFinite(availableRoomsNumber)
       ? availableRoomsNumber
       : null,
@@ -161,6 +92,14 @@ function CustomerHomeContent({ user, onRoomSelect }) {
 
   const featuredRooms = useMemo(() => roomTypes, [roomTypes]);
   const displayName = user?.name?.trim() || "Guest";
+  const primaryVisualImage = useMemo(
+    () => featuredRooms.find((room) => room?.image)?.image || DEFAULT_ROOM_IMAGE,
+    [featuredRooms],
+  );
+  const secondaryVisualImage = useMemo(
+    () => featuredRooms[1]?.image || primaryVisualImage,
+    [featuredRooms, primaryVisualImage],
+  );
   const checkOutMinDate = checkInDate || minDate;
 
   const handleCheckInChange = (event) => {
@@ -243,7 +182,7 @@ function CustomerHomeContent({ user, onRoomSelect }) {
       <section className="customer-hero" id="experience">
         <img
           className="customer-hero-image"
-          src={hotelImage}
+          src={primaryVisualImage}
           alt="Hotel lobby with warm luxury design"
         />
         <div className="customer-hero-overlay" />
@@ -361,7 +300,6 @@ function CustomerHomeContent({ user, onRoomSelect }) {
                 <CustomerRoomCard
                   key={room.id}
                   room={room}
-                  fallbackImage={hotelImage}
                   formatCurrency={formatCurrency}
                   onSelect={handleRoomSelect}
                 />
@@ -372,9 +310,9 @@ function CustomerHomeContent({ user, onRoomSelect }) {
 
         <section className="customer-philosophy" id="amenities">
           <div className="customer-philosophy-visual">
-            <img src={hotelImage} alt="Luxury in-room amenities" />
+            <img src={primaryVisualImage} alt="Luxury in-room amenities" />
             <div className="customer-concierge-card">
-              <img src={hotelImage} alt="Personal concierge" />
+              <img src={secondaryVisualImage} alt="Personal concierge" />
             </div>
           </div>
 

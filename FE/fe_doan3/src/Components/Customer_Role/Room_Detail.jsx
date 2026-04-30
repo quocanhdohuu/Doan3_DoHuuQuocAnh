@@ -1,5 +1,5 @@
 import React from "react";
-import hotelImage from "../../img/hotel_image.png";
+import { DEFAULT_ROOM_IMAGE, normalizeRoomImageUrl } from "./RoomImageUtils";
 
 const amenityItems = [
   {
@@ -69,7 +69,7 @@ function Room_Detail({
   onBookNow,
 }) {
   const roomName = room?.name || "Luxury Single Suite";
-  const roomImage = room?.image || hotelImage;
+  const roomImage = normalizeRoomImageUrl(room?.image) || DEFAULT_ROOM_IMAGE;
   const occupancy = Math.max(1, Number(room?.capacity) || 2);
   const nightlyRate = formatNightlyRate(room?.price);
   const roomSize =
@@ -103,7 +103,7 @@ function Room_Detail({
           src={roomImage}
           alt={roomName}
           onError={(event) => {
-            event.currentTarget.src = hotelImage;
+            event.currentTarget.src = DEFAULT_ROOM_IMAGE;
           }}
         />
       </section>
@@ -176,7 +176,13 @@ function Room_Detail({
 
         <section className="grand-room-story">
           <article className="grand-room-story-media">
-            <img src={hotelImage} alt={`${roomName} interior`} />
+            <img
+              src={roomImage}
+              alt={`${roomName} interior`}
+              onError={(event) => {
+                event.currentTarget.src = DEFAULT_ROOM_IMAGE;
+              }}
+            />
           </article>
 
           <article className="grand-room-story-copy">

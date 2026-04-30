@@ -1,11 +1,14 @@
 import React from "react";
+import { DEFAULT_ROOM_IMAGE, normalizeRoomImageUrl } from "./RoomImageUtils";
 
-function CustomerRoomCard({ room, fallbackImage, formatCurrency, onSelect }) {
+function CustomerRoomCard({ room, formatCurrency, onSelect }) {
   const handleSelect = () => {
     if (typeof onSelect === "function") {
       onSelect(room);
     }
   };
+
+  const imageSrc = normalizeRoomImageUrl(room?.image) || DEFAULT_ROOM_IMAGE;
 
   return (
     <article
@@ -22,10 +25,10 @@ function CustomerRoomCard({ room, fallbackImage, formatCurrency, onSelect }) {
     >
       <div className="customer-room-media">
         <img
-          src={room.image || fallbackImage}
+          src={imageSrc}
           alt={room.name}
           onError={(event) => {
-            event.currentTarget.src = fallbackImage;
+            event.currentTarget.src = DEFAULT_ROOM_IMAGE;
           }}
         />
       </div>
