@@ -7,6 +7,7 @@ import CustomerAboutContent from "./Customer_AboutContent";
 import CustomerAccountContent from "./Customer_AccountContent";
 import Room_Detail from "./Room_Detail";
 import Booking_Confirm from "./Booking_Confirm";
+import Experience_Detail from "./Experience_Detail";
 
 const MENU_KEYS = {
   HOME: "home",
@@ -15,6 +16,7 @@ const MENU_KEYS = {
   ACCOUNT: "account",
   ROOM_DETAIL: "room-detail",
   BOOKING_CONFIRM: "booking-confirm",
+  EXPERIENCE_DETAIL: "experience-detail",
 };
 
 function Customer_main() {
@@ -22,6 +24,7 @@ function Customer_main() {
   const [activePage, setActivePage] = useState(MENU_KEYS.HOME);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [bookingDraft, setBookingDraft] = useState(null);
+  const [selectedExperience, setSelectedExperience] = useState(null);
 
   const handleRoomSelect = useCallback((room, bookingContext) => {
     setSelectedRoom(room);
@@ -35,6 +38,19 @@ function Customer_main() {
 
   const handleGoToExperience = useCallback(() => {
     setActivePage(MENU_KEYS.EXPERIENCE);
+  }, []);
+
+  const handleExperienceSelect = useCallback((experienceItem) => {
+    setSelectedExperience(experienceItem || null);
+    setActivePage(MENU_KEYS.EXPERIENCE_DETAIL);
+  }, []);
+
+  const handleBackToExperience = useCallback(() => {
+    setActivePage(MENU_KEYS.EXPERIENCE);
+  }, []);
+
+  const handleRebookFromExperience = useCallback(() => {
+    setActivePage(MENU_KEYS.HOME);
   }, []);
 
   const handleGoToBookingConfirm = useCallback((nextBookingDraft) => {
@@ -61,7 +77,15 @@ function Customer_main() {
   const currentContent = useMemo(() => {
     switch (activePage) {
       case MENU_KEYS.EXPERIENCE:
-        return <CustomerExperienceContent />;
+        return <CustomerExperienceContent onSelectExperience={handleExperienceSelect} />;
+      case MENU_KEYS.EXPERIENCE_DETAIL:
+        return (
+          <Experience_Detail
+            experience={selectedExperience}
+            onBack={handleBackToExperience}
+            onRebook={handleRebookFromExperience}
+          />
+        );
       case MENU_KEYS.ABOUT:
         return <CustomerAboutContent />;
       case MENU_KEYS.ACCOUNT:
@@ -97,16 +121,22 @@ function Customer_main() {
     bookingDraft,
     handleBackToRooms,
     handleGoToExperience,
+    handleExperienceSelect,
+    handleBackToExperience,
+    handleRebookFromExperience,
     handleGoToBookingConfirm,
     handleBackToRoomDetail,
     handleBookingSuccess,
     handleRoomSelect,
+    selectedExperience,
   ]);
 
   const currentNavPage =
     activePage === MENU_KEYS.ROOM_DETAIL ||
     activePage === MENU_KEYS.BOOKING_CONFIRM
       ? MENU_KEYS.HOME
+      : activePage === MENU_KEYS.EXPERIENCE_DETAIL
+        ? MENU_KEYS.EXPERIENCE
       : activePage;
   const getNavClassName = (key) =>
     `customer-nav-link ${currentNavPage === key ? "active" : ""}`;

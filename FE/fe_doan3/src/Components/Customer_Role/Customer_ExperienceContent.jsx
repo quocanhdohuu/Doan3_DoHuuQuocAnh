@@ -19,22 +19,22 @@ const STATUS_META = {
   BOOKED: {
     label: "Confirmed",
     className: "customer-exp-status--booked",
-    note: "Manage booking",
+    note: "Quản lý đặt chỗ",
   },
   CHECKED_IN: {
     label: "Checked In",
     className: "customer-exp-status--checked-in",
-    note: "Enjoy your stay",
+    note: "Chúc bạn có một kỳ nghỉ vui vẻ!",
   },
   COMPLETED: {
     label: "Completed",
     className: "customer-exp-status--completed",
-    note: "Download invoice",
+    note: "Tải xuống hóa đơn",
   },
   CANCELLED: {
     label: "Canceled",
     className: "customer-exp-status--cancelled",
-    note: "Refund policy",
+    note: "Chính sách hoàn tiền",
   },
 };
 
@@ -134,7 +134,7 @@ const matchesFilter = (reservation, filterKey) => {
   return ALLOWED_STATUSES.includes(filterKey) && reservation.status === filterKey;
 };
 
-function CustomerExperienceContent() {
+function CustomerExperienceContent({ onSelectExperience }) {
   const { user } = useAuth();
   const userId = useMemo(() => resolveUserId(user), [user]);
   const [reservations, setReservations] = useState([]);
@@ -271,7 +271,20 @@ function CustomerExperienceContent() {
                   STATUS_META[item.status] || STATUS_META.BOOKED;
 
                 return (
-                  <article key={item.id} className="customer-exp-card">
+                  <article
+                    key={item.id}
+                    className={`customer-exp-card ${onSelectExperience ? "clickable" : ""}`}
+                    role={onSelectExperience ? "button" : undefined}
+                    tabIndex={onSelectExperience ? 0 : undefined}
+                    onClick={() => onSelectExperience?.(item)}
+                    onKeyDown={(event) => {
+                      if (!onSelectExperience) return;
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onSelectExperience(item);
+                      }
+                    }}
+                  >
                     <div className={`customer-exp-image ${statusMeta.className}`}>
                       <img
                         src={item.imageUrl || DEFAULT_ROOM_IMAGE}

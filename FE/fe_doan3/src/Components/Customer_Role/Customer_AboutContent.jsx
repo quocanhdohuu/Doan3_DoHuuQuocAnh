@@ -129,15 +129,15 @@ function CustomerAboutContent() {
         <div className="customer-about-contact-grid">
           <div>
             <span>Điện thoại</span>
-            <strong>+84 123 456 789</strong>
+            <strong>+84 394193241</strong>
           </div>
           <div>
             <span>Email</span>
-            <strong>info@theqahotel.com</strong>
+            <strong>quocanhdohuu@gmail.com</strong>
           </div>
           <div>
             <span>Địa chỉ</span>
-            <strong>123 Nguyễn Huệ, Q.1, TP.HCM</strong>
+            <strong>Khoái Châu, Hưng Yên</strong>
           </div>
         </div>
 
