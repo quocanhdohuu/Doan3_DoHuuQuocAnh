@@ -132,7 +132,7 @@ const getReservationsByUser = async (req, res) => {
     const userID = toPositiveInt(req.params.userId || req.query.userId || req.query.UserID);
 
     if (!userID) {
-      return res.status(400).json({ error: "UserID khong hop le" });
+      return res.status(400).json({ error: "UserID không hợp lệ" });
     }
 
     const request = new sql.Request();
@@ -144,7 +144,7 @@ const getReservationsByUser = async (req, res) => {
     console.error("getReservationsByUser Error:", err);
     return res
       .status(500)
-      .json({ error: "Loi server", detail: extractSqlErrorMessage(err) });
+      .json({ error: "Lỗi server", detail: extractSqlErrorMessage(err) });
   }
 };
 
@@ -154,7 +154,7 @@ const getCustomerInfoByUserID = async (req, res) => {
     const userID = toPositiveInt(req.params.userId || req.query.userId || req.query.UserID);
 
     if (!userID) {
-      return res.status(400).json({ error: "UserID khong hop le" });
+      return res.status(400).json({ error: "UserID không hợp lệ" });
     }
 
     const request = new sql.Request();
@@ -164,7 +164,7 @@ const getCustomerInfoByUserID = async (req, res) => {
     const customerInfo = result.recordset?.[0];
 
     if (!customerInfo) {
-      return res.status(404).json({ error: "Khong tim thay thong tin khach hang" });
+      return res.status(404).json({ error: "Không tìm thấy thông tin khách hàng" });
     }
 
     return res.json(customerInfo);
@@ -172,7 +172,7 @@ const getCustomerInfoByUserID = async (req, res) => {
     console.error("getCustomerInfoByUserID Error:", err);
     return res
       .status(500)
-      .json({ error: "Loi server", detail: extractSqlErrorMessage(err) });
+      .json({ error: "Lỗi server", detail: extractSqlErrorMessage(err) });
   }
 };
 
@@ -181,7 +181,7 @@ const updateCustomerProfile = async (req, res) => {
   try {
     const userID = toPositiveInt(req.params.userId || req.body?.userId || req.body?.UserID);
     if (!userID) {
-      return res.status(400).json({ error: "UserID khong hop le" });
+      return res.status(400).json({ error: "UserID không hợp lệ" });
     }
 
     const email = toNullableTrimmedString(req.body?.Email);
@@ -194,7 +194,7 @@ const updateCustomerProfile = async (req, res) => {
 
     if (!email && !fullName && !phone && !cccd && !passwordHash) {
       return res.status(400).json({
-        error: "Can it nhat 1 truong de cap nhat: Email, PasswordHash/Password, FullName, Phone, CCCD",
+        error: "Cần ít nhất 1 trường để cập nhật: Email, PasswordHash/Password, FullName, Phone, CCCD",
       });
     }
 
@@ -207,7 +207,7 @@ const updateCustomerProfile = async (req, res) => {
     `);
 
     if (!checkResult.recordset?.length) {
-      return res.status(404).json({ error: "Khong tim thay khach hang" });
+      return res.status(404).json({ error: "Không tìm thấy khách hàng" });
     }
 
     const request = new sql.Request();
@@ -221,7 +221,7 @@ const updateCustomerProfile = async (req, res) => {
     await request.execute("sp_UpdateCustomerProfile");
 
     return res.json({
-      message: "Cap nhat thong tin khach hang thanh cong",
+      message: "Cập nhật thông tin khách hàng thành công",
       data: {
         UserID: userID,
         Email: email,
@@ -235,10 +235,10 @@ const updateCustomerProfile = async (req, res) => {
     const message = extractSqlErrorMessage(err);
 
     if (/email/i.test(message) && /ton tai|trung|exist/i.test(message)) {
-      return res.status(400).json({ error: "Email da ton tai" });
+      return res.status(400).json({ error: "Email đã tồn tại" });
     }
 
-    return res.status(400).json({ error: message || "Loi server" });
+    return res.status(400).json({ error: message || "Lỗi server" });
   }
 };
 

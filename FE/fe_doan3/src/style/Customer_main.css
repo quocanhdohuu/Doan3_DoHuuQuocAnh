@@ -18,7 +18,7 @@
     ),
     linear-gradient(180deg, #efeff4 0%, #ececf2 38%, #e7e8ef 100%);
   color: var(--ink);
-  font-family: "times new roman", times, serif;
+  font-family: 'Times New Roman', Times, serif;
 }
 
 .customer-topbar {
@@ -36,7 +36,7 @@
 }
 
 .customer-brand {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: 32px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -165,7 +165,7 @@
   margin: 12px 0 0;
   font-size: clamp(48px, 7vw, 86px);
   line-height: 0.94;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-weight: 700;
   letter-spacing: 0.015em;
 }
@@ -297,7 +297,7 @@
 .customer-philosophy-content h2,
 .customer-promo h2 {
   margin: 10px 0 0;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: clamp(34px, 4vw, 52px);
   line-height: 1;
   color: #0f2d56;
@@ -394,7 +394,7 @@
 
 .customer-room-body h3 {
   margin: 0;
-  font-family: "Times New Roman", Times, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: 34px;
   line-height: 1;
   color: #14325d;
@@ -609,7 +609,7 @@
   display: block;
   margin-top: 8px;
   font-size: 48px;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
 }
 
 .customer-discount-box p {
@@ -630,7 +630,7 @@
 }
 
 .customer-footer-brand {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;  
   font-size: 24px;
   color: #273954;
 }
@@ -658,7 +658,7 @@
 
 .customer-placeholder-section h2 {
   margin: 10px 0 12px;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: clamp(34px, 4vw, 52px);
   line-height: 1;
   color: #0f2d56;
@@ -671,6 +671,735 @@
 .customer-account-summary {
   margin: 0;
   font-weight: 600;
+}
+
+.customer-account-content {
+  margin-top: 42px;
+}
+
+.customer-account-shell {
+  display: grid;
+  gap: 14px;
+}
+
+.customer-account-top-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.48fr);
+  gap: 14px;
+}
+
+.customer-account-identity-card,
+.customer-account-reward-card,
+.customer-account-info-card,
+.customer-account-setting-card,
+.customer-account-security-bar {
+  border-radius: 12px;
+  border: 1px solid rgba(12, 39, 71, 0.09);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.customer-account-identity-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 18px 16px;
+}
+
+.customer-account-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #1a456f 0%, #0f2f56 100%);
+  color: #f0f5ff;
+  font-weight: 800;
+  font-size: 24px;
+}
+
+.customer-account-identity-copy h2 {
+  margin: 0;
+  color: #15335d;
+  font-size: 34px;
+  line-height: 0.9;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.customer-account-identity-copy p {
+  margin: 6px 0 0;
+  color: #5b6a82;
+  font-size: 13px;
+}
+
+.customer-account-identity-copy small {
+  display: block;
+  margin-top: 3px;
+  color: #7a869c;
+  font-size: 12px;
+}
+
+.customer-account-link-btn {
+  border: none;
+  background: transparent;
+  color: #946f2d;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.customer-account-reward-card {
+  position: relative;
+  padding: 18px 18px 16px;
+}
+
+.customer-account-reward-card p {
+  margin: 0;
+  color: #707f95;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.customer-account-reward-card h3 {
+  margin: 12px 0 0;
+  color: #14335f;
+  font-size: 46px;
+  line-height: 0.85;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.customer-account-reward-card span {
+  color: #5f6d86;
+  font-size: 13px;
+}
+
+.customer-account-reward-card i {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: #d0a246;
+}
+
+.customer-account-info-card {
+  padding: 18px 18px 20px;
+}
+
+.customer-account-info-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.customer-account-info-head h3 {
+  margin: 0;
+  color: #14335f;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 41px;
+  line-height: 0.9;
+}
+
+.customer-account-edit-btn,
+.customer-account-cancel-btn,
+.customer-account-save-btn,
+.customer-account-soft-btn,
+.customer-account-primary-btn {
+  border-radius: 8px;
+  min-height: 36px;
+  padding: 0 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.customer-account-edit-btn {
+  border: none;
+  background: transparent;
+  color: #16365f;
+}
+
+.customer-account-edit-btn i {
+  margin-right: 8px;
+}
+
+.customer-account-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.customer-account-cancel-btn {
+  border: 1px solid rgba(16, 44, 80, 0.2);
+  background: #fff;
+  color: #173561;
+}
+
+.customer-account-save-btn,
+.customer-account-primary-btn {
+  border: none;
+  background: linear-gradient(135deg, #133d6f 0%, #0d2d53 100%);
+  color: #eef4ff;
+}
+
+.customer-account-save-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.customer-account-save-message {
+  margin: 12px 0 0;
+  color: #0d6a53;
+  font-weight: 600;
+}
+
+.customer-account-info-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+}
+
+.customer-account-info-grid label {
+  color: #627087;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.customer-account-info-grid input {
+  margin-top: 8px;
+  width: 100%;
+  border-radius: 9px;
+  border: 1px solid rgba(18, 45, 80, 0.12);
+  background: #f8f9fc;
+  color: #112d54;
+  padding: 10px 11px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.customer-account-info-grid input:disabled {
+  opacity: 0.8;
+  background: #eef1f6;
+}
+
+.customer-account-full-row {
+  grid-column: 1 / -1;
+}
+
+.customer-account-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.58fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.customer-account-setting-card {
+  padding: 16px;
+}
+
+.customer-account-setting-card h4 {
+  margin: 0;
+  color: #12335e;
+  font-size: 28px;
+  line-height: 0.95;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.customer-account-setting-card p {
+  margin: 10px 0 0;
+  color: #647289;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.customer-account-toggle-row {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #17355f;
+  font-size: 14px;
+}
+
+.customer-account-toggle {
+  width: 22px;
+  height: 12px;
+  border-radius: 999px;
+  background: #c8ced8;
+}
+
+.customer-account-toggle.active {
+  background: #0f426f;
+}
+
+.customer-account-setting-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.customer-account-setting-head button {
+  border: none;
+  background: transparent;
+  color: #8a6d2f;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.customer-account-chip-row {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.customer-account-chip-row span {
+  border-radius: 999px;
+  padding: 6px 11px;
+  font-size: 12px;
+  color: #254269;
+  background: rgba(17, 45, 83, 0.08);
+  font-weight: 600;
+}
+
+.customer-account-security-bar {
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.customer-account-security-bar h4 {
+  margin: 0;
+  color: #12335e;
+  font-size: 28px;
+  line-height: 0.95;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.customer-account-security-bar p {
+  margin: 6px 0 0;
+  color: #6b7990;
+  font-size: 13px;
+}
+
+.customer-account-security-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.customer-account-soft-btn {
+  border: 1px solid rgba(14, 42, 77, 0.18);
+  background: #f9fbff;
+  color: #12335f;
+}
+
+.customer-about-content {
+  margin-top: 42px;
+  gap: 46px;
+}
+
+.customer-about-hero,
+.customer-about-amenities,
+.customer-about-gallery,
+.customer-about-contact {
+  border-radius: 16px;
+  border: 1px solid rgba(12, 39, 71, 0.08);
+  background: rgba(246, 247, 250, 0.88);
+}
+
+.customer-about-hero {
+  padding: 30px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(390px, 0.92fr);
+  gap: 28px;
+  align-items: center;
+}
+
+.customer-about-hero-copy h2 {
+  margin: 0;
+  color: #0c1f3d;
+  font-size: clamp(40px, 5.4vw, 63px);
+  line-height: 0.96;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.customer-about-hero-copy p {
+  margin: 22px 0 0;
+  color: #324e72;
+  line-height: 1.58;
+  font-size: 16px;
+}
+
+.customer-about-hero-media {
+  margin: 0;
+}
+
+.customer-about-hero-media img {
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  max-height: 620px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.customer-about-amenities,
+.customer-about-gallery {
+  padding: 30px;
+}
+
+.customer-about-section-head h3 {
+  margin: 0;
+  text-align: center;
+  color: #0c1f3d;
+  font-size: clamp(40px, 5.4vw, 58px);
+  line-height: 0.95;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.customer-about-amenity-grid {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.customer-about-amenity-card {
+  border-radius: 12px;
+  background: #eceff4;
+  padding: 20px 14px 18px;
+  text-align: center;
+}
+
+.customer-about-amenity-icon {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #364867;
+  font-size: 40px;
+}
+
+.customer-about-amenity-card h4 {
+  margin: 12px 0 0;
+  color: #0e203d;
+  font-size: 22px;
+  line-height: 0.5;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.customer-about-amenity-card p {
+  margin: 10px 0 0;
+  color: #3a5376;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.customer-about-gallery-grid {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.customer-about-gallery-grid figure {
+  margin: 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.customer-about-gallery-grid img {
+  width: 100%;
+  height: 350px;
+  object-fit: cover;
+  display: block;
+}
+
+.customer-about-contact {
+  background: #0c1b3f;
+  border-color: #0c1b3f;
+  color: #ecf2ff;
+  text-align: center;
+  padding: 34px 20px;
+}
+
+.customer-about-contact h3 {
+  margin: 0;
+  color: #f2f6ff;
+  font-size: clamp(46px, 5.6vw, 58px);
+  line-height: 0.94;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.customer-about-contact > p {
+  margin: 18px auto 0;
+  max-width: 820px;
+  color: rgba(236, 243, 255, 0.9);
+  font-size: 16px;
+  line-height: 1.58;
+}
+
+.customer-about-contact-grid {
+  margin: 24px auto 0;
+  max-width: 980px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.customer-about-contact-grid > div {
+  padding: 0 16px;
+  border-right: 1px solid rgba(222, 234, 255, 0.25);
+}
+
+.customer-about-contact-grid > div:last-child {
+  border-right: none;
+}
+
+.customer-about-contact-grid span {
+  display: block;
+  color: rgba(221, 233, 255, 0.72);
+  font-size: 16px;
+}
+
+.customer-about-contact-grid strong {
+  display: block;
+  margin-top: 8px;
+  color: #ffffff;
+  font-size: 22px;
+  line-height: 1;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.customer-about-book-btn {
+  margin-top: 24px;
+  border: none;
+  border-radius: 12px;
+  min-height: 48px;
+  min-width: 230px;
+  background: #f1f3f7;
+  color: #0a2344;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.customer-experience-content {
+  margin-top: 42px;
+}
+
+.customer-experience-section {
+  background: rgba(247, 248, 251, 0.78);
+  border: 1px solid rgba(12, 39, 71, 0.1);
+  border-radius: 18px;
+  padding: 28px 20px 24px;
+  box-shadow: 0 20px 34px rgba(12, 32, 58, 0.07);
+}
+
+.customer-experience-head h2 {
+  margin: 8px 0 0;
+  color: #0f2d56;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: clamp(44px, 7vw, 62px);
+  line-height: 0.95;
+}
+
+.customer-experience-intro {
+  margin: 12px 0 0;
+  max-width: 720px;
+  color: #4f5d75;
+  line-height: 1.58;
+}
+
+.customer-exp-filter-row {
+  margin-top: 24px;
+  display: inline-flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(13, 42, 75, 0.1);
+  border-radius: 10px;
+  padding: 5px;
+}
+
+.customer-exp-filter-btn {
+  border: none;
+  background: transparent;
+  color: #596680;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 7px;
+  padding: 9px 14px;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.customer-exp-filter-btn.active {
+  background: rgba(15, 45, 86, 0.12);
+  color: #0f2d56;
+}
+
+.customer-exp-grid {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.customer-exp-card {
+  min-height: 206px;
+  border-radius: 14px;
+  border: 1px solid rgba(12, 39, 71, 0.1);
+  background: rgba(255, 255, 255, 0.88);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 108px 1fr;
+}
+
+.customer-exp-image {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #4f5f74 0%, #d4d8de 100%);
+}
+
+.customer-exp-image::before {
+  content: none;
+}
+
+.customer-exp-image.customer-exp-status--booked::before {
+  background:
+    linear-gradient(0deg, rgba(5, 26, 46, 0.2), rgba(5, 26, 46, 0.2)),
+    linear-gradient(135deg, #225b49 0%, #89a67a 100%);
+}
+
+.customer-exp-image.customer-exp-status--checked-in::before {
+  background:
+    linear-gradient(0deg, rgba(6, 29, 48, 0.2), rgba(6, 29, 48, 0.2)),
+    linear-gradient(135deg, #315d7f 0%, #9ab2c8 100%);
+}
+
+.customer-exp-image.customer-exp-status--completed::before {
+  background:
+    linear-gradient(0deg, rgba(42, 46, 52, 0.42), rgba(42, 46, 52, 0.42)),
+    linear-gradient(135deg, #4b4f57 0%, #d3d7de 100%);
+}
+
+.customer-exp-image.customer-exp-status--cancelled::before {
+  background:
+    linear-gradient(0deg, rgba(58, 41, 41, 0.32), rgba(58, 41, 41, 0.32)),
+    linear-gradient(135deg, #8c6767 0%, #e4d0ce 100%);
+}
+
+.customer-exp-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.customer-exp-body {
+  padding: 16px 16px 14px;
+}
+
+.customer-exp-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.customer-exp-status {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 4px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.customer-exp-status.customer-exp-status--booked {
+  background: rgba(17, 57, 91, 0.12);
+  color: #154270;
+}
+
+.customer-exp-status.customer-exp-status--checked-in {
+  background: rgba(22, 115, 128, 0.14);
+  color: #0f6c79;
+}
+
+.customer-exp-status.customer-exp-status--completed {
+  background: rgba(81, 89, 101, 0.18);
+  color: #4d5868;
+}
+
+.customer-exp-status.customer-exp-status--cancelled {
+  background: rgba(179, 53, 53, 0.14);
+  color: #a33434;
+}
+
+.customer-exp-id {
+  color: #6c7a90;
+  font-size: 12px;
+}
+
+.customer-exp-body h3 {
+  margin: 10px 0 0;
+  color: #15335f;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: clamp(28px, 4vw, 39px);
+  line-height: 0.95;
+}
+
+.customer-exp-date,
+.customer-exp-meta {
+  margin: 10px 0 0;
+  color: #616f87;
+  font-size: 13px;
+}
+
+.customer-exp-date i {
+  margin-right: 8px;
+}
+
+.customer-exp-footer {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.customer-exp-footer span {
+  color: #4a5870;
+  font-size: 14px;
+}
+
+.customer-exp-footer strong {
+  color: #112f57;
+  font-size: 14px;
+}
+
+.customer-exp-action-wrap {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+}
+
+.customer-exp-load-more {
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #123d6d 0%, #0d2b4e 100%);
+  color: #eff4ff;
+  min-width: 258px;
+  min-height: 44px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 18px rgba(9, 35, 65, 0.24);
 }
 
 .room-detail-page {
@@ -751,7 +1480,7 @@
 
 .room-detail-main-overlay h1 {
   margin: 0;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: clamp(40px, 4.8vw, 64px);
   line-height: 0.95;
 }
@@ -805,7 +1534,7 @@
   margin-top: 4px;
   display: block;
   color: #0f2444;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: 36px;
 }
 
@@ -854,7 +1583,7 @@
   border-top: 1px solid rgba(14, 40, 72, 0.12);
   font-size: 27px;
   color: #0f2444;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-weight: 700;
 }
 
@@ -912,7 +1641,7 @@
 .room-detail-amenities h2,
 .room-detail-reviews h2 {
   margin: 0;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: clamp(33px, 3.3vw, 45px);
   color: #102d56;
 }
@@ -940,7 +1669,7 @@
   margin: 0;
   color: #122d53;
   font-size: 20px;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
 }
 
 .room-detail-amenity-item p {
@@ -999,7 +1728,7 @@
   color: #26334a;
   font-size: clamp(20px, 2vw, 29px);
   line-height: 1.36;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-style: italic;
 }
 
@@ -1122,6 +1851,49 @@
   .room-detail-amenity-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  .customer-exp-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-account-top-grid,
+  .customer-account-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-account-security-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .customer-about-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-about-hero-media img {
+    min-height: 420px;
+  }
+
+  .customer-about-amenity-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .customer-about-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-about-gallery-grid img {
+    height: 300px;
+  }
+
+  .customer-about-contact-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .customer-about-contact-grid > div {
+    border-right: none;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1160,6 +1932,85 @@
 
   .customer-footer {
     align-items: flex-start;
+  }
+
+  .customer-experience-section {
+    padding: 22px 14px 18px;
+  }
+
+  .customer-exp-filter-row {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .customer-exp-filter-btn {
+    white-space: nowrap;
+  }
+
+  .customer-exp-card {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .customer-exp-image {
+    height: 120px;
+  }
+
+  .customer-account-identity-card {
+    grid-template-columns: 1fr;
+    text-align: center;
+    justify-items: center;
+  }
+
+  .customer-account-link-btn {
+    margin-top: 4px;
+  }
+
+  .customer-account-info-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .customer-account-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-account-security-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .customer-account-soft-btn,
+  .customer-account-primary-btn {
+    width: 100%;
+  }
+
+  .customer-about-hero,
+  .customer-about-amenities,
+  .customer-about-gallery,
+  .customer-about-contact {
+    padding: 20px 14px;
+  }
+
+  .customer-about-hero-copy p {
+    margin-top: 14px;
+    font-size: 15px;
+  }
+
+  .customer-about-hero-media img {
+    min-height: 280px;
+  }
+
+  .customer-about-amenity-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-about-gallery-grid img {
+    height: 220px;
+  }
+
+  .customer-about-contact-grid strong {
+    font-size: 31px;
   }
 
   .room-detail-shell {
@@ -1214,7 +2065,7 @@
 }
 
 .grand-room-brand {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: 43px;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -1328,7 +2179,7 @@
 
 .grand-room-title {
   margin: 14px 0 0;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: clamp(60px, 5vw, 82px);
   line-height: 0.9;
   color: #0c1f3d;
@@ -1350,7 +2201,7 @@
 .grand-room-rate strong {
   display: block;
   margin-top: 8px;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: 53px;
   color: #0e2344;
 }
@@ -1369,7 +2220,7 @@
 
 .grand-room-amenity-wrap h2 {
   margin: 0;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: 45px;
   color: #132b50;
 }
@@ -1490,7 +2341,7 @@
 
 .grand-room-story-copy h2 {
   margin: 13px 0 0;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: clamp(52px, 4.2vw, 72px);
   line-height: 0.95;
   color: #132a4e;

@@ -3886,6 +3886,7 @@ BEGIN
         rt.Name AS RoomType,
 		rt.RoomTypeID,
         rr.Quantity,
+		rt.ImageUrl,
 
         -------------------------------------------------
         -- Tổng tiền
