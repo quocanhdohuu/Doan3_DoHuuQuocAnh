@@ -7,6 +7,8 @@ const PENDING_INVOICES_API_URL = "http://localhost:3000/api/invoices/pending";
 const INVOICE_HISTORY_API_URL = "http://localhost:3000/api/invoices/history";
 const CREATE_AND_PAY_INVOICE_API_URL =
   "http://localhost:3000/api/invoices/create-and-pay";
+const INVOICE_DETAIL_BY_STAY_API_URL = (stayId) =>
+  `http://localhost:3000/api/invoices/stays/${stayId}/full`;
 const PENDING_PAGE_SIZE = 4;
 const HISTORY_PAGE_SIZE = 4;
 
@@ -54,6 +56,11 @@ class Hoadon extends Component {
     modalError: "",
     paySubmitting: false,
     invoiceData: getDefaultInvoiceData(),
+    selectedHistoryInvoice: null,
+    isDetailModalOpen: false,
+    detailModalLoading: false,
+    detailModalError: "",
+    detailInvoiceData: null,
   };
 
   componentDidMount() {
@@ -254,9 +261,14 @@ class Hoadon extends Component {
 
   mapInvoiceHistoryFromApi = (item) => {
     const fullName = String(item?.FullName ?? item?.fullName ?? "-");
-    const dateRaw =
-      item?.Date ?? item?.date ?? item?.CreatedAt ?? item?.createdAt;
+    const dateRaw = item?.LatestDate;
     const totalAmount = this.getNumber(item?.TotalAmount ?? item?.totalAmount);
+    const stayId = this.getNumber(item?.StayID ?? item?.stayId);
+    const invoiceId = this.getNumber(
+      item?.InvoiceID ?? item?.invoiceId ?? item?.ID ?? item?.id,
+    );
+    const resolvedStayId =
+      stayId > 0 ? stayId : invoiceId > 0 ? invoiceId : null;
 
     return {
       id:
@@ -272,6 +284,8 @@ class Hoadon extends Component {
       date: this.formatDateTimeForTable(dateRaw),
       total: totalAmount,
       status: String(item?.Status ?? item?.status ?? "PAID"),
+      stayId: resolvedStayId,
+      invoiceId: invoiceId > 0 ? invoiceId : null,
     };
   };
 
@@ -411,6 +425,146 @@ class Hoadon extends Component {
     }
   };
 
+  mapFullInvoiceDetailItemFromApi = (item, index) => {
+    const quantity = this.getNumber(item?.Quantity ?? item?.quantity ?? 1);
+    const unitPrice = this.getNumber(
+      item?.UnitPrice ?? item?.unitPrice ?? item?.Price ?? item?.price,
+    );
+    const amount =
+      this.getNumber(item?.Amount ?? item?.amount) || quantity * unitPrice;
+
+    return {
+      id:
+        item?.DetailID ??
+        item?.detailId ??
+        item?.ID ??
+        item?.id ??
+        `${String(item?.ItemType ?? "ITEM")}-${index}`,
+      itemType: String(item?.ItemType ?? item?.itemType ?? "").toUpperCase(),
+      itemName: String(item?.ItemName ?? item?.itemName ?? "-"),
+      quantity,
+      unitPrice,
+      amount,
+    };
+  };
+
+  getInvoiceDetailListByType = (detailData, itemType) =>
+    detailData.filter((item) => item.itemType === itemType);
+
+  mapFullInvoicePayloadFromApi = (payload, fallbackStayId) => {
+    const invoice =
+      payload?.invoice ??
+      payload?.Invoice ??
+      payload?.data?.invoice ??
+      payload?.data?.Invoice ??
+      {};
+
+    const rawDetails =
+      payload?.details ??
+      payload?.Details ??
+      payload?.data?.details ??
+      payload?.data?.Details ??
+      [];
+
+    const detailItems = Array.isArray(rawDetails)
+      ? rawDetails
+      : this.extractList(rawDetails);
+    const details = detailItems
+      .map(this.mapFullInvoiceDetailItemFromApi)
+      .filter((item) =>
+        ["ROOM", "SERVICE", "MINIBAR", "PENALTY"].includes(item.itemType),
+      );
+
+    const detailTotal = details.reduce(
+      (sum, item) => sum + this.getNumber(item.amount),
+      0,
+    );
+    const vat = this.getNumber(invoice?.VAT ?? invoice?.vat);
+    const totalAmount =
+      this.getNumber(invoice?.TotalAmount ?? invoice?.totalAmount) ||
+      detailTotal + vat;
+
+    return {
+      invoiceId:
+        this.getNumber(invoice?.InvoiceID ?? invoice?.invoiceId) || null,
+      stayId:
+        this.getNumber(invoice?.StayID ?? invoice?.stayId) ||
+        this.getNumber(fallbackStayId) ||
+        null,
+      fullName: String(
+        invoice?.FullName ??
+          invoice?.fullName ??
+          invoice?.GuestName ??
+          invoice?.guestName ??
+          "-",
+      ),
+      phone: String(invoice?.Phone ?? invoice?.phone ?? "-"),
+      vat,
+      totalAmount,
+      details,
+    };
+  };
+
+  loadFullInvoiceByStay = async (stayId) => {
+    if (!stayId) {
+      this.setState({
+        detailModalLoading: false,
+        detailModalError: "StayID không hợp lệ.",
+      });
+      return;
+    }
+
+    try {
+      this.setState({ detailModalLoading: true, detailModalError: "" });
+      const payload = await this.request(
+        INVOICE_DETAIL_BY_STAY_API_URL(stayId),
+      );
+      const detailInvoiceData = this.mapFullInvoicePayloadFromApi(
+        payload,
+        stayId,
+      );
+
+      this.setState({ detailInvoiceData });
+    } catch (err) {
+      this.setState({
+        detailModalError: err.message || "Không thể tải chi tiết hóa đơn.",
+      });
+    } finally {
+      this.setState({ detailModalLoading: false });
+    }
+  };
+
+  openDetailModal = (invoice) => {
+    const stayId = this.getNumber(invoice?.stayId);
+    if (!Number.isInteger(stayId) || stayId < 1) {
+      window.alert("Không tìm thấy StayID để xem chi tiết hóa đơn.");
+      return;
+    }
+
+    this.setState(
+      {
+        selectedHistoryInvoice: invoice,
+        isDetailModalOpen: true,
+        detailModalLoading: true,
+        detailModalError: "",
+        detailInvoiceData: null,
+      },
+      () => {
+        this.loadFullInvoiceByStay(stayId);
+      },
+    );
+  };
+
+  closeDetailModal = () => {
+    this.setState({
+      selectedHistoryInvoice: null,
+      isDetailModalOpen: false,
+      detailModalLoading: false,
+      detailModalError: "",
+      detailInvoiceData: null,
+    });
+  };
+
   openInvoiceModal = (room) => {
     const stayId = Number(room?.stayId);
     if (!Number.isInteger(stayId) || stayId < 1) {
@@ -450,6 +604,12 @@ class Hoadon extends Component {
   handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
       this.closeModal();
+    }
+  };
+
+  handleDetailOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      this.closeDetailModal();
     }
   };
 
@@ -537,6 +697,122 @@ class Hoadon extends Component {
   renderModalSectionHeader = (title) => (
     <h3 style={{ marginTop: 20, marginBottom: 10 }}>{title}</h3>
   );
+
+  renderDetailTypeTable = (label, items) => (
+    <>
+      {this.renderModalSectionHeader(label)}
+      <div className="hoadon-table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Tên mục</th>
+              <th>Số lượng</th>
+              <th>Đơn giá</th>
+              <th>Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.length === 0 && (
+              <tr>
+                <td colSpan="4">Không có dữ liệu {label}.</td>
+              </tr>
+            )}
+            {items.map((item) => (
+              <tr key={item.id}>
+                <td>{item.itemName}</td>
+                <td>{item.quantity}</td>
+                <td>{this.formatCurrency(item.unitPrice)}</td>
+                <td>{this.formatCurrency(item.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+
+  renderDetailModal = () => {
+    const {
+      isDetailModalOpen,
+      detailModalLoading,
+      detailModalError,
+      detailInvoiceData,
+      selectedHistoryInvoice,
+    } = this.state;
+
+    if (!isDetailModalOpen) return null;
+
+    const details = Array.isArray(detailInvoiceData?.details)
+      ? detailInvoiceData.details
+      : [];
+    const roomItems = this.getInvoiceDetailListByType(details, "ROOM");
+    const serviceItems = this.getInvoiceDetailListByType(details, "SERVICE");
+    const minibarItems = this.getInvoiceDetailListByType(details, "MINIBAR");
+    const penaltyItems = this.getInvoiceDetailListByType(details, "PENALTY");
+
+    return (
+      <div className="modal-overlay" onClick={this.handleDetailOverlayClick}>
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h2>Chi tiết hóa đơn</h2>
+            <button className="btn-close" onClick={this.closeDetailModal}>
+              X
+            </button>
+          </div>
+
+          {detailModalLoading && <p>Đang tải chi tiết hóa đơn...</p>}
+
+          {!detailModalLoading && detailModalError && (
+            <div>
+              <p>{detailModalError}</p>
+              <button
+                className="btn-secondary"
+                onClick={() =>
+                  this.loadFullInvoiceByStay(selectedHistoryInvoice?.stayId)
+                }
+              >
+                Tải lại
+              </button>
+            </div>
+          )}
+
+          {!detailModalLoading && !detailModalError && detailInvoiceData && (
+            <>
+              <p>
+                <strong>Tên khách:</strong> {detailInvoiceData.fullName}
+              </p>
+              <p>
+                <strong>SĐT:</strong> {detailInvoiceData.phone}
+              </p>
+
+              {this.renderDetailTypeTable("ROOM", roomItems)}
+              {this.renderDetailTypeTable("SERVICE", serviceItems)}
+              {this.renderDetailTypeTable("MINIBAR", minibarItems)}
+              {this.renderDetailTypeTable("PENALTY", penaltyItems)}
+
+              <p>
+                <strong>VAT:</strong>{" "}
+                {this.formatCurrency(detailInvoiceData.vat)}
+              </p>
+              <p>
+                <strong>Tổng tiền:</strong>{" "}
+                {this.formatCurrency(detailInvoiceData.totalAmount)}
+              </p>
+
+              <div style={{ marginTop: 16 }}>
+                <button
+                  className="btn-secondary"
+                  onClick={this.closeDetailModal}
+                >
+                  Đóng
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   renderModal = () => {
     const {
@@ -903,18 +1179,19 @@ class Hoadon extends Component {
                 {"‹"}
               </button>
 
-              {Array.from({ length: pendingTotalPages }, (_, idx) => idx + 1).map(
-                (page) => (
-                  <button
-                    key={page}
-                    type="button"
-                    className={`hoadon-page-btn ${page === safePendingPage ? "active" : ""}`}
-                    onClick={() => this.setState({ pendingCurrentPage: page })}
-                  >
-                    {page}
-                  </button>
-                ),
-              )}
+              {Array.from(
+                { length: pendingTotalPages },
+                (_, idx) => idx + 1,
+              ).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  className={`hoadon-page-btn ${page === safePendingPage ? "active" : ""}`}
+                  onClick={() => this.setState({ pendingCurrentPage: page })}
+                >
+                  {page}
+                </button>
+              ))}
 
               <button
                 type="button"
@@ -960,6 +1237,7 @@ class Hoadon extends Component {
                   <th>Ngày</th>
                   <th>Tổng tiền</th>
                   <th>Trạng thái</th>
+                  <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -988,6 +1266,15 @@ class Hoadon extends Component {
                       <td>{inv.date}</td>
                       <td>{this.formatCurrency(inv.total)}</td>
                       <td>{inv.status}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={() => this.openDetailModal(inv)}
+                        >
+                          Chi tiết
+                        </button>
+                      </td>
                     </tr>
                   ))}
               </tbody>
@@ -1010,18 +1297,19 @@ class Hoadon extends Component {
                 {"‹"}
               </button>
 
-              {Array.from({ length: historyTotalPages }, (_, idx) => idx + 1).map(
-                (page) => (
-                  <button
-                    key={page}
-                    type="button"
-                    className={`hoadon-page-btn ${page === safeHistoryPage ? "active" : ""}`}
-                    onClick={() => this.setState({ historyCurrentPage: page })}
-                  >
-                    {page}
-                  </button>
-                ),
-              )}
+              {Array.from(
+                { length: historyTotalPages },
+                (_, idx) => idx + 1,
+              ).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  className={`hoadon-page-btn ${page === safeHistoryPage ? "active" : ""}`}
+                  onClick={() => this.setState({ historyCurrentPage: page })}
+                >
+                  {page}
+                </button>
+              ))}
 
               <button
                 type="button"
@@ -1044,6 +1332,7 @@ class Hoadon extends Component {
         </div>
 
         {this.renderModal()}
+        {this.renderDetailModal()}
       </div>
     );
   }

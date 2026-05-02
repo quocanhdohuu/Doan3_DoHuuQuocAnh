@@ -1601,15 +1601,17 @@ ALTER PROCEDURE sp_GetInvoiceHistory
 AS
 BEGIN
     SELECT 
+		s.StayID,
         g.FullName,
-        i.Date,
+        MAX(i.Date) AS LatestDate,
         i.TotalAmount,
         i.Status
     FROM Invoices i
     JOIN Stays s ON i.StayID = s.StayID
     JOIN Guests g ON s.GuestID = g.GuestID
     WHERE i.Status = 'PAID'
-	ORDER BY i.Date DESC
+	GROUP BY s.StayID, g.FullName, i.TotalAmount,i.Status
+    ORDER BY LatestDate DESC
 END
 EXEC sp_GetInvoiceHistory
 
@@ -4231,6 +4233,42 @@ BEGIN
     ORDER BY Price ASC
 END
 EXEC sp_GetRoomTypesWithPrice
+
+---Load hoá đơn---------------------------
+ALTER PROCEDURE sp_GetFullInvoice_ByStayID
+    @StayID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. Invoice
+    SELECT 
+    i.InvoiceID,
+    i.StayID,
+    i.Date,
+    i.TotalAmount,
+    i.VAT,
+
+    ISNULL(c.FullName, g.FullName) AS FullName,
+    ISNULL(c.Phone, '') AS Phone,
+    ISNULL(u.Email, 'Không có') AS Email
+
+	FROM Invoices i
+	INNER JOIN Stays s ON i.StayID = s.StayID
+
+	LEFT JOIN Guests g ON s.GuestID = g.GuestID
+	LEFT JOIN Reservations r ON r.ReservationID = s.ReservationID
+	LEFT JOIN Users u ON r.UserID = u.UserID
+	LEFT JOIN Customers c ON u.UserID = c.UserID
+
+	WHERE i.StayID = @StayID;
+    -- 2. Details
+    SELECT id.*
+    FROM InvoiceDetails id
+    JOIN Invoices i ON id.InvoiceID = i.InvoiceID
+    WHERE i.StayID = @StayID;
+END
+EXEC sp_GetFullInvoice_ByStayID 1
 
 select * from Customers
 select * from Guests

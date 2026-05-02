@@ -55,6 +55,34 @@ const getInvoiceHistory = async (req, res) => {
   }
 };
 
+const getFullInvoiceByStayID = async (req, res) => {
+  console.log("getFullInvoiceByStayID called", req.params, req.query);
+  try {
+    const stayID = toPositiveInt(req.params.stayId || req.query.stayId);
+    if (!stayID) {
+      return res.status(400).json({ error: "StayID khong hop le" });
+    }
+
+    const request = new sql.Request();
+    request.input("StayID", sql.Int, stayID);
+    const result = await request.execute("sp_GetFullInvoice_ByStayID");
+
+    const invoice = result.recordsets?.[0]?.[0] || null;
+    const details = result.recordsets?.[1] || [];
+
+    return res.json({ invoice, details });
+  } catch (err) {
+    console.error("getFullInvoiceByStayID Error:", err);
+    const sqlMessage = err?.originalError?.info?.message || err?.message;
+
+    if (err?.originalError?.info?.message || err?.precedingErrors?.length) {
+      return res.status(400).json({ error: sqlMessage });
+    }
+
+    return res.status(500).json({ error: "Loi server", detail: sqlMessage });
+  }
+};
+
 const createAndPayInvoice = async (req, res) => {
   console.log("createAndPayInvoice called", req.body);
   try {
@@ -93,4 +121,9 @@ const createAndPayInvoice = async (req, res) => {
   }
 };
 
-module.exports = { getPendingInvoices, getInvoiceHistory, createAndPayInvoice };
+module.exports = {
+  getPendingInvoices,
+  getInvoiceHistory,
+  getFullInvoiceByStayID,
+  createAndPayInvoice,
+};
