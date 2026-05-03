@@ -54,11 +54,52 @@ const buildBookingCode = (reservationId, stayId) => {
   return `${base}-${suffix}`;
 };
 
+const DETAIL_TYPE_LABELS = {
+  ROOM: "Phòng",
+  SERVICE: "Dịch vụ",
+  MINIBAR: "Minibar",
+  PENALTY: "Phạt",
+};
+
+const groupDetailsByType = (details) => {
+  const grouped = {
+    ROOM: [],
+    SERVICE: [],
+    MINIBAR: [],
+    PENALTY: [],
+  };
+
+  details.forEach((detail) => {
+    const itemType = String(
+      detail.ItemType ?? detail.itemType ?? "",
+    ).toUpperCase();
+    const type = grouped[itemType] ? itemType : "PENALTY";
+    grouped[type].push(detail);
+  });
+
+  return grouped;
+};
+
 function Experience_Detail({ experience, onBack, onRebook }) {
   const summary = useMemo(() => {
     if (!experience) return null;
 
-    const totalAmount = Number(experience.totalAmount) || 0;
+    const invoice = experience.invoice ?? null;
+    const invoiceDetails = Array.isArray(experience.invoiceDetails)
+      ? experience.invoiceDetails
+      : [];
+
+    let totalAmount = Number(experience.totalAmount) || 0;
+
+    if (invoice && Number.isFinite(Number(invoice.TotalAmount))) {
+      totalAmount = Number(invoice.TotalAmount);
+    } else if (invoiceDetails.length > 0) {
+      totalAmount = invoiceDetails.reduce(
+        (sum, detail) => sum + (Number(detail.Amount ?? detail.amount) || 0),
+        0,
+      );
+    }
+
     const nights = getNightCount(experience.checkIn, experience.checkOut);
     const roomCharge = Math.max(Math.round(totalAmount * 1), 0);
     const perNight = nights > 0 ? Math.round(roomCharge / nights) : 0;
@@ -91,6 +132,10 @@ function Experience_Detail({ experience, onBack, onRebook }) {
   const statusMeta = STATUS_META[experience.status] || STATUS_META.BOOKED;
   const guestCount = Number(experience.guests) || 1;
   const guestLabel = guestCount > 1 ? "Guests" : "Guest";
+  const invoice = experience.invoice ?? null;
+  const invoiceDetails = Array.isArray(experience.invoiceDetails)
+    ? experience.invoiceDetails
+    : [];
 
   return (
     <main className="customer-main-content customer-experience-detail-content">
@@ -159,7 +204,7 @@ function Experience_Detail({ experience, onBack, onRebook }) {
                   <li>
                     <i className="fa-solid fa-id-badge" aria-hidden="true"></i>
                     <div>
-                      <strong>Reservation #{experience.reservationId}</strong>
+                      <strong>Reservation {experience.reservationId}</strong>
                       <span>Status: {statusMeta.label}</span>
                     </div>
                   </li>
@@ -184,7 +229,7 @@ function Experience_Detail({ experience, onBack, onRebook }) {
           </div>
 
           <aside className="exp-detail-summary">
-            <h3>Tóm tắt hoá đơn</h3>
+            <h3>Hoá đơn</h3>
 
             <div className="exp-detail-summary-list">
               <div>
@@ -194,6 +239,100 @@ function Experience_Detail({ experience, onBack, onRebook }) {
                 <strong>{formatCurrency(summary.roomCharge)}</strong>
               </div>
             </div>
+
+            {invoice && (
+              <div className="exp-detail-invoice-meta">
+                <h4>Thông tin hoá đơn</h4>
+                <p>
+                  <strong>Invoice ID: </strong>
+                  {invoice.InvoiceID ?? invoice.invoiceId ?? "N/A"}
+                </p>
+                <p>
+                  <strong>Ngày: </strong>
+                  {formatDateLong(invoice.Date)}
+                </p>
+                <p>
+                  <strong>Khách hàng: </strong>
+                  {invoice.FullName ?? invoice.fullName ?? "N/A"}
+                </p>
+                <p>
+                  <strong>Email: </strong>
+                  {invoice.Email ?? invoice.email ?? "N/A"}
+                </p>
+                <p>
+                  <strong>Phone: </strong>
+                  {invoice.Phone ?? invoice.phone ?? "N/A"}
+                </p>
+                <p>
+                  <strong>VAT: </strong>
+                  {invoice.VAT != null ? `${invoice.VAT}%` : "N/A"}
+                </p>
+              </div>
+            )}
+
+            {invoiceDetails.length > 0 && (
+              <div className="exp-detail-invoice-details">
+                <h4>CHI TIẾT HOÁ ĐƠN</h4>
+                <hr></hr>
+                {(() => {
+                  const grouped = groupDetailsByType(invoiceDetails);
+                  return Object.entries(grouped).map(([type, items]) =>
+                    items.length > 0 ? (
+                      <div
+                        key={type}
+                        className={`exp-detail-detail-group exp-detail-detail-group--${type.toLowerCase()}`}
+                      >
+                        <h4>{DETAIL_TYPE_LABELS[type]}</h4>
+                        <ul>
+                          {items.map((detail) => {
+                            const amount =
+                              Number(detail.Amount ?? detail.amount) || 0;
+                            return (
+                              <li
+                                key={
+                                  detail.DetailID ??
+                                  detail.detailId ??
+                                  detail.ItemName
+                                }
+                              >
+                                <strong>
+                                  {detail.ItemName ?? detail.itemName}
+                                  {": "}
+                                </strong>
+                                <span>
+                                  {detail.Quantity ?? detail.quantity} x{" "}
+                                  {formatCurrency(
+                                    detail.UnitPrice ?? detail.unitPrice,
+                                  )}
+                                </span>
+                                <span>
+                                  {" : "}
+                                  {formatCurrency(amount)}
+                                </span>
+                              </li>
+
+                            );
+                          })}
+                        </ul>
+                        <div className="exp-detail-detail-subtotal">
+                          <strong>Tổng tiền {DETAIL_TYPE_LABELS[type]} : </strong>
+                          <strong>
+                            {formatCurrency(
+                              items.reduce(
+                                (sum, d) =>
+                                  sum + (Number(d.Amount ?? d.amount) || 0),
+                                0,
+                              ),
+                            )}
+                          </strong>
+                        </div>
+                        <hr />
+                      </div>
+                    ) : null,
+                  );
+                })()}
+              </div>
+            )}
 
             <div className="exp-detail-total">
               <small>Tổng cộng</small>
@@ -209,7 +348,7 @@ function Experience_Detail({ experience, onBack, onRebook }) {
               <i className="fa-solid fa-credit-card" aria-hidden="true"></i>
               <div>
                 <small>Phương thức thanh toán</small>
-                <strong>Visa ending in 9928</strong>
+                <strong>Visa</strong>
               </div>
             </div>
 

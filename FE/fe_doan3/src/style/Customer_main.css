@@ -1363,6 +1363,14 @@
   font-size: 12px;
 }
 
+.exp-detail-invoice-details ul{
+  margin-left: -25px;
+  line-height: 1.5;
+}
+.exp-detail-invoice-details ul{
+  list-style: none;
+}
+
 .customer-exp-body h3 {
   margin: 10px 0 0;
   color: #15335f;

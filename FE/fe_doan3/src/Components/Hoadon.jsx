@@ -125,7 +125,7 @@ class Hoadon extends Component {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return String(value);
 
-    return date.toLocaleDateString("vi-VN");
+    return date.toLocaleDateString("vi-VN", { timeZone: "UTC" });
   };
 
   formatDateTimeForTable = (value) => {
@@ -134,7 +134,7 @@ class Hoadon extends Component {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return String(value);
 
-    return date.toLocaleString("vi-VN");
+    return date.toLocaleString("vi-VN", { timeZone: "UTC" });
   };
 
   mapPendingInvoiceFromApi = (item) => {
@@ -792,7 +792,7 @@ class Hoadon extends Component {
 
               <p>
                 <strong>VAT:</strong>{" "}
-                {this.formatCurrency(detailInvoiceData.vat)}
+                {`${this.getNumber(detailInvoiceData.vat).toLocaleString("vi-VN")}%`}
               </p>
               <p>
                 <strong>Tổng tiền:</strong>{" "}

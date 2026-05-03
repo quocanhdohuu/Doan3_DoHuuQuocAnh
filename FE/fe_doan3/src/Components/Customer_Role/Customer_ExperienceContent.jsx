@@ -4,6 +4,7 @@ import { DEFAULT_ROOM_IMAGE, normalizeRoomImageUrl } from "./RoomImageUtils";
 import "../../style/Customer_main.css";
 
 const RESERVATIONS_API_BASE_URL = "http://localhost:3000/api/customers";
+const INVOICE_API_BASE_URL = "http://localhost:3000/api/invoices/stays";
 const PAGE_SIZE = 4;
 const ALLOWED_STATUSES = ["BOOKED", "CANCELLED", "CHECKED_IN", "COMPLETED"];
 
@@ -131,7 +132,9 @@ const matchesFilter = (reservation, filterKey) => {
   if (filterKey === "ALL") {
     return ALLOWED_STATUSES.includes(reservation.status);
   }
-  return ALLOWED_STATUSES.includes(filterKey) && reservation.status === filterKey;
+  return (
+    ALLOWED_STATUSES.includes(filterKey) && reservation.status === filterKey
+  );
 };
 
 function CustomerExperienceContent({ onSelectExperience }) {
@@ -140,6 +143,8 @@ function CustomerExperienceContent({ onSelectExperience }) {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [detailError, setDetailError] = useState("");
+  const [detailLoadingId, setDetailLoadingId] = useState(null);
   const [activeFilter, setActiveFilter] = useState("ALL");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
@@ -214,6 +219,46 @@ function CustomerExperienceContent({ onSelectExperience }) {
     setVisibleCount(PAGE_SIZE);
   };
 
+  const handleExperienceClick = async (item) => {
+    if (!onSelectExperience) return;
+    if (item.status !== "COMPLETED") {
+      onSelectExperience(item);
+      return;
+    }
+
+    setDetailError("");
+    setDetailLoadingId(item.id);
+
+    try {
+      if (!item.stayId) {
+        throw new Error("Không xác định được stayId để tải chi tiết hoá đơn.");
+      }
+
+      const response = await fetch(
+        `${INVOICE_API_BASE_URL}/${item.stayId}/full`,
+      );
+      if (!response.ok) {
+        throw new Error(`Lỗi API hoá đơn: ${response.status}`);
+      }
+
+      const payload = await response.json();
+      const invoice = payload?.invoice ?? payload;
+      const invoiceDetails = Array.isArray(payload?.details)
+        ? payload.details
+        : [];
+
+      onSelectExperience({
+        ...item,
+        invoice,
+        invoiceDetails,
+      });
+    } catch (err) {
+      setDetailError(err?.message || "Không thể tải thông tin hoá đơn.");
+    } finally {
+      setDetailLoadingId(null);
+    }
+  };
+
   return (
     <main className="customer-main-content customer-experience-content">
       <section className="customer-experience-section">
@@ -244,6 +289,12 @@ function CustomerExperienceContent({ onSelectExperience }) {
           ))}
         </div>
 
+        {detailError && !loading && (
+          <div className="customer-status-box customer-status-box--error">
+            {detailError}
+          </div>
+        )}
+
         {loading && (
           <div className="customer-status-box">
             Đang tải reservations của khách hàng...
@@ -273,19 +324,22 @@ function CustomerExperienceContent({ onSelectExperience }) {
                 return (
                   <article
                     key={item.id}
-                    className={`customer-exp-card ${onSelectExperience ? "clickable" : ""}`}
+                    className={`customer-exp-card ${onSelectExperience ? "clickable" : ""} ${detailLoadingId === item.id ? "loading" : ""}`}
                     role={onSelectExperience ? "button" : undefined}
                     tabIndex={onSelectExperience ? 0 : undefined}
-                    onClick={() => onSelectExperience?.(item)}
+                    onClick={() => handleExperienceClick(item)}
                     onKeyDown={(event) => {
                       if (!onSelectExperience) return;
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        onSelectExperience(item);
+                        handleExperienceClick(item);
                       }
                     }}
+                    aria-busy={detailLoadingId === item.id ? "true" : undefined}
                   >
-                    <div className={`customer-exp-image ${statusMeta.className}`}>
+                    <div
+                      className={`customer-exp-image ${statusMeta.className}`}
+                    >
                       <img
                         src={item.imageUrl || DEFAULT_ROOM_IMAGE}
                         alt={item.roomType || "Room image"}
@@ -319,7 +373,8 @@ function CustomerExperienceContent({ onSelectExperience }) {
                       </p>
 
                       <p className="customer-exp-meta">
-                        {item.quantity} room{item.quantity > 1 ? "s" : ""} | {item.guests} guest
+                        {item.quantity} room{item.quantity > 1 ? "s" : ""} |{" "}
+                        {item.guests} guest
                         {item.guests > 1 ? "s" : ""}
                       </p>
 
