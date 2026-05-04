@@ -1,4 +1,5 @@
-import React, { Component } from "react";
+import React, { Component, useRef } from "react";
+import { useReactToPrint } from "react-to-print";
 import "../style/Hoadon.css";
 import { FeatureHeader } from "./Common";
 
@@ -38,6 +39,168 @@ const getDefaultInvoiceData = () => ({
   method: "CASH",
   status: "PENDING",
 });
+
+// Function component cho Detail Modal với React-to-Print
+function DetailInvoiceModal({
+  isOpen,
+  isLoading,
+  error,
+  detailInvoiceData,
+  selectedHistoryInvoice,
+  onClose,
+  onRetry,
+  getNumber,
+  formatCurrency,
+  getInvoiceDetailListByType,
+}) {
+  const printRef = useRef();
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `Hoa_Don_${detailInvoiceData?.fullName || "Invoice"}`,
+  });
+
+  if (!isOpen) return null;
+
+  const details = Array.isArray(detailInvoiceData?.details)
+    ? detailInvoiceData.details
+    : [];
+  const roomItems = getInvoiceDetailListByType(details, "ROOM");
+  const serviceItems = getInvoiceDetailListByType(details, "SERVICE");
+  const minibarItems = getInvoiceDetailListByType(details, "MINIBAR");
+  const penaltyItems = getInvoiceDetailListByType(details, "PENALTY");
+
+  const renderDetailTypeTable = (label, items) => (
+    <>
+      <h3 style={{ marginTop: 20, marginBottom: 10 }}>{label}</h3>
+      <div className="hoadon-table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Tên mục</th>
+              <th>Số lượng</th>
+              <th>Đơn giá</th>
+              <th>Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.length === 0 && (
+              <tr>
+                <td colSpan="4">Không có dữ liệu {label}.</td>
+              </tr>
+            )}
+            {items.map((item) => (
+              <tr key={item.id}>
+                <td>{item.itemName}</td>
+                <td>{item.quantity}</td>
+                <td>{formatCurrency(item.unitPrice)}</td>
+                <td>{formatCurrency(item.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Chi tiết hóa đơn</h2>
+          <button className="btn-close" onClick={onClose}>
+            X
+          </button>
+        </div>
+
+        {isLoading && <p>Đang tải chi tiết hóa đơn...</p>}
+
+        {!isLoading && error && (
+          <div>
+            <p>{error}</p>
+            <button
+              className="btn-secondary"
+              onClick={() => onRetry(selectedHistoryInvoice?.stayId)}
+            >
+              Tải lại
+            </button>
+          </div>
+        )}
+
+        {!isLoading && !error && detailInvoiceData && (
+          <>
+            <div ref={printRef} style={{ padding: "20px", background: "#fff" }}>
+              <div style={{ textAlign: "center", marginBottom: "20px" }}>
+                <h1 style={{ fontSize: "24px", marginBottom: "10px" }}>
+                  HÓA ĐƠN THANH TOÁN
+                </h1>
+                <p style={{ fontSize: "14px", color: "#666" }}>
+                  Ngày in:{" "}
+                  {new Date().toLocaleDateString("vi-VN", { timeZone: "UTC" })}
+                </p>
+              </div>
+
+              <p>
+                <strong>Tên khách:</strong> {detailInvoiceData.fullName}
+              </p>
+              <p>
+                <strong>SĐT:</strong> {detailInvoiceData.phone}
+              </p>
+
+              {renderDetailTypeTable("ROOM", roomItems)}
+              {renderDetailTypeTable("SERVICE", serviceItems)}
+              {renderDetailTypeTable("MINIBAR", minibarItems)}
+              {renderDetailTypeTable("PENALTY", penaltyItems)}
+
+              <p style={{ marginTop: 20, fontSize: "16px" }}>
+                <strong>VAT:</strong>{" "}
+                {`${getNumber(detailInvoiceData.vat).toLocaleString("vi-VN")}%`}
+              </p>
+              <p
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "bold",
+                  color: "#d32f2f",
+                }}
+              >
+                <strong>Tổng tiền:</strong>{" "}
+                {formatCurrency(detailInvoiceData.totalAmount)}
+              </p>
+            </div>
+
+            <div
+              style={{
+                marginBottom: "20px",
+              }}
+            >
+              <button
+                className="btn-secondary"
+                style={{
+                  float: "left",
+                  marginTop: "-10px",
+                }}
+                onClick={onClose}
+              >
+                Đóng
+              </button>
+
+              <button
+                className="btn-primary"
+                onClick={handlePrint}
+                style={{
+                  float: "left",
+                  marginTop: "-10px",
+                }}
+              >
+                <i className="fa fa-download"></i> Xuất PDF
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 class Hoadon extends Component {
   state = {
@@ -740,77 +903,19 @@ class Hoadon extends Component {
       selectedHistoryInvoice,
     } = this.state;
 
-    if (!isDetailModalOpen) return null;
-
-    const details = Array.isArray(detailInvoiceData?.details)
-      ? detailInvoiceData.details
-      : [];
-    const roomItems = this.getInvoiceDetailListByType(details, "ROOM");
-    const serviceItems = this.getInvoiceDetailListByType(details, "SERVICE");
-    const minibarItems = this.getInvoiceDetailListByType(details, "MINIBAR");
-    const penaltyItems = this.getInvoiceDetailListByType(details, "PENALTY");
-
     return (
-      <div className="modal-overlay" onClick={this.handleDetailOverlayClick}>
-        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header">
-            <h2>Chi tiết hóa đơn</h2>
-            <button className="btn-close" onClick={this.closeDetailModal}>
-              X
-            </button>
-          </div>
-
-          {detailModalLoading && <p>Đang tải chi tiết hóa đơn...</p>}
-
-          {!detailModalLoading && detailModalError && (
-            <div>
-              <p>{detailModalError}</p>
-              <button
-                className="btn-secondary"
-                onClick={() =>
-                  this.loadFullInvoiceByStay(selectedHistoryInvoice?.stayId)
-                }
-              >
-                Tải lại
-              </button>
-            </div>
-          )}
-
-          {!detailModalLoading && !detailModalError && detailInvoiceData && (
-            <>
-              <p>
-                <strong>Tên khách:</strong> {detailInvoiceData.fullName}
-              </p>
-              <p>
-                <strong>SĐT:</strong> {detailInvoiceData.phone}
-              </p>
-
-              {this.renderDetailTypeTable("ROOM", roomItems)}
-              {this.renderDetailTypeTable("SERVICE", serviceItems)}
-              {this.renderDetailTypeTable("MINIBAR", minibarItems)}
-              {this.renderDetailTypeTable("PENALTY", penaltyItems)}
-
-              <p>
-                <strong>VAT:</strong>{" "}
-                {`${this.getNumber(detailInvoiceData.vat).toLocaleString("vi-VN")}%`}
-              </p>
-              <p>
-                <strong>Tổng tiền:</strong>{" "}
-                {this.formatCurrency(detailInvoiceData.totalAmount)}
-              </p>
-
-              <div style={{ marginTop: 16 }}>
-                <button
-                  className="btn-secondary"
-                  onClick={this.closeDetailModal}
-                >
-                  Đóng
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      <DetailInvoiceModal
+        isOpen={isDetailModalOpen}
+        isLoading={detailModalLoading}
+        error={detailModalError}
+        detailInvoiceData={detailInvoiceData}
+        selectedHistoryInvoice={selectedHistoryInvoice}
+        onClose={this.closeDetailModal}
+        onRetry={this.loadFullInvoiceByStay}
+        getNumber={this.getNumber}
+        formatCurrency={this.formatCurrency}
+        getInvoiceDetailListByType={this.getInvoiceDetailListByType}
+      />
     );
   };
 
