@@ -321,8 +321,7 @@ function CustomerExperienceContent({ onSelectExperience }) {
 
         {!loading && !error && filteredReservations.length === 0 && (
           <div className="customer-status-box">
-            Không có reservation nào thuộc các trạng thái BOOKED, CHECKED_IN,
-            COMPLETED, CANCELLED.
+            Không có reservation nào.
           </div>
         )}
 

@@ -48,8 +48,7 @@ const normalizeStatus = (status) => {
   if (normalized === "BOOKED") return "booked";
   if (normalized === "CHECKED_IN") return "checkedin";
   if (normalized === "COMPLETED") return "completed";
-  if (normalized === "CANCELLED" || normalized === "CANCELED")
-    return "canceled";
+  if (normalized === "CANCELLED") return "canceled";
 
   return "unknown";
 };
