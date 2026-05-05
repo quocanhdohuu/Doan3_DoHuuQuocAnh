@@ -3,6 +3,7 @@ import { DEFAULT_ROOM_IMAGE } from "./RoomImageUtils";
 import "../../style/Customer_main.css";
 
 const STATUS_META = {
+  PENDING: { label: "Pending", badgeClass: "exp-detail-badge--pending" },
   BOOKED: { label: "Confirmed", badgeClass: "exp-detail-badge--booked" },
   CHECKED_IN: {
     label: "Checked In",
@@ -310,12 +311,13 @@ function Experience_Detail({ experience, onBack, onRebook }) {
                                   {formatCurrency(amount)}
                                 </span>
                               </li>
-
                             );
                           })}
                         </ul>
                         <div className="exp-detail-detail-subtotal">
-                          <strong>Tổng tiền {DETAIL_TYPE_LABELS[type]} : </strong>
+                          <strong>
+                            Tổng tiền {DETAIL_TYPE_LABELS[type]} :{" "}
+                          </strong>
                           <strong>
                             {formatCurrency(
                               items.reduce(

@@ -8,6 +8,7 @@ const {
   getReservationHistoryByUser,
   getAllReservations,
   updateReservation,
+  updateReservationToBooked,
   cancelReservation,
   getWaitingCheckInCustomers,
   getCurrentStayingCustomers,
@@ -67,6 +68,7 @@ router.post("/book-room", bookRoom);
 router.post("/", createReservation);
 router.post("/new-customer", createReservationWithNewCustomer);
 router.put("/:id", updateReservation);
+router.put("/:id/update-to-booked", updateReservationToBooked);
 router.patch("/:id/cancel", cancelReservation);
 
 module.exports = router;

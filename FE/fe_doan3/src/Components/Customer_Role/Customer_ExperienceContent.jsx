@@ -6,10 +6,17 @@ import "../../style/Customer_main.css";
 const RESERVATIONS_API_BASE_URL = "http://localhost:3000/api/customers";
 const INVOICE_API_BASE_URL = "http://localhost:3000/api/invoices/stays";
 const PAGE_SIZE = 4;
-const ALLOWED_STATUSES = ["BOOKED", "CANCELLED", "CHECKED_IN", "COMPLETED"];
+const ALLOWED_STATUSES = [
+  "PENDING",
+  "BOOKED",
+  "CANCELLED",
+  "CHECKED_IN",
+  "COMPLETED",
+];
 
 const FILTER_OPTIONS = [
   { key: "ALL", label: "All Stays" },
+  { key: "PENDING", label: "Pending" },
   { key: "BOOKED", label: "Booked" },
   { key: "CHECKED_IN", label: "Checked In" },
   { key: "COMPLETED", label: "Completed" },
@@ -17,6 +24,11 @@ const FILTER_OPTIONS = [
 ];
 
 const STATUS_META = {
+  PENDING: {
+    label: "Pending",
+    className: "customer-exp-status--pending",
+    note: "Chờ xác nhận",
+  },
   BOOKED: {
     label: "Confirmed",
     className: "customer-exp-status--booked",

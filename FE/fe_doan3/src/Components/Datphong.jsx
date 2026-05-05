@@ -9,6 +9,7 @@ const PAGE_SIZE = 4;
 
 const STATUS_OPTIONS = [
   { value: "all", label: "Tất cả trạng thái" },
+  { value: "pending", label: "Đang chờ" },
   { value: "booked", label: "Đã đặt" },
   { value: "checkedin", label: "Đã nhận" },
   { value: "completed", label: "Hoàn thành" },
@@ -16,6 +17,7 @@ const STATUS_OPTIONS = [
 ];
 
 const STATUS_LABELS = {
+  pending: "Đang chờ",
   booked: "Đã đặt",
   checkedin: "Đã nhận",
   completed: "Hoàn thành",
@@ -42,6 +44,7 @@ const normalizeStatus = (status) => {
     .trim()
     .toUpperCase();
 
+  if (normalized === "PENDING") return "pending";
   if (normalized === "BOOKED") return "booked";
   if (normalized === "CHECKED_IN") return "checkedin";
   if (normalized === "COMPLETED") return "completed";
@@ -514,9 +517,7 @@ class Datphong extends Component {
         );
 
         if (!selectedCustomer || selectedCustomer.userId === null) {
-          throw new Error(
-            "KhÃ¡ch hÃ ng Ä‘Ã£ chá»n khÃ´ng cÃ³ UserID há»£p lá»‡.",
-          );
+          throw new Error("Khách hàng đã chọn không có UserID hợp lệ.");
         }
 
         await this.request(RESERVATIONS_API_URL, {
@@ -602,6 +603,37 @@ class Datphong extends Component {
     } catch (err) {
       this.setState({
         error: err.message || "Không thể hủy lịch đặt.",
+        notice: "",
+      });
+    } finally {
+      this.setState({ actionLoadingId: null });
+    }
+  };
+
+  confirmPendingBooking = async (reservationId) => {
+    if (!window.confirm("Xác nhận đặt phòng?")) {
+      return;
+    }
+
+    try {
+      this.setState({ actionLoadingId: reservationId, error: "", notice: "" });
+      const response = await this.request(
+        `${RESERVATIONS_API_URL}/${reservationId}/update-to-booked`,
+        {
+          method: "PUT",
+        },
+      );
+
+      await this.fetchReservations();
+      this.setState({
+        notice:
+          response?.Message ||
+          response?.message ||
+          "Xác nhận đặt phòng thành công.",
+      });
+    } catch (err) {
+      this.setState({
+        error: err.message || "Không thể xác nhận đặt phòng.",
         notice: "",
       });
     } finally {
@@ -726,7 +758,7 @@ class Datphong extends Component {
                     const statusKey = normalizeStatus(reservation.statusRaw);
                     const statusLabel =
                       STATUS_LABELS[statusKey] || STATUS_LABELS.unknown;
-                    const isCanceled = statusKey === "canceled";
+                    const isCanceled = statusKey !== "booked";
 
                     return (
                       <tr key={reservation.id}>
@@ -745,6 +777,21 @@ class Datphong extends Component {
                           </span>
                         </td>
                         <td className="datphong-actions">
+                          {statusKey === "pending" && (
+                            <button
+                              className="dp-icon-btn dp-icon-btn-confirm"
+                              title="Xác nhận"
+                              onClick={() =>
+                                this.confirmPendingBooking(reservation.id)
+                              }
+                              disabled={
+                                actionLoadingId === reservation.id ||
+                                submitLoading
+                              }
+                            >
+                              <i className="fa fa-check"></i>
+                            </button>
+                          )}
                           <button
                             className="dp-icon-btn"
                             title="Sửa"

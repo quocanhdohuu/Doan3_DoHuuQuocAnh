@@ -431,6 +431,31 @@ const updateReservation = async (req, res) => {
   }
 };
 
+const updateReservationToBooked = async (req, res) => {
+  console.log("updateReservationToBooked called", req.params, req.body);
+  try {
+    const reservationID = toPositiveInt(
+      req.params.id || req.body.ReservationID,
+    );
+
+    if (!reservationID) {
+      return res.status(400).json({ error: "ReservationID không hợp lệ" });
+    }
+
+    const request = new sql.Request();
+    request.input("ReservationID", sql.Int, reservationID);
+
+    const result = await request.execute("sp_UpdateReservationToBooked");
+    const payload = result.recordset?.[0] || null;
+
+    return res.json(
+      payload || { message: "Cập nhật trạng thái đặt phòng thành công" },
+    );
+  } catch (err) {
+    return sendSqlError(res, err, "updateReservationToBooked");
+  }
+};
+
 const cancelReservation = async (req, res) => {
   console.log("cancelReservation called", req.params);
   try {
@@ -962,6 +987,7 @@ module.exports = {
   getReservationHistoryByUser,
   getAllReservations,
   updateReservation,
+  updateReservationToBooked,
   cancelReservation,
   getWaitingCheckInCustomers,
   getCurrentStayingCustomers,
