@@ -4248,8 +4248,8 @@ BEGIN
     i.Date,
     i.TotalAmount,
     i.VAT,
-	--s.ActualCheckIn,
-	--s.ActualCheckOut,
+	s.ActualCheckIn,
+	s.ActualCheckOut,
 
     ISNULL(c.FullName, g.FullName) AS FullName,
     ISNULL(c.Phone, '') AS Phone,

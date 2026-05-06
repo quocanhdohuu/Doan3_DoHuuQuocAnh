@@ -146,6 +146,12 @@ function DetailInvoiceModal({
               <p>
                 <strong>SĐT:</strong> {detailInvoiceData.phone}
               </p>
+              <p>
+                <strong>Nhận phòng:</strong> {detailInvoiceData.actualCheckIn}
+              </p>
+              <p>
+                <strong>Trả phòng:</strong> {detailInvoiceData.actualCheckOut}
+              </p>
 
               {renderDetailTypeTable("ROOM", roomItems)}
               {renderDetailTypeTable("SERVICE", serviceItems)}
@@ -662,6 +668,12 @@ class Hoadon extends Component {
           "-",
       ),
       phone: String(invoice?.Phone ?? invoice?.phone ?? "-"),
+      actualCheckIn: this.formatDateTimeForTable(
+        invoice?.ActualCheckIn ?? invoice?.actualCheckIn,
+      ),
+      actualCheckOut: this.formatDateTimeForTable(
+        invoice?.ActualCheckOut ?? invoice?.actualCheckOut,
+      ),
       vat,
       totalAmount,
       details,
