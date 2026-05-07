@@ -277,7 +277,7 @@ tbody tr td {
 table {
   width: 100%;
   border-collapse: collapse;
-  font-family: Arial;
+  font-family: 'Times New Roman', Times, serif;
 }
 
 thead {

@@ -83,7 +83,7 @@
 
 .booking-selected-body h2 {
   margin: 0;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: clamp(42px, 5vw, 56px);
   line-height: 0.95;
   color: #0f2749;
@@ -123,7 +123,7 @@
   display: block;
   color: #0f2649;
   font-size: clamp(20px, 2.1vw, 33px);
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
 }
 
 .booking-summary-card {
@@ -136,7 +136,7 @@
 
 .booking-summary-card h2 {
   margin: 0;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: clamp(42px, 3.4vw, 52px);
   line-height: 0.94;
   color: #0f2749;
@@ -202,7 +202,7 @@
   margin-top: 6px;
   display: block;
   color: #0b1f41;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-size: clamp(46px, 4vw, 58px);
   line-height: 0.9;
 }
@@ -216,7 +216,7 @@
   background: linear-gradient(135deg, #0d3a68 0%, #0a284a 100%);
   color: #eef4ff;
   font-size: 30px;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
   font-weight: 700;
   cursor: pointer;
 }
@@ -270,7 +270,7 @@
   margin: 0;
   color: #122e54;
   font-size: 27px;
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: 'Times New Roman', Times, serif;
 }
 
 .booking-highlight-card p {
