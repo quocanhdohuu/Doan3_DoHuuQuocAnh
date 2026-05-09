@@ -70,38 +70,18 @@ function DetailInvoiceModal({
   const minibarItems = getInvoiceDetailListByType(details, "MINIBAR");
   const penaltyItems = getInvoiceDetailListByType(details, "PENALTY");
 
-  const renderDetailTypeTable = (label, items) => (
-    <>
-      <h3 style={{ marginTop: 20, marginBottom: 10 }}>{label}</h3>
-      <div className="hoadon-table-wrap">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Tên mục</th>
-              <th>Số lượng</th>
-              <th>Đơn giá</th>
-              <th>Thành tiền</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.length === 0 && (
-              <tr>
-                <td colSpan="4">Không có dữ liệu {label}.</td>
-              </tr>
-            )}
-            {items.map((item) => (
-              <tr key={item.id}>
-                <td>{item.itemName}</td>
-                <td>{item.quantity}</td>
-                <td>{formatCurrency(item.unitPrice)}</td>
-                <td>{formatCurrency(item.amount)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
-  );
+  const detailRows = [
+    ...roomItems.map((item) => ({ ...item, typeLabel: "ROOM" })),
+    ...serviceItems.map((item) => ({ ...item, typeLabel: "SERVICE" })),
+    ...minibarItems.map((item) => ({ ...item, typeLabel: "MINIBAR" })),
+    ...penaltyItems.map((item) => ({ ...item, typeLabel: "PENALTY" })),
+  ];
+  const typeLabelVi = {
+    ROOM: "Phòng",
+    SERVICE: "Dịch vụ",
+    MINIBAR: "Minibar",
+    PENALTY: "Phạt",
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -153,10 +133,36 @@ function DetailInvoiceModal({
                 <strong>Trả phòng:</strong> {detailInvoiceData.actualCheckOut}
               </p>
 
-              {renderDetailTypeTable("ROOM", roomItems)}
-              {renderDetailTypeTable("SERVICE", serviceItems)}
-              {renderDetailTypeTable("MINIBAR", minibarItems)}
-              {renderDetailTypeTable("PENALTY", penaltyItems)}
+              <h3 style={{ marginTop: 20, marginBottom: 10 }}>Chi tiết hóa đơn</h3>
+              <div className="hoadon-table-wrap">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Loại</th>
+                      <th>Tên mục</th>
+                      <th>Số lượng</th>
+                      <th>Đơn giá</th>
+                      <th>Thành tiền</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detailRows.length === 0 && (
+                      <tr>
+                        <td colSpan="5">Không có dữ liệu chi tiết.</td>
+                      </tr>
+                    )}
+                    {detailRows.map((item) => (
+                      <tr key={`${item.typeLabel}-${item.id}`}>
+                        <td><b>{typeLabelVi[item.typeLabel] || item.typeLabel}</b></td>
+                        <td>{item.itemName}</td>
+                        <td>{item.quantity}</td>
+                        <td>{formatCurrency(item.unitPrice)}</td>
+                        <td>{formatCurrency(item.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               <p style={{ marginTop: 20, fontSize: "16px" }}>
                 <strong>VAT:</strong>{" "}
