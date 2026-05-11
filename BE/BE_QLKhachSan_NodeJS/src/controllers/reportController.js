@@ -5,12 +5,12 @@ const parseYearMonth = (req, res) => {
   const month = Number.parseInt(req.query.month, 10);
 
   if (!Number.isInteger(year) || year < 1900 || year > 9999) {
-    res.status(400).json({ error: "year khong hop le" });
+    res.status(400).json({ error: "Năm không hợp lệ" });
     return null;
   }
 
   if (!Number.isInteger(month) || month < 1 || month > 12) {
-    res.status(400).json({ error: "month khong hop le" });
+    res.status(400).json({ error: "Tháng không hợp lệ" });
     return null;
   }
 
@@ -32,7 +32,7 @@ const executeReportProcedure = async (req, res, procedureName, context) => {
     return res.json(result.recordset?.[0] || {});
   } catch (err) {
     console.error(`${context} Error:`, err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
@@ -51,7 +51,7 @@ const executeReportListProcedure = async (req, res, procedureName, context) => {
     return res.json(result.recordset || []);
   } catch (err) {
     console.error(`${context} Error:`, err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 

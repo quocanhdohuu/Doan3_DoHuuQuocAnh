@@ -8,7 +8,7 @@ const executeOverviewProcedure = async (res, procedureName, context) => {
     return res.json(result.recordset?.[0] || {});
   } catch (err) {
     console.error(`${context} Error:`, err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 

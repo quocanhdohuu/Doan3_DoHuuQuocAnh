@@ -62,7 +62,7 @@ const getRoomTypesWithPrice = async (req, res) => {
     console.error("getRoomTypesWithPrice Error:", err);
     return res
       .status(500)
-      .json({ error: "Loi server", detail: err.message, stack: err.stack });
+      .json({ error: "Lỗi server", detail: err.message, stack: err.stack });
   }
 };
 
@@ -194,7 +194,7 @@ const searchAvailableRoomTypes = async (req, res) => {
     console.error("searchAvailableRoomTypes Error:", err);
     return res
       .status(500)
-      .json({ error: "Loi server", detail: err.message, stack: err.stack });
+      .json({ error: "Lỗi server", detail: err.message, stack: err.stack });
   }
 };
 

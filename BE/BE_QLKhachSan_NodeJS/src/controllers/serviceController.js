@@ -19,13 +19,13 @@ const getServices = async (req, res) => {
     const result = await sql.query`EXEC sp_GetActiveServices`;
 
     if (!result.recordset) {
-      return res.status(404).json({ error: "Khong tim thay du lieu dich vu" });
+      return res.status(404).json({ error: "Không tìm thấy dữ liệu dịch vụ" });
     }
 
     return res.json(result.recordset);
   } catch (err) {
     console.error("getServices Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
@@ -35,16 +35,24 @@ const addService = async (req, res) => {
     const { ServiceName, Price, Status } = req.body;
     const normalizedStatus = Status == null ? "TRUE" : normalizeStatus(Status);
 
-    if (!ServiceName || typeof ServiceName !== "string" || !ServiceName.trim()) {
-      return res.status(400).json({ error: "ServiceName khong hop le" });
+    if (
+      !ServiceName ||
+      typeof ServiceName !== "string" ||
+      !ServiceName.trim()
+    ) {
+      return res.status(400).json({ error: "ServiceName không hợp lệ" });
     }
 
     if (Price == null || Number.isNaN(Number(Price)) || Number(Price) < 0) {
-      return res.status(400).json({ error: "Price phai la so hop le va khong am" });
+      return res
+        .status(400)
+        .json({ error: "Price phải là số hợp lệ va khong am" });
     }
 
     if (!normalizedStatus) {
-      return res.status(400).json({ error: "Status chi chap nhan TRUE hoac FALSE" });
+      return res
+        .status(400)
+        .json({ error: "Status chỉ chấp nhận TRUE hoặc FALSE" });
     }
 
     await sql.query`
@@ -54,10 +62,10 @@ const addService = async (req, res) => {
         @Status=${normalizedStatus}
     `;
 
-    return res.status(201).json({ message: "Them dich vu thanh cong" });
+    return res.status(201).json({ message: "Thêm dịch vụ thành công" });
   } catch (err) {
     console.error("addService Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
@@ -68,15 +76,21 @@ const updateService = async (req, res) => {
     const { ServiceName, Price } = req.body;
 
     if (!Number.isInteger(serviceID) || serviceID <= 0) {
-      return res.status(400).json({ error: "ServiceID khong hop le" });
+      return res.status(400).json({ error: "ServiceID không hợp lệ" });
     }
 
-    if (!ServiceName || typeof ServiceName !== "string" || !ServiceName.trim()) {
-      return res.status(400).json({ error: "ServiceName khong hop le" });
+    if (
+      !ServiceName ||
+      typeof ServiceName !== "string" ||
+      !ServiceName.trim()
+    ) {
+      return res.status(400).json({ error: "ServiceName không hợp lệ" });
     }
 
     if (Price == null || Number.isNaN(Number(Price)) || Number(Price) < 0) {
-      return res.status(400).json({ error: "Price phai la so hop le va khong am" });
+      return res
+        .status(400)
+        .json({ error: "Price phải là số hợp lệ va khong am" });
     }
 
     const currentServiceResult = await sql.query`
@@ -86,7 +100,9 @@ const updateService = async (req, res) => {
     `;
 
     if (currentServiceResult.recordset.length === 0) {
-      return res.status(404).json({ error: "Khong tim thay dich vu can cap nhat" });
+      return res
+        .status(404)
+        .json({ error: "Không tìm thấy dịch vụ cần cập nhật" });
     }
 
     const currentService = currentServiceResult.recordset[0];
@@ -100,10 +116,10 @@ const updateService = async (req, res) => {
         @Status=${normalizedStatus}
     `;
 
-    return res.json({ message: "Cap nhat dich vu thanh cong" });
+    return res.json({ message: "Cập nhật dịch vụ thành công" });
   } catch (err) {
     console.error("updateService Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
@@ -113,7 +129,7 @@ const deleteService = async (req, res) => {
     const serviceID = Number.parseInt(req.params.id, 10);
 
     if (!Number.isInteger(serviceID) || serviceID <= 0) {
-      return res.status(400).json({ error: "ServiceID khong hop le" });
+      return res.status(400).json({ error: "ServiceID không hợp lệ" });
     }
 
     await sql.query`
@@ -121,10 +137,10 @@ const deleteService = async (req, res) => {
         @ServiceID=${serviceID}
     `;
 
-    return res.json({ message: "Xoa dich vu thanh cong" });
+    return res.json({ message: "Xóa dịch vụ thành công" });
   } catch (err) {
     console.error("deleteService Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 

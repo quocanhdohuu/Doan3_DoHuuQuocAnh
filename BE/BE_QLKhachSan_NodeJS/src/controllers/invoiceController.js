@@ -38,7 +38,7 @@ const getPendingInvoices = async (req, res) => {
     return res.json(result.recordset || []);
   } catch (err) {
     console.error("getPendingInvoices Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
@@ -51,7 +51,7 @@ const getInvoiceHistory = async (req, res) => {
     return res.json(result.recordset || []);
   } catch (err) {
     console.error("getInvoiceHistory Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
@@ -60,7 +60,7 @@ const getFullInvoiceByStayID = async (req, res) => {
   try {
     const stayID = toPositiveInt(req.params.stayId || req.query.stayId);
     if (!stayID) {
-      return res.status(400).json({ error: "StayID khong hop le" });
+      return res.status(400).json({ error: "StayID không hợp lệ" });
     }
 
     const request = new sql.Request();
@@ -79,7 +79,7 @@ const getFullInvoiceByStayID = async (req, res) => {
       return res.status(400).json({ error: sqlMessage });
     }
 
-    return res.status(500).json({ error: "Loi server", detail: sqlMessage });
+    return res.status(500).json({ error: "Lỗi server", detail: sqlMessage });
   }
 };
 
@@ -94,7 +94,7 @@ const createAndPayInvoice = async (req, res) => {
 
     if (!stayID || !method || vat == null) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: StayID, Method, VAT(0-100)",
+        error: "Thiếu hoặc sai tham số: StayID, Method, VAT(0-100)",
       });
     }
 
@@ -108,7 +108,7 @@ const createAndPayInvoice = async (req, res) => {
 
     return res
       .status(201)
-      .json(payload || { message: "Tao va thanh toan hoa don thanh cong" });
+      .json(payload || { message: "Tạo và thanh toán hóa đơn thành công" });
   } catch (err) {
     console.error("createAndPayInvoice Error:", err);
     const sqlMessage = err?.originalError?.info?.message || err?.message;
@@ -117,7 +117,7 @@ const createAndPayInvoice = async (req, res) => {
       return res.status(400).json({ error: sqlMessage });
     }
 
-    return res.status(500).json({ error: "Loi server", detail: sqlMessage });
+    return res.status(500).json({ error: "Lỗi server", detail: sqlMessage });
   }
 };
 

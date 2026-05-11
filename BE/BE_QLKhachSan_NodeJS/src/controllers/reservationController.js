@@ -333,7 +333,7 @@ const bookRoom = async (req, res) => {
     ) {
       return res.status(400).json({
         error:
-          "Thieu hoac sai tham so: (UserID hoac CustomerID), RoomTypeID, CheckInDate, CheckOutDate, NumRooms, NumPeople",
+          "Thiếu hoặc sai tham số: (UserID hoac CustomerID), RoomTypeID, CheckInDate, CheckOutDate, NumRooms, NumPeople",
       });
     }
 
@@ -510,7 +510,7 @@ const getAvailableRoomsForCheckIn = async (req, res) => {
 
     if (!reservationID) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: reservationId",
+        error: "Thiếu hoặc sai tham số: reservationId",
       });
     }
 
@@ -532,7 +532,7 @@ const checkInByReservationOneRoom = async (req, res) => {
 
     if (!reservationID || !roomID) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: ReservationID, RoomID",
+        error: "Thiếu hoặc sai tham số: ReservationID, RoomID",
       });
     }
 
@@ -545,7 +545,7 @@ const checkInByReservationOneRoom = async (req, res) => {
 
     return res
       .status(201)
-      .json(payload || { message: "Check-in theo dat phong thanh cong" });
+      .json(payload || { message: "Check-in theo dat phong thành công" });
   } catch (err) {
     return sendSqlError(res, err, "checkInByReservationOneRoom");
   }
@@ -562,7 +562,7 @@ const checkInWalkInOneRoom = async (req, res) => {
     if (!fullName || !cccd || !roomID || !expectedCheckOut) {
       return res.status(400).json({
         error:
-          "Thieu hoac sai tham so: FullName, CCCD, RoomID, ExpectedCheckOut(ISO datetime)",
+          "Thiếu hoặc sai tham số: FullName, CCCD, RoomID, ExpectedCheckOut(ISO datetime)",
       });
     }
 
@@ -577,7 +577,7 @@ const checkInWalkInOneRoom = async (req, res) => {
 
     return res
       .status(201)
-      .json(payload || { message: "Check-in walk-in thanh cong" });
+      .json(payload || { message: "Check-in walk-in thành công" });
   } catch (err) {
     return sendSqlError(res, err, "checkInWalkInOneRoom");
   }
@@ -592,7 +592,7 @@ const transferRoom = async (req, res) => {
 
     if (!stayID || !oldRoomID || !newRoomID) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: StayID, OldRoomID, NewRoomID",
+        error: "Thiếu hoặc sai tham số: StayID, OldRoomID, NewRoomID",
       });
     }
 
@@ -604,7 +604,7 @@ const transferRoom = async (req, res) => {
     const result = await request.execute("sp_TransferRoom");
     const payload = result.recordset?.[0] || null;
 
-    return res.json(payload || { message: "Chuyen phong thanh cong" });
+    return res.json(payload || { message: "Chuyển phòng thành công" });
   } catch (err) {
     return sendSqlError(res, err, "transferRoom");
   }
@@ -618,7 +618,7 @@ const extendStay = async (req, res) => {
 
     if (!stayID || !newCheckOut) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: StayID, NewCheckOut (ISO datetime)",
+        error: "Thiếu hoặc sai tham số: StayID, NewCheckOut (ISO datetime)",
       });
     }
 
@@ -629,7 +629,7 @@ const extendStay = async (req, res) => {
     const result = await request.execute("sp_ExtendStay");
     const payload = result.recordset?.[0] || null;
 
-    return res.json(payload || { message: "Gia han luu tru thanh cong" });
+    return res.json(payload || { message: "Gia hạn lưu trú thành công" });
   } catch (err) {
     return sendSqlError(res, err, "extendStay");
   }
@@ -643,7 +643,7 @@ const checkOutRoom = async (req, res) => {
 
     if (!stayID || !roomID) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: StayID, RoomID",
+        error: "Thiếu hoặc sai tham số: StayID, RoomID",
       });
     }
 
@@ -654,7 +654,7 @@ const checkOutRoom = async (req, res) => {
     const result = await request.execute("sp_CheckOutRoom");
     const payload = result.recordset?.[0] || null;
 
-    return res.json(payload || { message: "Check-out phong thanh cong" });
+    return res.json(payload || { message: "Check-out phòng thành công" });
   } catch (err) {
     return sendSqlError(res, err, "checkOutRoom");
   }
@@ -669,7 +669,7 @@ const addServiceUsage = async (req, res) => {
 
     if (!stayID || !serviceID || !quantity) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: StayID, ServiceID, Quantity",
+        error: "Thiếu hoặc sai tham số: StayID, ServiceID, Quantity",
       });
     }
 
@@ -679,7 +679,7 @@ const addServiceUsage = async (req, res) => {
     request.input("Quantity", sql.Int, quantity);
 
     await request.execute("sp_AddServiceUsage");
-    return res.status(201).json({ message: "Them dich vu su dung thanh cong" });
+    return res.status(201).json({ message: "Thêm dịch vụ sử dụng thành công" });
   } catch (err) {
     return sendSqlError(res, err, "addServiceUsage");
   }
@@ -693,7 +693,7 @@ const updateServiceUsage = async (req, res) => {
 
     if (!usageID || !quantity) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: UsageID, Quantity",
+        error: "Thiếu hoặc sai tham số: UsageID, Quantity",
       });
     }
 
@@ -702,7 +702,7 @@ const updateServiceUsage = async (req, res) => {
     request.input("Quantity", sql.Int, quantity);
 
     await request.execute("sp_UpdateServiceUsage");
-    return res.json({ message: "Cap nhat dich vu su dung thanh cong" });
+    return res.json({ message: "Cập nhật dịch vụ sử dụng thành công" });
   } catch (err) {
     return sendSqlError(res, err, "updateServiceUsage");
   }
@@ -715,7 +715,7 @@ const deleteServiceUsage = async (req, res) => {
 
     if (!usageID) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: UsageID",
+        error: "Thiếu hoặc sai tham số: UsageID",
       });
     }
 
@@ -723,7 +723,7 @@ const deleteServiceUsage = async (req, res) => {
     request.input("UsageID", sql.Int, usageID);
 
     await request.execute("sp_DeleteServiceUsage");
-    return res.json({ message: "Xoa dich vu su dung thanh cong" });
+    return res.json({ message: "Xóa dịch vụ sử dụng thành công" });
   } catch (err) {
     return sendSqlError(res, err, "deleteServiceUsage");
   }
@@ -736,7 +736,7 @@ const getServiceUsageByStay = async (req, res) => {
 
     if (!stayID) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: StayID",
+        error: "Thiếu hoặc sai tham số: StayID",
       });
     }
 
@@ -759,7 +759,7 @@ const addMinibarUsage = async (req, res) => {
 
     if (!stayID || !minibarID || !quantity) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: StayID, MinibarID, Quantity",
+        error: "Thiếu hoặc sai tham số: StayID, MinibarID, Quantity",
       });
     }
 
@@ -769,7 +769,7 @@ const addMinibarUsage = async (req, res) => {
     request.input("Quantity", sql.Int, quantity);
 
     await request.execute("sp_AddMinibarUsage");
-    return res.status(201).json({ message: "Them minibar usage thanh cong" });
+    return res.status(201).json({ message: "Thêm minibar usage thành công" });
   } catch (err) {
     return sendSqlError(res, err, "addMinibarUsage");
   }
@@ -783,7 +783,7 @@ const updateMinibarUsage = async (req, res) => {
 
     if (!id || !quantity) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: ID, Quantity",
+        error: "Thiếu hoặc sai tham số: ID, Quantity",
       });
     }
 
@@ -792,7 +792,7 @@ const updateMinibarUsage = async (req, res) => {
     request.input("Quantity", sql.Int, quantity);
 
     await request.execute("sp_UpdateMinibarUsage");
-    return res.json({ message: "Cap nhat minibar usage thanh cong" });
+    return res.json({ message: "Cập nhật minibar usage thành công" });
   } catch (err) {
     return sendSqlError(res, err, "updateMinibarUsage");
   }
@@ -805,7 +805,7 @@ const deleteMinibarUsage = async (req, res) => {
 
     if (!id) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: ID",
+        error: "Thiếu hoặc sai tham số: ID",
       });
     }
 
@@ -813,7 +813,7 @@ const deleteMinibarUsage = async (req, res) => {
     request.input("ID", sql.Int, id);
 
     await request.execute("sp_DeleteMinibarUsage");
-    return res.json({ message: "Xoa minibar usage thanh cong" });
+    return res.json({ message: "Xóa minibar usage thành công" });
   } catch (err) {
     return sendSqlError(res, err, "deleteMinibarUsage");
   }
@@ -826,7 +826,7 @@ const getMinibarUsageByStay = async (req, res) => {
 
     if (!stayID) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: StayID",
+        error: "Thiếu hoặc sai tham số: StayID",
       });
     }
 
@@ -847,7 +847,7 @@ const getMinibarByRoom = async (req, res) => {
 
     if (!roomID) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: RoomID",
+        error: "Thiếu hoặc sai tham số: RoomID",
       });
     }
 
@@ -870,7 +870,7 @@ const addPenalty = async (req, res) => {
 
     if (!stayID || !reason || !amount) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: StayID, Reason, Amount",
+        error: "Thiếu hoặc sai tham số: StayID, Reason, Amount",
       });
     }
 
@@ -880,7 +880,7 @@ const addPenalty = async (req, res) => {
     request.input("Amount", sql.Decimal(14, 2), amount);
 
     await request.execute("sp_AddPenalty");
-    return res.status(201).json({ message: "Them penalty thanh cong" });
+    return res.status(201).json({ message: "Thêm penalty thành công" });
   } catch (err) {
     return sendSqlError(res, err, "addPenalty");
   }
@@ -895,7 +895,7 @@ const updatePenalty = async (req, res) => {
 
     if (!penaltyID || !reason || !amount) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: PenaltyID, Reason, Amount",
+        error: "Thiếu hoặc sai tham số: PenaltyID, Reason, Amount",
       });
     }
 
@@ -905,7 +905,7 @@ const updatePenalty = async (req, res) => {
     request.input("Amount", sql.Decimal(14, 2), amount);
 
     await request.execute("sp_UpdatePenalty");
-    return res.json({ message: "Cap nhat penalty thanh cong" });
+    return res.json({ message: "Cập nhật penalty thành công" });
   } catch (err) {
     return sendSqlError(res, err, "updatePenalty");
   }
@@ -918,7 +918,7 @@ const deletePenalty = async (req, res) => {
 
     if (!penaltyID) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: PenaltyID",
+        error: "Thiếu hoặc sai tham số: PenaltyID",
       });
     }
 
@@ -926,7 +926,7 @@ const deletePenalty = async (req, res) => {
     request.input("PenaltyID", sql.Int, penaltyID);
 
     await request.execute("sp_DeletePenalty");
-    return res.json({ message: "Xoa penalty thanh cong" });
+    return res.json({ message: "Xóa penalty thành công" });
   } catch (err) {
     return sendSqlError(res, err, "deletePenalty");
   }
@@ -939,7 +939,7 @@ const getPenaltyByStay = async (req, res) => {
 
     if (!stayID) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: StayID",
+        error: "Thiếu hoặc sai tham số: StayID",
       });
     }
 
@@ -964,7 +964,7 @@ const getRoomStayHistoryCheckedOutByStay = async (req, res) => {
 
     if (!stayID) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: StayID",
+        error: "Thiếu hoặc sai tham số: StayID",
       });
     }
 

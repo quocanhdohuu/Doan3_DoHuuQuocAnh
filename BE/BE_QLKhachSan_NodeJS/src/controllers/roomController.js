@@ -9,7 +9,7 @@ const getRooms = async (req, res) => {
     return res.json(result.recordset || []);
   } catch (err) {
     console.error("getRooms Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
@@ -20,13 +20,13 @@ const getRoomCalendar = async (req, res) => {
     const year = Number.parseInt(req.query.year, 10);
 
     if (!Number.isInteger(month) || month < 1 || month > 12) {
-      return res.status(400).json({ error: "month phai la so tu 1 den 12" });
+      return res.status(400).json({ error: "month phải là số từ 1 đến 12" });
     }
 
     if (!Number.isInteger(year) || year < 1900 || year > 9999) {
       return res
         .status(400)
-        .json({ error: "year phai la so hop le (1900 - 9999)" });
+        .json({ error: "year phải là số hợp lệ (1900 - 9999)" });
     }
 
     const request = new sql.Request();
@@ -41,7 +41,7 @@ const getRoomCalendar = async (req, res) => {
     });
   } catch (err) {
     console.error("getRoomCalendar Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
@@ -75,7 +75,7 @@ const getAvailableRoomsAdvanced = async (req, res) => {
     if (!expectedCheckOut) {
       return res.status(400).json({
         error:
-          "Thieu hoac sai tham so: ExpectedCheckOut (ISO datetime). Vi du: 2026-04-15T12:00:00",
+          "Thiếu hoặc sai tham số: ExpectedCheckOut (ISO datetime). Ví dụ: 2026-04-15T12:00:00",
       });
     }
 
@@ -86,7 +86,7 @@ const getAvailableRoomsAdvanced = async (req, res) => {
     return res.json(result.recordset || []);
   } catch (err) {
     console.error("getAvailableRoomsAdvanced Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
@@ -103,7 +103,7 @@ const addRoom = async (req, res) => {
       roomTypeIdNum <= 0
     ) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: RoomNumber, Status, RoomTypeID",
+        error: "Thiếu hoặc sai tham số: RoomNumber, Status, RoomTypeID",
       });
     }
 
@@ -114,7 +114,7 @@ const addRoom = async (req, res) => {
     `;
 
     if (checkDuplicate.recordset.length > 0) {
-      return res.status(409).json({ error: "Phong da ton tai" });
+      return res.status(409).json({ error: "Phòng đã tồn tại" });
     }
 
     const request = new sql.Request();
@@ -124,10 +124,10 @@ const addRoom = async (req, res) => {
 
     await request.execute("AddRoom");
 
-    return res.status(201).json({ message: "Them phong thanh cong" });
+    return res.status(201).json({ message: "Thêm phòng thành công" });
   } catch (err) {
     console.error("addRoom Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
@@ -139,7 +139,7 @@ const updateRoom = async (req, res) => {
     const roomTypeIdNum = Number(RoomTypeID);
 
     if (!Number.isInteger(roomId) || roomId <= 0) {
-      return res.status(400).json({ error: "RoomID khong hop le" });
+      return res.status(400).json({ error: "RoomID không hợp lệ" });
     }
 
     if (
@@ -149,7 +149,7 @@ const updateRoom = async (req, res) => {
       roomTypeIdNum <= 0
     ) {
       return res.status(400).json({
-        error: "Thieu hoac sai tham so: RoomNumber, Status, RoomTypeID",
+        error: "Thiếu hoặc sai tham số: RoomNumber, Status, RoomTypeID",
       });
     }
 
@@ -160,7 +160,7 @@ const updateRoom = async (req, res) => {
     `;
 
     if (checkRoomExists.recordset.length === 0) {
-      return res.status(404).json({ error: "Phong khong ton tai" });
+      return res.status(404).json({ error: "Phòng không tồn tại" });
     }
 
     const checkDuplicateNumber = await sql.query`
@@ -171,7 +171,7 @@ const updateRoom = async (req, res) => {
     `;
 
     if (checkDuplicateNumber.recordset.length > 0) {
-      return res.status(409).json({ error: "So phong da ton tai" });
+      return res.status(409).json({ error: "Số phòng đã tồn tại" });
     }
 
     const request = new sql.Request();
@@ -182,10 +182,10 @@ const updateRoom = async (req, res) => {
 
     await request.execute("UpdateRoom");
 
-    return res.json({ message: "Cap nhat phong thanh cong" });
+    return res.json({ message: "Cập nhật phòng thành công" });
   } catch (err) {
     console.error("updateRoom Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 

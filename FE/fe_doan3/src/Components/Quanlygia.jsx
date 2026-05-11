@@ -86,7 +86,7 @@ class Quanlygia extends Component {
     try {
       const response = await fetch(ROOM_TYPES_API_URL);
       if (!response.ok) {
-        throw new Error(`Loi tai loai phong: ${response.status}`);
+        throw new Error(`Lỗi tải loại phòng: ${response.status}`);
       }
 
       const data = await response.json();
@@ -101,7 +101,7 @@ class Quanlygia extends Component {
         this.setState({ roomTypes });
       }
     } catch (error) {
-      console.error("Khong the tai danh sach loai phong:", error);
+      console.error("Không thể tải danh sách loại phòng:", error);
     }
   };
 
@@ -111,7 +111,7 @@ class Quanlygia extends Component {
     try {
       const response = await fetch(RATES_API_URL);
       if (!response.ok) {
-        throw new Error(`Loi tai du lieu: ${response.status}`);
+        throw new Error(`Lỗi tải dữ liệu: ${response.status}`);
       }
 
       const data = await response.json();
@@ -136,14 +136,17 @@ class Quanlygia extends Component {
         });
       });
 
-      const roomTypesFromRates = Array.from(roomTypeMap.entries()).map(([id, name]) => ({
-        id,
-        name,
-      }));
+      const roomTypesFromRates = Array.from(roomTypeMap.entries()).map(
+        ([id, name]) => ({
+          id,
+          name,
+        }),
+      );
 
       this.setState((prev) => ({
         seasonalPrices,
-        roomTypes: prev.roomTypes.length > 0 ? prev.roomTypes : roomTypesFromRates,
+        roomTypes:
+          prev.roomTypes.length > 0 ? prev.roomTypes : roomTypesFromRates,
         currentPage: 1,
         loading: false,
       }));
@@ -200,7 +203,12 @@ class Quanlygia extends Component {
       : "Khoảng thời gian này đã tồn tại giá cho loại phòng này.";
   };
 
-  hasOverlappingRange = ({ roomTypeId, startDate, endDate, excludeRateId = null }) => {
+  hasOverlappingRange = ({
+    roomTypeId,
+    startDate,
+    endDate,
+    excludeRateId = null,
+  }) => {
     const roomTypeIdText = String(roomTypeId);
     const start = toInputDate(startDate);
     const end = toInputDate(endDate);
@@ -209,7 +217,8 @@ class Quanlygia extends Component {
 
     return this.state.seasonalPrices.some((item) => {
       if (String(item.roomTypeId) !== roomTypeIdText) return false;
-      if (excludeRateId !== null && String(item.id) === String(excludeRateId)) return false;
+      if (excludeRateId !== null && String(item.id) === String(excludeRateId))
+        return false;
 
       const itemStart = toInputDate(item.startDate);
       const itemEnd = toInputDate(item.endDate);
@@ -226,7 +235,8 @@ class Quanlygia extends Component {
 
     return this.state.seasonalPrices.some((item) => {
       if (String(item.roomTypeId) !== roomTypeIdText) return false;
-      if (excludeRateId !== null && String(item.id) === String(excludeRateId)) return false;
+      if (excludeRateId !== null && String(item.id) === String(excludeRateId))
+        return false;
 
       const itemStart = toInputDate(item.startDate);
       const itemEnd = toInputDate(item.endDate);
@@ -256,7 +266,8 @@ class Quanlygia extends Component {
       return "Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc.";
     }
 
-    const { roomTypeIdNum, excludeRateId } = this.getDateValidationContext(priceDraft);
+    const { roomTypeIdNum, excludeRateId } =
+      this.getDateValidationContext(priceDraft);
     if (roomTypeIdNum === null) return "Loại phòng không hợp lệ.";
 
     const isOverlapping = this.hasOverlappingRange({
@@ -278,7 +289,8 @@ class Quanlygia extends Component {
     const hasEndOnly = Boolean(endDate) && !startDate;
     if (!hasStartOnly && !hasEndOnly) return "";
 
-    const { roomTypeIdNum, excludeRateId } = this.getDateValidationContext(priceDraft);
+    const { roomTypeIdNum, excludeRateId } =
+      this.getDateValidationContext(priceDraft);
     if (roomTypeIdNum === null) return "Loại phòng không hợp lệ.";
 
     const hasConflict = this.hasDatePointConflict({
@@ -309,7 +321,9 @@ class Quanlygia extends Component {
 
   handleRoomTypeChange = (e) => {
     const value = e.target.value;
-    const selected = this.state.roomTypes.find((item) => String(item.id) === value);
+    const selected = this.state.roomTypes.find(
+      (item) => String(item.id) === value,
+    );
     const { currentPrice } = this.state;
     const nextPrice = {
       ...currentPrice,
@@ -331,10 +345,11 @@ class Quanlygia extends Component {
   handleSave = async (e) => {
     e.preventDefault();
     const { currentPrice, modalMode } = this.state;
-    const { id, roomTypeId, amount, seasonName, startDate, endDate } = currentPrice;
+    const { id, roomTypeId, amount, seasonName, startDate, endDate } =
+      currentPrice;
 
     if (!roomTypeId || !amount || !seasonName || !startDate || !endDate) {
-      alert("Vui long dien day du cac truong bat buoc.");
+      alert("Vui lòng điền đầy đủ các trường bắt buộc.");
       return;
     }
 
@@ -368,7 +383,8 @@ class Quanlygia extends Component {
     try {
       this.setState({ submitLoading: true, error: null });
 
-      const url = modalMode === "add" ? RATES_API_URL : `${RATES_API_URL}/${id}`;
+      const url =
+        modalMode === "add" ? RATES_API_URL : `${RATES_API_URL}/${id}`;
       const response = await fetch(url, {
         method: modalMode === "add" ? "POST" : "PUT",
         headers: { "Content-Type": "application/json" },
@@ -384,16 +400,20 @@ class Quanlygia extends Component {
 
       await this.fetchRates();
       this.setState({ isModalOpen: false });
-      alert(modalMode === "add" ? "Them gia thanh cong." : "Cap nhat gia thanh cong.");
+      alert(
+        modalMode === "add"
+          ? "Thêm giá thành công."
+          : "Cập nhật giá thành công.",
+      );
     } catch (error) {
-      this.setState({ error: error.message || "Khong the luu gia." });
+      this.setState({ error: error.message || "Không thể lưu giá." });
     } finally {
       this.setState({ submitLoading: false });
     }
   };
 
   handleDelete = async (id) => {
-    if (!window.confirm("Xac nhan xoa?")) return;
+    if (!window.confirm("Xác nhận xóa?")) return;
 
     try {
       this.setState({ deletingRateId: id, error: null });
@@ -409,9 +429,9 @@ class Quanlygia extends Component {
       }
 
       await this.fetchRates();
-      alert("Xoa gia thanh cong.");
+      alert("Xóa giá thành công.");
     } catch (error) {
-      this.setState({ error: error.message || "Khong the xoa gia." });
+      this.setState({ error: error.message || "Không thể xóa giá." });
     } finally {
       this.setState({ deletingRateId: null });
     }
@@ -457,8 +477,14 @@ class Quanlygia extends Component {
     return (
       <div className="qlgia-page">
         <div className="qlgia-top">
-          <FeatureHeader title="Quản lý Giá phòng" description="Quản lý giá theo mùa" />
-          <button className="qlgia-btn-primary" onClick={this.openAddPriceModal}>
+          <FeatureHeader
+            title="Quản lý Giá phòng"
+            description="Quản lý giá theo mùa"
+          />
+          <button
+            className="qlgia-btn-primary"
+            onClick={this.openAddPriceModal}
+          >
             + Thêm giá
           </button>
         </div>
@@ -561,16 +587,18 @@ class Quanlygia extends Component {
                 ‹
               </button>
 
-              {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-                <button
-                  key={page}
-                  type="button"
-                  className={`qlgia-page-btn ${page === currentDisplayPage ? "active" : ""}`}
-                  onClick={() => this.setState({ currentPage: page })}
-                >
-                  {page}
-                </button>
-              ))}
+              {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    className={`qlgia-page-btn ${page === currentDisplayPage ? "active" : ""}`}
+                    onClick={() => this.setState({ currentPage: page })}
+                  >
+                    {page}
+                  </button>
+                ),
+              )}
 
               <button
                 type="button"
@@ -591,7 +619,10 @@ class Quanlygia extends Component {
 
         {isModalOpen && (
           <div className="qlgia-modal-overlay" onClick={this.closeModal}>
-            <div className="qlgia-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="qlgia-modal-content"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button className="qlgia-modal-close" onClick={this.closeModal}>
                 ×
               </button>
@@ -605,7 +636,9 @@ class Quanlygia extends Component {
                     onChange={this.handleRoomTypeChange}
                   >
                     <option value="">
-                      {typeOptions.length > 0 ? "Chọn loại phòng" : "Không có loại phòng"}
+                      {typeOptions.length > 0
+                        ? "Chọn loại phòng"
+                        : "Không có loại phòng"}
                     </option>
                     {typeOptions.map((rt) => (
                       <option key={rt.id} value={rt.id}>
@@ -659,10 +692,18 @@ class Quanlygia extends Component {
                 </label>
 
                 <div className="qlgia-modal-btns">
-                  <button className="qlgia-btn-secondary" type="button" onClick={this.closeModal}>
+                  <button
+                    className="qlgia-btn-secondary"
+                    type="button"
+                    onClick={this.closeModal}
+                  >
                     Hủy
                   </button>
-                  <button className="qlgia-btn-primary" type="submit" disabled={submitLoading}>
+                  <button
+                    className="qlgia-btn-primary"
+                    type="submit"
+                    disabled={submitLoading}
+                  >
                     {submitLoading ? "Đang lưu..." : "Lưu"}
                   </button>
                 </div>

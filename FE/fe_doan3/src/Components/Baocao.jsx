@@ -371,12 +371,12 @@ const Baocao = () => {
           ]),
           usedRooms: getNumberFromPayload(occupancyPayload, [
             "Số phòng đã sử dụng",
-            "So phong da su dung",
+            "Số phòng đã sử dụng",
             "usedRooms",
           ]),
           totalRooms: getNumberFromPayload(occupancyPayload, [
             "Tổng số phòng",
-            "Tong so phong",
+            "Tổng số phòng",
             "totalRooms",
           ]),
           netRevenue: getNumberFromPayload(netRevenuePayload, [
@@ -386,22 +386,22 @@ const Baocao = () => {
           ]),
           bookedGuests: getNumberFromPayload(guestTypePayload, [
             "Khách đặt trước",
-            "Khach dat truoc",
+            "Khách đặt trước",
             "bookedGuests",
           ]),
           walkinGuests: getNumberFromPayload(guestTypePayload, [
             "Khách walk-in",
-            "Khach walk-in",
+            "Khách walk-in",
             "walkinGuests",
           ]),
           totalGuests: getNumberFromPayload(guestTypePayload, [
             "Tổng lượt khách",
-            "Tong luot khach",
+            "Tổng lượt khách",
             "totalGuests",
           ]),
           reservationCount: getNumberFromPayload(reservationCountPayload, [
             "Số lượng đặt phòng",
-            "So luong dat phong",
+            "Số lượng đặt phòng",
             "reservationCount",
           ]),
         });

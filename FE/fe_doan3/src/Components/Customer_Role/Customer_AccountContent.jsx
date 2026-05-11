@@ -33,8 +33,13 @@ const normalizeAccountData = (payload, fallbackUser) => {
     Email: String(email || "").trim(),
     Phone: String(source?.Phone ?? source?.phone ?? "").trim(),
     CCCD: String(source?.CCCD ?? source?.cccd ?? "").trim(),
-    PasswordHash: String(source?.PasswordHash ?? source?.passwordHash ?? "").trim(),
-    TotalStay: Math.max(0, Number(source?.TotalStay ?? source?.totalStay ?? 0) || 0),
+    PasswordHash: String(
+      source?.PasswordHash ?? source?.passwordHash ?? "",
+    ).trim(),
+    TotalStay: Math.max(
+      0,
+      Number(source?.TotalStay ?? source?.totalStay ?? 0) || 0,
+    ),
   };
 };
 
@@ -97,7 +102,7 @@ function CustomerAccountContent({ user }) {
 
     const loadCustomerInfo = async () => {
       if (!userId) {
-        setError("Khong tim thay UserID. Vui long dang nhap lai.");
+        setError("Không tìm thấy UserID. Vui lòng đăng nhập lại.");
         setLoading(false);
         return;
       }
@@ -128,7 +133,7 @@ function CustomerAccountContent({ user }) {
         });
       } catch (err) {
         if (err.name !== "AbortError") {
-          setError(err?.message || "Khong the tai thong tin tai khoan.");
+          setError(err?.message || "Không thể tải thông tin tài khoản.");
           setAccountData(null);
         }
       } finally {
@@ -215,10 +220,16 @@ function CustomerAccountContent({ user }) {
   return (
     <main className="customer-main-content customer-account-content">
       <section className="customer-account-shell">
-        {loading && <div className="customer-status-box">Đang tải thông tin tài khoản...</div>}
+        {loading && (
+          <div className="customer-status-box">
+            Đang tải thông tin tài khoản...
+          </div>
+        )}
 
         {!loading && error && (
-          <div className="customer-status-box customer-status-box--error">{error}</div>
+          <div className="customer-status-box customer-status-box--error">
+            {error}
+          </div>
         )}
 
         {!loading && !error && (
@@ -230,7 +241,9 @@ function CustomerAccountContent({ user }) {
                 </div>
 
                 <div className="customer-account-identity-copy">
-                  <h2>{profileName.first} {profileName.second}</h2>
+                  <h2>
+                    {profileName.first} {profileName.second}
+                  </h2>
                 </div>
 
                 <button
@@ -312,7 +325,7 @@ function CustomerAccountContent({ user }) {
                 </label>
 
                 <label>
-                  Phone 
+                  Phone
                   <input
                     type="text"
                     name="Phone"
@@ -334,7 +347,7 @@ function CustomerAccountContent({ user }) {
                 </label>
 
                 <label className="customer-account-full-row">
-                  Password 
+                  Password
                   <input
                     type="text"
                     name="PasswordHash"
@@ -349,14 +362,23 @@ function CustomerAccountContent({ user }) {
             <div className="customer-account-bottom-grid">
               <article className="customer-account-setting-card">
                 <h4>Cài đặt thông báo</h4>
-                <p>Quản lý cách chúng tôi liên hệ với bạn về việc đặt chỗ và các ưu đãi đặc biệt.</p>
+                <p>
+                  Quản lý cách chúng tôi liên hệ với bạn về việc đặt chỗ và các
+                  ưu đãi đặc biệt.
+                </p>
                 <div className="customer-account-toggle-row">
                   <span>Email</span>
-                  <span className="customer-account-toggle active" aria-hidden="true"></span>
+                  <span
+                    className="customer-account-toggle active"
+                    aria-hidden="true"
+                  ></span>
                 </div>
                 <div className="customer-account-toggle-row">
                   <span>SMS</span>
-                  <span className="customer-account-toggle" aria-hidden="true"></span>
+                  <span
+                    className="customer-account-toggle"
+                    aria-hidden="true"
+                  ></span>
                 </div>
               </article>
 
@@ -366,7 +388,8 @@ function CustomerAccountContent({ user }) {
                   <button type="button">Quản lý</button>
                 </div>
                 <p>
-                  Chúng tôi sử dụng những thông tin chi tiết này để điều chỉnh việc bố trí phòng cho phù hợp nhất có thể.
+                  Chúng tôi sử dụng những thông tin chi tiết này để điều chỉnh
+                  việc bố trí phòng cho phù hợp nhất có thể.
                 </p>
                 <div className="customer-account-chip-row">
                   <span>Tầng cao</span>

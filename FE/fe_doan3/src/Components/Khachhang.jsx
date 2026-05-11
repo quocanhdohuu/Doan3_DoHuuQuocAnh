@@ -104,7 +104,7 @@ const Khachhang = () => {
       setCustomers(Array.isArray(data) ? data.map(mapCustomerFromApi) : []);
       setCurrentPage(1);
     } catch (err) {
-      alert(getErrorMessage(err, "Khong the tai danh sach khach hang."));
+      alert(getErrorMessage(err, "Không thể tải danh sách khách hàng."));
     } finally {
       setLoading(false);
     }
@@ -231,7 +231,7 @@ const Khachhang = () => {
       );
       handleCloseModal();
     } catch (err) {
-      alert(getErrorMessage(err, "Khong the luu thong tin khach hang."));
+      alert(getErrorMessage(err, "Không thể lưu thông tin khách hàng."));
     } finally {
       setSubmitLoading(false);
     }
@@ -279,11 +279,11 @@ const Khachhang = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7">Dang tai du lieu...</td>
+                  <td colSpan="7">Đang tải dữ liệu...</td>
                 </tr>
               ) : filteredList.length === 0 ? (
                 <tr>
-                  <td colSpan="7">Khong co du lieu khach hang.</td>
+                  <td colSpan="7">Không có dữ liệu khách hàng.</td>
                 </tr>
               ) : (
                 paginatedList.map((kh) => (

@@ -28,10 +28,10 @@ const hasDateOverlap = async ({
 };
 
 const isBusinessRuleError = (message = "") =>
-  message.includes("Ngay bat dau phai nho hon hoac bang ngay ket thuc") ||
-  message.includes("Khoang thoi gian nay da ton tai gia cho loai phong nay") ||
+  message.includes("Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc") ||
+  message.includes("Khoảng thời gian này đã tồn tại giá cho loại phòng này") ||
   message.includes(
-    "Khoang thoi gian bi trung voi gia khac cua loai phong nay",
+    "Khoảng thời gian bị trùng với giá khác của loại phòng này",
   ) ||
   message.includes("Ngày b?t d?u ph?i nh? hon ho?c b?ng ngày k?t thúc") ||
   message.includes("Kho?ng th?i gian này dã t?n t?i giá cho lo?i phòng này") ||
@@ -42,13 +42,13 @@ const getRates = async (req, res) => {
   try {
     const result = await sql.query`EXEC sp_GetSeasonRate`;
     if (!result.recordset) {
-      return res.status(404).json({ error: "Khong tim thay du lieu gia" });
+      return res.status(404).json({ error: "Không tìm thấy dữ liệu giá" });
     }
 
     return res.json(result.recordset);
   } catch (err) {
     console.error("getRates Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
@@ -68,26 +68,26 @@ const addRate = async (req, res) => {
     ) {
       return res.status(400).json({
         error:
-          "Thieu hoac sai tham so: RoomTypeID, Price, StartDate, EndDate, Season",
+          "Thiếu hoặc sai tham số: RoomTypeID, Price, StartDate, EndDate, Season",
       });
     }
 
     if (!isValidDateString(StartDate) || !isValidDateString(EndDate)) {
       return res
         .status(400)
-        .json({ error: "StartDate hoac EndDate khong hop le" });
+        .json({ error: "StartDate hoặc EndDate không hợp lệ" });
     }
 
     if (new Date(StartDate) > new Date(EndDate)) {
       return res
         .status(400)
-        .json({ error: "Ngay bat dau phai nho hon hoac bang ngay ket thuc" });
+        .json({ error: "Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc" });
     }
 
     const duplicated = await hasDateOverlap({ RoomTypeID, StartDate, EndDate });
     if (duplicated) {
       return res.status(400).json({
-        error: "Khoang thoi gian nay da ton tai gia cho loai phong nay",
+        error: "Khoảng thời gian này đã tồn tại giá cho loại phòng này",
       });
     }
 
@@ -100,14 +100,14 @@ const addRate = async (req, res) => {
         @Season=${Season}
     `;
 
-    return res.status(201).json({ message: "Them gia theo mua thanh cong" });
+    return res.status(201).json({ message: "Thêm giá theo mùa thành công" });
   } catch (err) {
     console.error("addRate Error:", err);
     if (isBusinessRuleError(err.message)) {
       return res.status(400).json({ error: err.message });
     }
 
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
@@ -118,7 +118,7 @@ const updateRate = async (req, res) => {
     const { RoomTypeID, Price, StartDate, EndDate, Season } = req.body;
 
     if (!Number.isInteger(rateID) || rateID <= 0) {
-      return res.status(400).json({ error: "RateID khong hop le" });
+      return res.status(400).json({ error: "RateID không hợp lệ" });
     }
 
     const hasUpdateFields =
@@ -131,18 +131,18 @@ const updateRate = async (req, res) => {
     if (!hasUpdateFields) {
       return res
         .status(400)
-        .json({ error: "Can it nhat mot truong de cap nhat" });
+        .json({ error: "Cần ít nhất một trường để cập nhật" });
     }
 
     if (
       RoomTypeID != null &&
       (!Number.isInteger(RoomTypeID) || RoomTypeID <= 0)
     ) {
-      return res.status(400).json({ error: "RoomTypeID khong hop le" });
+      return res.status(400).json({ error: "RoomTypeID không hợp lệ" });
     }
 
     if (Price != null && Number.isNaN(Number(Price))) {
-      return res.status(400).json({ error: "Price phai la so hop le" });
+      return res.status(400).json({ error: "Price phải là số hợp lệ" });
     }
 
     if (
@@ -151,7 +151,7 @@ const updateRate = async (req, res) => {
     ) {
       return res
         .status(400)
-        .json({ error: "StartDate hoac EndDate khong hop le" });
+        .json({ error: "StartDate hoặc EndDate không hợp lệ" });
     }
 
     const currentRateResult = await sql.query`
@@ -161,7 +161,7 @@ const updateRate = async (req, res) => {
     `;
 
     if (currentRateResult.recordset.length === 0) {
-      return res.status(404).json({ error: "Khong tim thay gia can cap nhat" });
+      return res.status(404).json({ error: "Không tìm thấy giá cần cập nhật" });
     }
 
     const currentRate = currentRateResult.recordset[0];
@@ -172,7 +172,7 @@ const updateRate = async (req, res) => {
     if (new Date(nextStartDate) > new Date(nextEndDate)) {
       return res
         .status(400)
-        .json({ error: "Ngay bat dau phai nho hon hoac bang ngay ket thuc" });
+        .json({ error: "Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc" });
     }
 
     const duplicated = await hasDateOverlap({
@@ -184,7 +184,7 @@ const updateRate = async (req, res) => {
 
     if (duplicated) {
       return res.status(400).json({
-        error: "Khoang thoi gian bi trung voi gia khac cua loai phong nay",
+        error: "Khoảng thời gian bị trùng với giá khác của loại phòng này",
       });
     }
 
@@ -198,14 +198,14 @@ const updateRate = async (req, res) => {
         @Season=${Season ?? null}
     `;
 
-    return res.json({ message: "Cap nhat gia theo mua thanh cong" });
+    return res.json({ message: "Cập nhật giá theo mùa thành công" });
   } catch (err) {
     console.error("updateRate Error:", err);
     if (isBusinessRuleError(err.message)) {
       return res.status(400).json({ error: err.message });
     }
 
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
@@ -215,7 +215,7 @@ const deleteRate = async (req, res) => {
     const rateID = Number.parseInt(req.params.id, 10);
 
     if (!Number.isInteger(rateID) || rateID <= 0) {
-      return res.status(400).json({ error: "RateID khong hop le" });
+      return res.status(400).json({ error: "RateID không hợp lệ" });
     }
 
     await sql.query`
@@ -223,10 +223,10 @@ const deleteRate = async (req, res) => {
         @RateID=${rateID}
     `;
 
-    return res.json({ message: "Xoa gia theo mua thanh cong" });
+    return res.json({ message: "Xóa giá theo mùa thành công" });
   } catch (err) {
     console.error("deleteRate Error:", err);
-    return res.status(500).json({ error: "Loi server", detail: err.message });
+    return res.status(500).json({ error: "Lỗi server", detail: err.message });
   }
 };
 
