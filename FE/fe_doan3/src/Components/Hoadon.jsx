@@ -1365,6 +1365,7 @@ class Hoadon extends Component {
                   <th>Ngày</th>
                   <th>Tổng tiền</th>
                   <th>Trạng thái</th>
+                  <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -1393,6 +1394,15 @@ class Hoadon extends Component {
                       <td>{inv.date}</td>
                       <td>{this.formatCurrency(inv.total)}</td>
                       <td>{inv.status}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={() => this.openDetailModal(inv)}
+                        >
+                          Chi tiết
+                        </button>
+                      </td>
                     </tr>
                   ))}
               </tbody>
