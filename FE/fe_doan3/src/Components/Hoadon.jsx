@@ -133,7 +133,9 @@ function DetailInvoiceModal({
                 <strong>Trả phòng:</strong> {detailInvoiceData.actualCheckOut}
               </p>
 
-              <h3 style={{ marginTop: 20, marginBottom: 10 }}>Chi tiết hóa đơn</h3>
+              <h3 style={{ marginTop: 20, marginBottom: 10 }}>
+                Chi tiết hóa đơn
+              </h3>
               <div className="hoadon-table-wrap">
                 <table className="table">
                   <thead>
@@ -153,7 +155,9 @@ function DetailInvoiceModal({
                     )}
                     {detailRows.map((item) => (
                       <tr key={`${item.typeLabel}-${item.id}`}>
-                        <td><b>{typeLabelVi[item.typeLabel] || item.typeLabel}</b></td>
+                        <td>
+                          <b>{typeLabelVi[item.typeLabel] || item.typeLabel}</b>
+                        </td>
                         <td>{item.itemName}</td>
                         <td>{item.quantity}</td>
                         <td>{formatCurrency(item.unitPrice)}</td>
@@ -849,6 +853,7 @@ class Hoadon extends Component {
       );
 
       this.closeModal();
+      this.openDetailModal({ stayId });
       await Promise.all([
         this.fetchPendingInvoices(),
         this.fetchInvoiceHistory(),
@@ -1360,7 +1365,6 @@ class Hoadon extends Component {
                   <th>Ngày</th>
                   <th>Tổng tiền</th>
                   <th>Trạng thái</th>
-                  <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -1389,15 +1393,6 @@ class Hoadon extends Component {
                       <td>{inv.date}</td>
                       <td>{this.formatCurrency(inv.total)}</td>
                       <td>{inv.status}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-secondary"
-                          onClick={() => this.openDetailModal(inv)}
-                        >
-                          Chi tiết
-                        </button>
-                      </td>
                     </tr>
                   ))}
               </tbody>
