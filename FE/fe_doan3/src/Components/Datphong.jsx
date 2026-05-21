@@ -757,7 +757,7 @@ class Datphong extends Component {
                     const statusKey = normalizeStatus(reservation.statusRaw);
                     const statusLabel =
                       STATUS_LABELS[statusKey] || STATUS_LABELS.unknown;
-                    const isCanceled = statusKey !== "booked";
+                    const isCanceled = statusKey !== "booked" && statusKey !== "pending";
 
                     return (
                       <tr key={reservation.id}>
